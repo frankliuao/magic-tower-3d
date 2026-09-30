@@ -79,6 +79,24 @@ export const App: React.FC = () => {
     return game.subscribe(forceUpdate);
   }, [game, forceUpdate]);
 
+  // 首次用户交互后自动开始播放背景音乐（浏览器自动播放策略要求）
+  useEffect(() => {
+    const startBGMOnce = () => {
+      sound.startBGM();
+      window.removeEventListener('keydown', startBGMOnce);
+      window.removeEventListener('click', startBGMOnce);
+      window.removeEventListener('touchstart', startBGMOnce);
+    };
+    window.addEventListener('keydown', startBGMOnce);
+    window.addEventListener('click', startBGMOnce);
+    window.addEventListener('touchstart', startBGMOnce);
+    return () => {
+      window.removeEventListener('keydown', startBGMOnce);
+      window.removeEventListener('click', startBGMOnce);
+      window.removeEventListener('touchstart', startBGMOnce);
+    };
+  }, []);
+
   // 玩家移动触发器 (自适应绝对网格移动)
   const handleMove = useCallback(
     (cmd: MoveCommand) => {

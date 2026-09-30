@@ -577,8 +577,8 @@ export const ITEM_NAMES: Record<string, { zh: string; en: string }> = {
   key_yellow: { zh: '黄钥匙', en: 'Yellow Key' },
   key_blue: { zh: '蓝钥匙', en: 'Blue Key' },
   key_red: { zh: '红钥匙', en: 'Red Key' },
-  potion_red: { zh: '生命红药水', en: 'Red Potion' },
-  potion_blue: { zh: '生命蓝药水', en: 'Blue Potion' },
+  potion_red: { zh: '小血瓶', en: 'Small Red Potion' },
+  potion_blue: { zh: '大血瓶', en: 'Large Red Potion' },
   holy_water: { zh: '圣水', en: 'Holy Water' },
   gem_red: { zh: '红宝石', en: 'Ruby' },
   gem_blue: { zh: '蓝宝石', en: 'Sapphire' },
@@ -788,7 +788,7 @@ export function getPickupNotification(
     return { text: lang === 'zh' ? '生命 +200' : 'HP +200', color: '#f87171' };
   }
   if (itemType === 'potion_blue') {
-    return { text: lang === 'zh' ? '生命 +500' : 'HP +500', color: '#60a5fa' };
+    return { text: lang === 'zh' ? '生命 +500' : 'HP +500', color: '#ef4444' };
   }
   if (itemType === 'holy_water') {
     return { text: lang === 'zh' ? '生命值翻倍！' : 'HP Doubled!', color: '#c084fc' };

@@ -1,6 +1,6 @@
 // src/engine/ModelFactory.ts
 import * as THREE from 'three';
-import { ItemType } from '../types/game';
+import { ItemType, Tile } from '../types/game';
 import { MONSTERS } from '../data/monsters';
 import { TextureGenerator } from './TextureGenerator';
 
@@ -127,6 +127,8 @@ export class ModelFactory {
     shieldGroup.position.set(-0.3, 0.45, 0.05);
     group.add(shieldGroup);
 
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -563,6 +565,8 @@ export class ModelFactory {
     halo.name = 'npc_halo';
     bubbleG.add(halo);
 
+    // 角色体型等比缩减 20%
+    bubbleG.scale.multiplyScalar(0.8);
     return bubbleG;
   }
 
@@ -665,6 +669,8 @@ export class ModelFactory {
     // 5. 挂载友好交互指示器 (头顶气泡与脚底光环)
     group.add(this.createNpcBubble());
 
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -727,6 +733,8 @@ export class ModelFactory {
     group.add(robe, trim, head, mustache, smile, eyeL, eyeR, hat, hatBrim, feather, pouch, pouchTie, coin);
     group.add(this.createNpcBubble());
 
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -934,6 +942,8 @@ export class ModelFactory {
       }
     });
 
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -973,6 +983,9 @@ export class ModelFactory {
     ruby.position.set(0, 1.04, 0.1);
 
     group.add(skirt, bodice, head, hair, crown, ruby);
+
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -1162,6 +1175,8 @@ export class ModelFactory {
       }
     });
 
+    // 角色体型等比缩减 20%
+    group.scale.multiplyScalar(0.8);
     return group;
   }
 
@@ -1294,116 +1309,294 @@ export class ModelFactory {
   }
 
   // -------------------------------------------------------------------------
-  // 7.2 蝙蝠系列 (Bat)
+  // 7.2 蝙蝠系列 (Bat) - 饱满丝绒身躯、萌系生动面庞、平滑弧度翼膜与连贯骨架拍击
   // -------------------------------------------------------------------------
   private static createBatMesh(monsterId: string, _data: any, color: THREE.Color): THREE.Group {
     const group = new THREE.Group();
     group.name = `monster_${monsterId}`;
 
-    const batFurMat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
-    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.24, 8, 16), batFurMat);
-    torso.position.set(0, 0.52, 0);
-    torso.rotation.x = 0.35;
+    // 材质定义
+    const batFurMat = new THREE.MeshStandardMaterial({
+      color: color,
+      roughness: 0.65,
+      metalness: 0.1,
+    });
 
-    const headG = new THREE.Group();
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), batFurMat);
-    skull.scale.set(0.9, 0.9, 1.1);
+    const chestFurMat = new THREE.MeshStandardMaterial({
+      color: color.clone().offsetHSL(0, -0.05, 0.12),
+      roughness: 0.8,
+      metalness: 0.05,
+    });
 
-    const snout = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 8), batFurMat);
-    snout.position.set(0, -0.04, 0.15);
-    snout.rotation.x = Math.PI / 2;
-
-    const earMat = new THREE.MeshStandardMaterial({
-      color: color.clone().offsetHSL(0, 0.05, 0.08),
-      roughness: 0.5,
+    const innerEarMat = new THREE.MeshStandardMaterial({
+      color: 0xdb2777,
+      roughness: 0.6,
+      metalness: 0.05,
       side: THREE.DoubleSide,
     });
-    const createEar = (x: number) => {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 6), earMat);
-      ear.scale.set(1.0, 1.0, 0.3);
-      ear.position.set(x, 0.15, 0);
-      ear.rotation.z = x < 0 ? 0.35 : -0.35;
-      ear.rotation.x = -0.15;
-      return ear;
+
+    const wingMembraneMat = new THREE.MeshStandardMaterial({
+      color: color.clone().multiplyScalar(0.72),
+      roughness: 0.45,
+      metalness: 0.08,
+      side: THREE.DoubleSide,
+    });
+
+    const wingBoneMat = new THREE.MeshStandardMaterial({
+      color: color.clone().multiplyScalar(0.5),
+      roughness: 0.5,
+      metalness: 0.1,
+    });
+
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: 0xff1020,
+      emissive: 0xee0022,
+      emissiveIntensity: 0.75,
+      roughness: 0.15,
+    });
+
+    const eyeSpecMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const fangMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.05 });
+    const darkFeatureMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4 });
+
+    // 1. 躯干 (Torso) - 饱满梨形丝绒身体，平滑无棱角
+    const torsoPoints: THREE.Vector2[] = [
+      new THREE.Vector2(0, 0),
+      new THREE.Vector2(0.08, 0.03),
+      new THREE.Vector2(0.14, 0.10),
+      new THREE.Vector2(0.16, 0.20), // 饱满肚子
+      new THREE.Vector2(0.14, 0.32), // 胸部
+      new THREE.Vector2(0.10, 0.42), // 颈部收束
+      new THREE.Vector2(0, 0.45),
+    ];
+    const torsoGeo = new THREE.LatheGeometry(torsoPoints, 24);
+    torsoGeo.computeVertexNormals();
+    const torso = new THREE.Mesh(torsoGeo, batFurMat);
+    torso.position.set(0, 0.28, -0.02);
+    torso.rotation.x = 0.22; // 自然前倾悬停身姿
+
+    // 胸部毛领圈 (Chest Ruff)
+    const chestRuff = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.032, 12, 24), chestFurMat);
+    chestRuff.position.set(0, 0.60, 0.03);
+    chestRuff.rotation.x = 0.55;
+    chestRuff.scale.set(1.05, 0.85, 1.15);
+
+    // 底部抓握小脚爪 (Talons)
+    const createFoot = (x: number) => {
+      const footG = new THREE.Group();
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.010, 0.08, 8), batFurMat);
+      leg.position.set(0, -0.04, 0);
+      leg.rotation.x = -0.3;
+      footG.add(leg);
+
+      for (let i = -1; i <= 1; i++) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.028, 6), darkFeatureMat);
+        claw.position.set(i * 0.012, -0.08, 0.015);
+        claw.rotation.x = Math.PI * 0.65;
+        footG.add(claw);
+      }
+      footG.position.set(x, 0.30, -0.06);
+      return footG;
     };
 
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff1e27 });
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), eyeMat);
-    eyeL.position.set(-0.06, 0.02, 0.12);
-    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), eyeMat);
-    eyeR.position.set(0.06, 0.02, 0.12);
+    // 2. 头部 (Head) - 圆润自然萌态头部与圆滑吻部，彻底消除尖锥匹诺曹长鼻
+    const headG = new THREE.Group();
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.145, 24, 20), batFurMat);
+    skull.scale.set(1.05, 0.95, 1.05);
 
-    const fangMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
-    const fangTL = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 4), fangMat);
-    fangTL.position.set(-0.035, -0.09, 0.15);
-    fangTL.rotation.x = Math.PI;
-    const fangTR = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 4), fangMat);
-    fangTR.position.set(0.035, -0.09, 0.15);
-    fangTR.rotation.x = Math.PI;
+    // 圆润口吻 (Smooth Rounded Muzzle)
+    const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.075, 20, 16), batFurMat);
+    muzzle.scale.set(1.15, 0.75, 1.25);
+    muzzle.position.set(0, -0.04, 0.11);
 
-    headG.add(skull, snout, createEar(-0.09), createEar(0.09), eyeL, eyeR, fangTL, fangTR);
-    headG.position.set(0, 0.68, 0.1);
+    // 小巧黑鼻头 (Button Nose)
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.024, 16, 12), darkFeatureMat);
+    nose.scale.set(1.2, 0.8, 1.0);
+    nose.position.set(0, -0.015, 0.20);
 
-    const wingMat = new THREE.MeshStandardMaterial({
-      color: color.clone().multiplyScalar(0.75),
-      roughness: 0.6,
-      metalness: 0.15,
-      side: THREE.DoubleSide,
+    // 晶莹吸血尖牙 (Vampire Fangs)
+    const fangL = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.052, 10), fangMat);
+    fangL.position.set(-0.038, -0.082, 0.15);
+    fangL.rotation.x = Math.PI - 0.22;
+    fangL.rotation.z = -0.08;
+
+    const fangR = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.052, 10), fangMat);
+    fangR.position.set(0.038, -0.082, 0.15);
+    fangR.rotation.x = Math.PI - 0.22;
+    fangR.rotation.z = 0.08;
+
+    // 灵动红宝石大眼睛与高光点 (Glossy Ruby Eyes & Highlights)
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.036, 16, 16), eyeMat);
+    eyeL.position.set(-0.065, 0.024, 0.125);
+    const specL = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), eyeSpecMat);
+    specL.position.set(-0.056, 0.040, 0.154);
+
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.036, 16, 16), eyeMat);
+    eyeR.position.set(0.065, 0.024, 0.125);
+    const specR = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), eyeSpecMat);
+    specR.position.set(0.074, 0.040, 0.154);
+
+    // 杯状自然微弯蝙蝠耳廓 (Cupped Aerodynamic Bat Ears)
+    const earShape = new THREE.Shape();
+    earShape.moveTo(0, 0);
+    earShape.quadraticCurveTo(0.065, 0.10, 0.055, 0.23);
+    earShape.quadraticCurveTo(0.025, 0.21, 0.0, 0.25);
+    earShape.quadraticCurveTo(-0.035, 0.15, -0.045, 0.05);
+    earShape.quadraticCurveTo(-0.025, 0.01, 0, 0);
+
+    const earGeo = new THREE.ExtrudeGeometry(earShape, {
+      depth: 0.012,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.005,
+      bevelThickness: 0.005,
     });
+    earGeo.computeVertexNormals();
 
+    const innerEarShape = new THREE.Shape();
+    innerEarShape.moveTo(0, 0.02);
+    innerEarShape.quadraticCurveTo(0.045, 0.09, 0.038, 0.19);
+    innerEarShape.quadraticCurveTo(0.0, 0.21, -0.028, 0.06);
+    innerEarShape.closePath();
+
+    const innerEarGeo = new THREE.ExtrudeGeometry(innerEarShape, {
+      depth: 0.013,
+      bevelEnabled: false,
+    });
+    innerEarGeo.computeVertexNormals();
+
+    const createEar = (isLeftEar: boolean) => {
+      const earG = new THREE.Group();
+      const outerEar = new THREE.Mesh(earGeo, batFurMat);
+      const innerEar = new THREE.Mesh(innerEarGeo, innerEarMat);
+      innerEar.position.set(0, 0, 0.003);
+      earG.add(outerEar, innerEar);
+
+      if (isLeftEar) {
+        earG.position.set(-0.09, 0.11, -0.01);
+        earG.rotation.set(-0.15, -0.18, 0.36);
+      } else {
+        earG.scale.set(-1, 1, 1);
+        earG.position.set(0.09, 0.11, -0.01);
+        earG.rotation.set(-0.15, 0.18, -0.36);
+      }
+      return earG;
+    };
+
+    headG.add(
+      skull,
+      muzzle,
+      nose,
+      fangL,
+      fangR,
+      eyeL,
+      specL,
+      eyeR,
+      specR,
+      createEar(true),
+      createEar(false)
+    );
+    headG.position.set(0, 0.69, 0.08);
+
+    // 3. 翅膀 (Wings) - 水平展开面向下，前缘骨骼顺应+Z，后缘三段贝塞尔花边顺应-Z
     const wingShape = new THREE.Shape();
     wingShape.moveTo(0, 0);
-    wingShape.lineTo(0.24, 0.22);
-    wingShape.lineTo(0.55, 0.28);
-    wingShape.quadraticCurveTo(0.42, 0.08, 0.36, 0.0);
-    wingShape.quadraticCurveTo(0.28, -0.12, 0.20, -0.04);
-    wingShape.quadraticCurveTo(0.10, -0.16, 0, 0);
+    // 上缘骨架轮廓
+    wingShape.quadraticCurveTo(0.18, 0.16, 0.38, 0.19);
+    wingShape.quadraticCurveTo(0.52, 0.21, 0.70, 0.18);
+    // 翼膜下缘三段平滑圆弧花边 (Scallops)
+    wingShape.quadraticCurveTo(0.56, 0.04, 0.50, -0.09);
+    wingShape.quadraticCurveTo(0.38, 0.00, 0.30, -0.12);
+    wingShape.quadraticCurveTo(0.18, -0.03, 0.10, -0.10);
+    wingShape.quadraticCurveTo(0.04, -0.04, 0, 0);
 
-    const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.015, bevelEnabled: false });
-    const boneMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
+    const wingGeo = new THREE.ExtrudeGeometry(wingShape, {
+      depth: 0.008,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      steps: 1,
+      bevelSize: 0.004,
+      bevelThickness: 0.004,
+    });
+    // 旋转 90 度使翼面完全水平面向下 (Broad wing surface facing DOWN towards ground!)
+    wingGeo.rotateX(Math.PI / 2);
+    wingGeo.computeVertexNormals();
 
     const createWingGroup = (isLeft: boolean) => {
       const wg = new THREE.Group();
-      const wingMesh = new THREE.Mesh(wingGeo, wingMat);
-      wingMesh.name = isLeft ? 'bat_wing_l' : 'bat_wing_r';
+      wg.name = isLeft ? 'bat_wing_l' : 'bat_wing_r';
 
-      const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.32, 6), boneMat);
-      arm1.position.set(0.12, 0.11, 0.01);
-      arm1.rotation.z = -0.7;
+      // 翼膜主体 (水平平铺)
+      const membrane = new THREE.Mesh(wingGeo, wingMembraneMat);
+      wg.add(membrane);
 
-      const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.36, 6), boneMat);
-      arm2.position.set(0.39, 0.25, 0.01);
-      arm2.rotation.z = -0.2;
+      // 水平骨骼装配辅助函数 (精准连接 XZ 平面上的两个端点)
+      const addBone = (x1: number, z1: number, x2: number, z2: number, r1: number, r2: number) => {
+        const dx = x2 - x1;
+        const dz = z2 - z1;
+        const len = Math.hypot(dx, dz);
+        const ang = Math.atan2(dz, dx);
+        const bone = new THREE.Mesh(
+          new THREE.CylinderGeometry(r2, r1, len, 8),
+          wingBoneMat
+        );
+        bone.position.set((x1 + x2) / 2, 0.006, (z1 + z2) / 2);
+        bone.rotation.y = -ang;
+        bone.rotation.z = -Math.PI / 2;
+        wg.add(bone);
+      };
 
-      const thumbClaw = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 4), fangMat);
-      thumbClaw.position.set(0.24, 0.23, 0.01);
-      thumbClaw.rotation.z = 0.5;
+      // 1. 上臂骨 (肩部到腕关节)
+      addBone(0, 0, 0.38, 0.19, 0.015, 0.013);
 
-      wg.add(wingMesh, arm1, arm2, thumbClaw);
+      // 2. 腕关节球 (Wrist joint)
+      const wristJoint = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 10), wingBoneMat);
+      wristJoint.position.set(0.38, 0.008, 0.19);
+      wg.add(wristJoint);
+
+      // 3. 前臂骨 (腕关节到翼尖)
+      addBone(0.38, 0.19, 0.70, 0.18, 0.013, 0.007);
+
+      // 4. 翼指骨 1 (腕部延伸至第一翼尖下沿)
+      addBone(0.38, 0.19, 0.50, -0.09, 0.009, 0.005);
+
+      // 5. 翼指骨 2 (腕部延伸至第二翼尖下沿)
+      addBone(0.38, 0.19, 0.30, -0.12, 0.008, 0.005);
+
+      // 6. 拇指钩爪 (Thumb hook claw)
+      const thumbClaw = new THREE.Mesh(new THREE.ConeGeometry(0.010, 0.038, 8), darkFeatureMat);
+      thumbClaw.position.set(0.38, 0.015, 0.205);
+      thumbClaw.rotation.x = -Math.PI / 4;
+      thumbClaw.rotation.y = 0.3;
+      wg.add(thumbClaw);
 
       if (!isLeft) {
-        wg.scale.set(-1, 1, 1);
-        wg.position.set(0.08, 0.54, 0);
-        wg.rotation.y = 0.35;
+        // 右翼：向正X水平展开，面向下
+        wg.position.set(0.09, 0.50, 0.02);
+        wg.rotation.set(0.08, 0, -0.15);
       } else {
-        wg.position.set(-0.08, 0.54, 0);
-        wg.rotation.y = -0.35;
+        // 左翼：镜像反转，向负X水平展开，面向下
+        wg.scale.set(-1, 1, 1);
+        wg.position.set(-0.09, 0.50, 0.02);
+        wg.rotation.set(0.08, 0, 0.15);
       }
+
       return wg;
     };
 
-    const clawMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
-    const clawL = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 4), clawMat);
-    clawL.position.set(-0.05, 0.36, -0.05);
-    clawL.rotation.x = -0.4;
-    const clawR = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 4), clawMat);
-    clawR.position.set(0.05, 0.36, -0.05);
-    clawR.rotation.x = -0.4;
-
-    group.add(torso, headG, createWingGroup(true), createWingGroup(false), clawL, clawR);
+    group.add(
+      torso,
+      chestRuff,
+      createFoot(-0.06),
+      createFoot(0.06),
+      headG,
+      createWingGroup(true),
+      createWingGroup(false)
+    );
 
     if (monsterId === 'big_bat') {
-      group.scale.set(1.3, 1.3, 1.3);
+      group.scale.set(1.28, 1.28, 1.28);
     } else if (monsterId === 'red_bat') {
       group.scale.set(1.45, 1.45, 1.45);
     }
@@ -2519,8 +2712,13 @@ export class ModelFactory {
       group.add(gem);
     } else if (itemType.startsWith('potion_') || itemType === 'holy_water') {
       // 药水：玻璃炼金药剂瓶与冒泡药液 (Alchemy Flask with Glowing Potion)
+      // 用户规范：小血瓶与大血瓶必须均为红色生命药水，绝不可为蓝色，小血瓶相比大血瓶体型更加紧凑精巧
+      const isSmallPotion = itemType === 'potion_red';
+      const isBigPotion = itemType === 'potion_blue';
+
+      // 无论小血瓶还是大血瓶，均为红色药水 (小血瓶为鲜亮红宝石色，大血瓶为深邃赤红晶露)
       let liquidColor = 0xef4444;
-      if (itemType === 'potion_blue') liquidColor = 0x3b82f6;
+      if (isBigPotion) liquidColor = 0xdc2626;
       if (itemType === 'holy_water') liquidColor = 0xa855f7;
 
       const glassMat = new THREE.MeshPhysicalMaterial({
@@ -2530,25 +2728,47 @@ export class ModelFactory {
         opacity: 0.85,
         roughness: 0.1,
       });
-      const bottle = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), glassMat);
-      bottle.position.y = 0.35;
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.2, 12), glassMat);
-      neck.position.y = 0.55;
+
+      // 瓶身体型分级：小血瓶小巧精致 (半径 0.17)，大血瓶饱满硕大 (半径 0.25)
+      const flaskRadius = isSmallPotion ? 0.17 : isBigPotion ? 0.25 : 0.22;
+      const bottleY = isSmallPotion ? 0.28 : isBigPotion ? 0.36 : 0.33;
+      const neckRadius = isSmallPotion ? 0.065 : isBigPotion ? 0.092 : 0.082;
+      const neckHeight = isSmallPotion ? 0.14 : isBigPotion ? 0.20 : 0.17;
+      const neckY = bottleY + flaskRadius * 0.86;
+
+      const bottle = new THREE.Mesh(new THREE.SphereGeometry(flaskRadius, 16, 16), glassMat);
+      bottle.position.y = bottleY;
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(neckRadius, neckRadius, neckHeight, 12), glassMat);
+      neck.position.y = neckY;
 
       const liquidMat = new THREE.MeshStandardMaterial({
         color: liquidColor,
         emissive: liquidColor,
-        emissiveIntensity: 0.5,
+        emissiveIntensity: 0.55,
       });
-      const liquid = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), liquidMat);
-      liquid.position.y = 0.32;
+      const liquid = new THREE.Mesh(new THREE.SphereGeometry(flaskRadius * 0.84, 14, 14), liquidMat);
+      liquid.position.y = bottleY - 0.015;
+
+      const corkRadius = neckRadius * 0.9;
+      const corkHeight = isSmallPotion ? 0.08 : 0.10;
       const cork = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.08, 0.1),
+        new THREE.CylinderGeometry(corkRadius, corkRadius, corkHeight),
         new THREE.MeshStandardMaterial({ color: 0x92400e })
       );
-      cork.position.y = 0.66;
+      cork.position.y = neckY + neckHeight / 2 + corkHeight / 2 - 0.015;
 
       group.add(bottle, neck, liquid, cork);
+
+      // 大血瓶专属：颈部装饰华丽纯金项圈以凸显大血瓶的尊贵高阶效力
+      if (isBigPotion) {
+        const goldRing = new THREE.Mesh(
+          new THREE.TorusGeometry(neckRadius * 1.06, 0.016, 8, 16),
+          new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.88, roughness: 0.2 })
+        );
+        goldRing.rotation.x = Math.PI / 2;
+        goldRing.position.y = neckY - 0.01;
+        group.add(goldRing);
+      }
     } else if (itemType.startsWith('sword_')) {
       // 武器剑类
       const bladeMat = new THREE.MeshStandardMaterial({
@@ -3118,9 +3338,14 @@ export class ModelFactory {
   private static sharedFloorGeo: THREE.BoxGeometry | null = null;
 
   // =========================================================================
-  // 11. 墙体 (Wall) - 带程序化凹凸石砖贴图与倒角 (共享几何体与材质缓存以极度降低开销)
+  // 11. 墙体 (Wall) - 厚度与门体严格一致 (0.16)，智能平滑衔接相邻墙体与门
   // =========================================================================
-  static createWallMesh(theme: string): THREE.Mesh {
+  static createWallMesh(
+    theme: string,
+    layout?: (Tile | null)[][],
+    x?: number,
+    y?: number
+  ): THREE.Object3D {
     const matKey = `wall_mat_${theme}`;
     let wallMat = this.matCache.get(matKey) as THREE.MeshStandardMaterial;
     if (!wallMat) {
@@ -3133,16 +3358,151 @@ export class ModelFactory {
       this.matCache.set(matKey, wallMat);
     }
 
-    const WALL_H = 0.90; // 降低墙体高度，与主角同高 (0.90)，避免遮挡视野
-    if (!this.sharedWallGeo) {
-      this.sharedWallGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
-      this.sharedWallGeo.translate(0, WALL_H / 2, 0); // 让底部精准对齐 y = 0 地表，顶部与主角同高 (y = 0.90)
+    const WALL_H = 0.90; // 与主角同高 (0.90)，避免遮挡视野
+    const T = 0.16; // 严格与门体厚度对齐 (0.16)
+    const armLen = 0.42; // (1.0 - T) / 2
+    const armCenter = 0.29; // (0.5 + T / 2) / 2
+
+    // 默认或无上下文时（如单元测试）：回退为标准单格横向薄墙
+    if (!layout || x === undefined || y === undefined) {
+      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
     }
 
-    const wall = new THREE.Mesh(this.sharedWallGeo, wallMat);
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    return wall;
+    const isWallLike = (tx: number, ty: number): boolean => {
+      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
+      const t = layout[ty]?.[tx];
+      if (!t) return false;
+      return t.type === 'wall' || t.type === 'fake_wall' || t.type.startsWith('door_') || t.type === 'shop';
+    };
+
+    let hasNorth = isWallLike(x, y - 1);
+    let hasSouth = isWallLike(x, y + 1);
+    let hasWest = isWallLike(x - 1, y);
+    let hasEast = isWallLike(x + 1, y);
+
+    // 边界延展：若位于地图外沿且有邻接墙体走向，则顺向延展贴满边界，防止边缘断层
+    if (x === 0 && (hasNorth || hasSouth || hasEast)) hasWest = true;
+    if (x === 10 && (hasNorth || hasSouth || hasWest)) hasEast = true;
+    if (y === 0 && (hasWest || hasEast || hasSouth)) hasNorth = true;
+    if (y === 10 && (hasWest || hasEast || hasNorth)) hasSouth = true;
+
+    // 1. 若 8 个邻近网格全为实体墙（处于 3x3 实体岩体正中心内部）：直接使用整块实心石方块填充
+    if (
+      hasNorth && hasSouth && hasWest && hasEast &&
+      isWallLike(x - 1, y - 1) && isWallLike(x + 1, y - 1) &&
+      isWallLike(x - 1, y + 1) && isWallLike(x + 1, y + 1)
+    ) {
+      const solidGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
+      solidGeo.translate(0, WALL_H / 2, 0);
+      const solidMesh = new THREE.Mesh(solidGeo, wallMat);
+      solidMesh.castShadow = true;
+      solidMesh.receiveShadow = true;
+      return solidMesh;
+    }
+
+    // 2. 纯横向走向墙段 (水平贯穿)
+    if (hasWest && hasEast && !hasNorth && !hasSouth) {
+      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // 3. 纯纵向走向墙段 (纵向贯穿)
+    if (hasNorth && hasSouth && !hasWest && !hasEast) {
+      const geo = new THREE.BoxGeometry(T, WALL_H, 1.0);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // 4. 单向横向尽头
+    if ((hasWest || hasEast) && !hasNorth && !hasSouth) {
+      const posX = hasWest ? -0.21 : 0.21;
+      const geo = new THREE.BoxGeometry(0.58, WALL_H, T);
+      geo.translate(posX, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // 5. 单向纵向尽头
+    if ((hasNorth || hasSouth) && !hasWest && !hasEast) {
+      const posZ = hasNorth ? -0.21 : 0.21;
+      const geo = new THREE.BoxGeometry(T, WALL_H, 0.58);
+      geo.translate(0, WALL_H / 2, posZ);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // 6. 独立立柱 (无任何正交邻接)
+    if (!hasNorth && !hasSouth && !hasWest && !hasEast) {
+      const geo = new THREE.BoxGeometry(0.20, WALL_H, 0.20);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // 7. 转角、T 字路口与十字交叉结构 (复合轻量组件)
+    const group = new THREE.Group();
+    group.name = 'wall';
+
+    // 核心立柱 (对齐厚度 T x T)
+    const centerGeo = new THREE.BoxGeometry(T, WALL_H, T);
+    centerGeo.translate(0, WALL_H / 2, 0);
+    const centerMesh = new THREE.Mesh(centerGeo, wallMat);
+    centerMesh.castShadow = true;
+    centerMesh.receiveShadow = true;
+    group.add(centerMesh);
+
+    if (hasWest) {
+      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
+      armGeo.translate(-armCenter, WALL_H / 2, 0);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasEast) {
+      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
+      armGeo.translate(armCenter, WALL_H / 2, 0);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasNorth) {
+      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
+      armGeo.translate(0, WALL_H / 2, -armCenter);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasSouth) {
+      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
+      armGeo.translate(0, WALL_H / 2, armCenter);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+
+    return group;
   }
 
   // =========================================================================

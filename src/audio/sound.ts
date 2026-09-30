@@ -7,6 +7,50 @@ class SoundEngine {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
 
+  // ── BGM 背景音乐 ──
+  private bgm: HTMLAudioElement | null = null;
+  public bgmEnabled: boolean = true;
+  private bgmVolume: number = 0.35;
+
+  /** 初始化并开始循环播放背景音乐（需在首次用户交互后调用） */
+  startBGM() {
+    if (typeof window === 'undefined') return;
+    if (!this.bgm) {
+      this.bgm = new Audio('./Beneath_the_Sunless_Floor.mp3');
+      this.bgm.loop = true;
+      this.bgm.volume = this.bgmVolume;
+    }
+    if (this.bgmEnabled) {
+      this.bgm.play().catch(() => {/* 浏览器自动播放策略阻止，静默忽略 */});
+    }
+  }
+
+  /** 暂停背景音乐 */
+  pauseBGM() {
+    this.bgm?.pause();
+  }
+
+  /** 切换背景音乐开关 */
+  toggleBGM(): boolean {
+    this.bgmEnabled = !this.bgmEnabled;
+    if (this.bgmEnabled) {
+      this.startBGM();
+    } else {
+      this.pauseBGM();
+    }
+    return this.bgmEnabled;
+  }
+
+  /** 设置背景音乐音量 (0~1) */
+  setBGMVolume(v: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, v));
+    if (this.bgm) this.bgm.volume = this.bgmVolume;
+  }
+
+  getBGMVolume(): number {
+    return this.bgmVolume;
+  }
+
   private getContext(): AudioContext | null {
     if (!this.enabled || typeof window === 'undefined') return null;
     if (!this.ctx) {

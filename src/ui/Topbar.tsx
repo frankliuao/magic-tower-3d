@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Music2,
   Wrench,
   Languages,
 } from 'lucide-react';
@@ -35,10 +36,16 @@ export const Topbar: React.FC<TopbarProps> = ({
 }) => {
   const { lang, toggleLang, t } = useI18n();
   const [soundEnabled, setSoundEnabled] = React.useState(sound.enabled);
+  const [bgmEnabled, setBgmEnabled] = React.useState(sound.bgmEnabled);
 
   const toggleSound = () => {
     sound.enabled = !sound.enabled;
     setSoundEnabled(sound.enabled);
+  };
+
+  const toggleBgm = () => {
+    const on = sound.toggleBGM();
+    setBgmEnabled(on);
   };
 
   return (
@@ -103,6 +110,15 @@ export const Topbar: React.FC<TopbarProps> = ({
           ) : (
             <VolumeX className="w-4 h-4 text-rose-400" />
           )}
+        </button>
+
+        {/* 背景音乐开关 */}
+        <button
+          onClick={toggleBgm}
+          className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-slate-300 transition-all"
+          title={bgmEnabled ? 'BGM ON' : 'BGM OFF'}
+        >
+          <Music2 className={`w-4 h-4 ${bgmEnabled ? 'text-amber-400' : 'text-rose-400 opacity-50'}`} />
         </button>
 
         {/* 调试菜单 */}

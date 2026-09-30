@@ -127,6 +127,7 @@ export class ThreeCanvas {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
+    this.renderer.localClippingEnabled = true; // 启用逐材质裁剪面 (用于门扇滑入墙体裁剪)
     container.appendChild(this.renderer.domElement);
 
     // 4. 灯光系统
@@ -288,7 +289,7 @@ export class ThreeCanvas {
           continue;
         }
 
-        const tileObj = this.buildTileObject(tile, floorData.theme);
+        const tileObj = this.buildTileObject(tile, floorData.theme, floorData.layout, x, y);
         if (tileObj) {
           tileObj.position.set(world.x, 0, world.z);
 
@@ -322,9 +323,12 @@ export class ThreeCanvas {
             }
           }
 
-          // 怪物朝向：智能面向守护的房门或要道
+          // 怪物朝向：进入楼层时所有怪物立即转向主角方向，时时刻刻盯着主角
           if (tile.type === 'monster') {
-            tileObj.rotation.y = this.getMonsterGuardRotation(floorData.layout, x, y);
+            const heroWorld = ThreeCanvas.gridToWorld(this.playerGridPos.x, this.playerGridPos.y);
+            const dx = heroWorld.x - world.x;
+            const dz = heroWorld.z - world.z;
+            tileObj.rotation.y = Math.atan2(dx, dz);
           }
 
           // 注册需要持续逐帧微动的场景物体与怪物待机动作
@@ -566,13 +570,29 @@ export class ThreeCanvas {
   }
 
   // 创建单格 3D 实体
-  private buildTileObject(tile: Tile, theme: string): THREE.Object3D | null {
+  private buildTileObject(
+    tile: Tile,
+    theme: string,
+    layout?: (Tile | null)[][],
+    x?: number,
+    y?: number
+  ): THREE.Object3D | null {
     switch (tile.type) {
       case 'wall':
-        return ModelFactory.createWallMesh(theme);
+        return ModelFactory.createWallMesh(theme, layout, x, y);
       case 'fake_wall': {
-        const wall = ModelFactory.createWallMesh(theme);
-        (wall.material as THREE.MeshStandardMaterial).opacity = 0.95;
+        const wall = ModelFactory.createWallMesh(theme, layout, x, y);
+        wall.traverse((c) => {
+          if ((c as THREE.Mesh).isMesh) {
+            const mat = (c as THREE.Mesh).material;
+            if (mat && !Array.isArray(mat)) {
+              const m = mat.clone() as THREE.MeshStandardMaterial;
+              m.transparent = true;
+              m.opacity = 0.95;
+              (c as THREE.Mesh).material = m;
+            }
+          }
+        });
         return wall;
       }
       case 'door_yellow':
@@ -621,11 +641,52 @@ export class ThreeCanvas {
     if (!mesh) return;
 
     if (isDoor) {
-      // 开启门动画：向两侧对开消散
+      // 开启门动画：向两侧纯平移滑入墙体
+      // 1. 先克隆材质以隔离变更
+      mesh.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          if (m.material) {
+            m.material = Array.isArray(m.material)
+              ? m.material.map((mat) => mat.clone())
+              : m.material.clone();
+          }
+        }
+      });
+
+      // 2. 计算世界空间裁剪面：门扇超出瓦片边界(±0.5)后被裁剪，视觉上缩入墙体消失
+      const doorObj = mesh as THREE.Group;
+      doorObj.updateMatrixWorld(true);
+      // 本地空间：保留 x ∈ [-0.5, 0.5] 范围内的几何体
+      const clipLeft = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.5);
+      const clipRight = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0.5);
+      // 变换到世界空间 (自动适配门的旋转，如纵向门 rotation.y = π/2)
+      clipLeft.applyMatrix4(doorObj.matrixWorld);
+      clipRight.applyMatrix4(doorObj.matrixWorld);
+
+      // 3. 将裁剪面应用到所有克隆材质上
+      doorObj.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          if (m.material) {
+            const applyClip = (mat: THREE.Material) => {
+              (mat as any).clippingPlanes = [clipLeft, clipRight];
+              (mat as any).clipShadows = true;
+              mat.needsUpdate = true;
+            };
+            if (Array.isArray(m.material)) {
+              m.material.forEach(applyClip);
+            } else {
+              applyClip(m.material);
+            }
+          }
+        }
+      });
+
       this.openingDoors.push({
-        group: mesh as THREE.Group,
+        group: doorObj,
         startTime: performance.now(),
-        duration: 420,
+        duration: 450,
       });
       this.tileMeshes.delete(key);
       this.animatedItems = this.animatedItems.filter((item) => item.mesh !== mesh);
@@ -878,6 +939,17 @@ export class ThreeCanvas {
         if (item.rune) item.rune.rotation.z += delta * 0.35;
         mesh.position.y = Math.sin(sec * 2.5) * 0.04;
       } else if (item.type === 'slime') {
+        // 怪物实时朝向主角
+        const dx = this.heroCurrentPos.x - mesh.position.x;
+        const dz = this.heroCurrentPos.z - mesh.position.z;
+        if (dx * dx + dz * dz > 0.001) {
+          const targetAngle = Math.atan2(dx, dz);
+          let diff = targetAngle - mesh.rotation.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          mesh.rotation.y += diff * Math.min(1.0, delta * 8.0);
+        }
+
         const sx = item.baseScale ? item.baseScale.x : 1.0;
         const sy = item.baseScale ? item.baseScale.y : 1.0;
         const sz = item.baseScale ? item.baseScale.z : 1.0;
@@ -885,13 +957,39 @@ export class ThreeCanvas {
         const scaleXZ = 1.08 - Math.sin(sec * 4.0 + item.initialX * 1.5) * 0.05;
         mesh.scale.set(sx * scaleXZ, sy * scaleY, sz * scaleXZ);
       } else if (item.type === 'bat') {
+        // 怪物实时朝向主角
+        const dx = this.heroCurrentPos.x - mesh.position.x;
+        const dz = this.heroCurrentPos.z - mesh.position.z;
+        if (dx * dx + dz * dz > 0.001) {
+          const targetAngle = Math.atan2(dx, dz);
+          let diff = targetAngle - mesh.rotation.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          mesh.rotation.y += diff * Math.min(1.0, delta * 8.0);
+        }
+
         mesh.position.y = 0.15 + Math.sin(sec * 6.0 + item.initialX * 2.0) * 0.08;
         if (item.batWingL && item.batWingR) {
-          const flap = Math.sin(sec * 14.0 + item.initialX * 3.0) * 0.35;
-          item.batWingL.rotation.z = -0.2 + flap;
-          item.batWingR.rotation.z = 0.2 - flap;
+          // 水平展翅上下扑击 (Flapping downwards against air)
+          const flap = Math.sin(sec * 14.0 + item.initialX * 3.0) * 0.38;
+          const pitch = Math.cos(sec * 14.0 + item.initialX * 3.0) * 0.12;
+          item.batWingL.rotation.z = 0.15 - flap;
+          item.batWingL.rotation.x = 0.08 + pitch;
+          item.batWingR.rotation.z = -0.15 + flap;
+          item.batWingR.rotation.x = 0.08 + pitch;
         }
       } else if (item.type === 'monster_idle') {
+        // 怪物实时朝向主角
+        const dx = this.heroCurrentPos.x - mesh.position.x;
+        const dz = this.heroCurrentPos.z - mesh.position.z;
+        if (dx * dx + dz * dz > 0.001) {
+          const targetAngle = Math.atan2(dx, dz);
+          let diff = targetAngle - mesh.rotation.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          mesh.rotation.y += diff * Math.min(1.0, delta * 8.0);
+        }
+
         const sx = item.baseScale ? item.baseScale.x : 1.0;
         const sy = item.baseScale ? item.baseScale.y : 1.0;
         const sz = item.baseScale ? item.baseScale.z : 1.0;
@@ -978,7 +1076,7 @@ export class ThreeCanvas {
     }
   }
 
-  // 门开启对开滑移消散动画
+  // 门开启平移进墙裁剪动画 (门扇纯平直滑入两侧墙体，裁剪面使其自然消失于墙内)
   private updateOpeningDoors(now: number) {
     for (let i = this.openingDoors.length - 1; i >= 0; i--) {
       const item = this.openingDoors[i];
@@ -990,41 +1088,17 @@ export class ThreeCanvas {
       const leafR = item.group.getObjectByName('door_leaf_r');
 
       if (leafL && leafR) {
-        // 双扇对开：左右门扇分别向两侧滑移并向外侧旋转展开
-        leafL.position.x = -ease * 0.46;
-        leafL.rotation.y = -ease * (Math.PI * 0.45);
-
-        leafR.position.x = ease * 0.46;
-        leafR.rotation.y = ease * (Math.PI * 0.45);
+        // 双扇平开：左右门扇纯平直向两侧滑入墙体内 (裁剪面在瓦片边界 ±0.5 处截断)
+        leafL.position.x = -ease * 0.54;
+        leafR.position.x = ease * 0.54;
       } else {
         const panel = item.group.getObjectByName('door_panel');
         if (panel) {
-          panel.position.y = p * 1.25;
+          panel.scale.x = Math.max(0.01, 1 - ease);
         }
       }
 
-      // 后半段开门伴随透明度柔和淡出消散
-      if (p > 0.35) {
-        const fade = Math.max(0, 1 - (p - 0.35) / 0.65);
-        item.group.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            if (mesh.material) {
-              if (Array.isArray(mesh.material)) {
-                mesh.material.forEach((m) => {
-                  m.transparent = true;
-                  m.opacity = Math.min(m.opacity ?? 1, fade);
-                });
-              } else {
-                const mat = mesh.material as THREE.Material;
-                mat.transparent = true;
-                mat.opacity = Math.min(mat.opacity ?? 1, fade);
-              }
-            }
-          }
-        });
-      }
-
+      // 动画完毕，从场景中移除门对象
       if (p >= 1.0) {
         this.floorGroup.remove(item.group);
         this.openingDoors.splice(i, 1);

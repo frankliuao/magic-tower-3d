@@ -29,21 +29,21 @@ export const ITEMS: Record<ItemType, ItemDef> = {
 
   potion_red: {
     id: 'potion_red',
-    name: '红血瓶',
-    nameEn: 'Red Potion',
+    name: '小血瓶',
+    nameEn: 'Small Red Potion',
     description: '恢复 200 点生命值。',
     category: 'potion',
     value: 200,
-    color: '#f87171',
+    color: '#ef4444',
   },
   potion_blue: {
     id: 'potion_blue',
-    name: '蓝血瓶',
-    nameEn: 'Blue Potion',
+    name: '大血瓶',
+    nameEn: 'Large Red Potion',
     description: '恢复 500 点生命值。',
     category: 'potion',
     value: 500,
-    color: '#60a5fa',
+    color: '#dc2626',
   },
   holy_water: {
     id: 'holy_water',
