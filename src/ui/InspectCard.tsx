@@ -19,6 +19,7 @@ import { MONSTERS } from '../data/monsters';
 import { ITEMS } from '../data/items';
 import { calculateBattle } from '../game/combat';
 import { useI18n, getMonsterName, getItemName, getFloorName } from '../i18n';
+import { MonsterIcon } from './MonsterIcon';
 
 interface InspectCardProps {
   tile: Tile | null;
@@ -92,16 +93,13 @@ export const InspectCard: React.FC<InspectCardProps> = ({
         <div className="flex flex-col gap-2.5">
           {/* 怪物名称与分类 */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner shrink-0"
-              style={{
-                backgroundColor: `${monster.color}25`,
-                border: `2px solid ${monster.color}`,
-                color: monster.color,
-              }}
-            >
-              {mName.charAt(0)}
-            </div>
+            <MonsterIcon
+              key={monster.id}
+              monsterId={monster.id}
+              name={mName}
+              color={monster.color}
+              className="w-14 h-14"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base text-slate-100 truncate">{mName}</span>
@@ -110,7 +108,9 @@ export const InspectCard: React.FC<InspectCardProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
-                {monster.description || ''}
+                {lang === 'en'
+                  ? (monster.descriptionEn || monster.description || '')
+                  : (monster.description || '')}
               </p>
             </div>
           </div>
