@@ -3391,11 +3391,25 @@ export class ModelFactory {
     if (y === 0 && (hasWest || hasEast || hasSouth)) hasNorth = true;
     if (y === 10 && (hasWest || hasEast || hasNorth)) hasSouth = true;
 
-    // 1. 若 8 个邻近网格全为实体墙（处于 3x3 实体岩体正中心内部）：直接使用整块实心石方块填充
+    const wallNeighborCount = (hasNorth ? 1 : 0) + (hasSouth ? 1 : 0) + (hasWest ? 1 : 0) + (hasEast ? 1 : 0);
+
+    // 1. 若周围有 3 个或 4 个实体墙邻居（处于实体厚墙/岩体内部或边缘）：直接使用整块实心石方块填充
+    // 避免在厚墙边缘生成空心十字架/笼子结构
+    if (wallNeighborCount >= 3) {
+      const solidGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
+      solidGeo.translate(0, WALL_H / 2, 0);
+      const solidMesh = new THREE.Mesh(solidGeo, wallMat);
+      solidMesh.castShadow = true;
+      solidMesh.receiveShadow = true;
+      return solidMesh;
+    }
+
+    // 1.5 若为实体厚墙的拐角处（两个邻接方向有墙，且两墙夹角后方的对角也是墙）：实心方块填充
     if (
-      hasNorth && hasSouth && hasWest && hasEast &&
-      isWallLike(x - 1, y - 1) && isWallLike(x + 1, y - 1) &&
-      isWallLike(x - 1, y + 1) && isWallLike(x + 1, y + 1)
+      (hasWest && hasSouth && isWallLike(x - 1, y + 1)) ||
+      (hasEast && hasSouth && isWallLike(x + 1, y + 1)) ||
+      (hasWest && hasNorth && isWallLike(x - 1, y - 1)) ||
+      (hasEast && hasNorth && isWallLike(x + 1, y - 1))
     ) {
       const solidGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
       solidGeo.translate(0, WALL_H / 2, 0);
