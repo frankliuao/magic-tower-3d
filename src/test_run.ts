@@ -2,8 +2,10 @@
 import { GameState } from './game/gameState';
 import { getFloor } from './data/floors';
 import { MONSTERS } from './data/monsters';
+import { IRON_DOOR_RULES, findIronDoorRule } from './data/ironDoors';
 import { calculateBattle } from './game/combat';
 import { findPathToAdjacent } from './game/pathfinding';
+import { getMonsterName } from './i18n';
 
 console.log('==============================================');
 console.log('   魔塔 3D (Magic Tower 3D) 核心逻辑全栈自检');
@@ -105,6 +107,9 @@ console.log('\n--- 4. 验证游戏行动状态机 ---');
 game.initGame();
 assert(game.currentFloor === 1, '初始处于经典第 1 层');
 assert(game.playerPos.x === 5 && game.playerPos.y === 10, '玩家出生在 1 层入口 (5, 10)');
+assert(game.playerStats.inventory.monster_manual === 1, '勇士开局默认自带【怪物手册】神器');
+assert(game.playerStats.inventory.compass === 1, '勇士开局默认自带【楼层罗盘】神器');
+assert(getFloor(1).layout[10][1]?.type === 'floor', '1F 取消地面多余罗盘拾取道具，直接为畅通地面');
 
 // 向上移动一步到 (5, 9)
 game.move('up');
@@ -339,6 +344,162 @@ assert(testGame.getCurrentFloorData().layout[8][5]?.type === 'floor', '熔岩成
 const adjTest = findPathToAdjacent(f13.layout, { x: 5, y: 10 }, { x: 5, y: 9 });
 assert(adjTest !== null && adjTest.path.length === 0 && adjTest.finalDir === 'up', '与目标对象正相邻时直接返回当前位置并面朝目标');
 
+// 10. 验证 49F 与 10F 机关铁门守卫联动机制
+console.log('\n--- 10. 验证 49F 与 10F 机关铁门守卫联动机制 ---');
+const doorTestGame = new GameState();
+doorTestGame.initGame();
+doorTestGame.playerStats.hp = 99999;
+doorTestGame.playerStats.maxHp = 99999;
+doorTestGame.playerStats.atk = 9999;
+doorTestGame.playerStats.def = 9999;
+
+// 测试 49F 铁门 1: (5, 8) 必须消灭两侧巫师 (4, 9) 与 (6, 9)
+doorTestGame.changeFloor(49, 'up');
+const f49Data = doorTestGame.getCurrentFloorData();
+doorTestGame.playerPos = { x: 5, y: 9, dir: 'up' };
+
+assert(f49Data.layout[8][5]?.type === 'door_iron', '49F 初始 (5, 8) 为铁门');
+assert(f49Data.layout[9][4]?.type === 'monster', '49F (4, 9) 左侧守卫巫师存活');
+assert(f49Data.layout[9][6]?.type === 'monster', '49F (6, 9) 右侧守卫巫师存活');
+
+// 撞击铁门应被阻挡
+let doorBlockMsg = '';
+doorTestGame.move('up', undefined, (txt) => { doorBlockMsg = txt; });
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 9, '两守卫存活时，铁门不可开启 (玩家被阻拦在 5, 9)');
+assert(doorBlockMsg.includes('消灭门两侧守护的巫师'), '给出明确消灭两侧巫师的提示');
+assert(f49Data.layout[8][5]?.type === 'door_iron', '铁门依然处于关闭状态');
+
+// 击杀左侧巫师 (4, 9)
+doorTestGame.move('left');
+assert(doorTestGame.playerPos.x === 4 && doorTestGame.playerPos.y === 9, '成功进入 (4, 9) 格子击败左侧巫师');
+assert(f49Data.layout[8][5]?.type === 'door_iron', '只杀一人时，铁门依然关闭');
+
+// 回到 (5, 9) 再次尝试撞门，仍应被阻挡
+doorTestGame.move('right');
+doorTestGame.move('up');
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 9, '右侧巫师尚存，铁门依然阻拦勇士');
+
+// 击杀右侧巫师 (6, 9)
+doorTestGame.move('right');
+assert(doorTestGame.playerPos.x === 6 && doorTestGame.playerPos.y === 9, '成功进入 (6, 9) 格子击败右侧巫师');
+assert(f49Data.layout[8][5]?.type === 'floor', '两侧巫师均被消灭，铁门自动轰然开启为普通地板！');
+
+// 此时玩家可以自由穿过 (5, 8)
+doorTestGame.move('left'); // 回到 (5, 9)
+doorTestGame.move('up');   // 走进 (5, 8)
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 8, '铁门开启后勇士顺利迈入 (5, 8)');
+
+// 测试 49F 铁门 2: (5, 6) 必须消灭两侧黑暗骑士 (4, 7) 与 (6, 7)
+doorTestGame.move('up'); // 移到 (5, 7)
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 7, '勇士来到第二道铁门前走廊 (5, 7)');
+assert(f49Data.layout[6][5]?.type === 'door_iron', '49F 初始 (5, 6) 为第二道铁门');
+assert(f49Data.layout[7][4]?.type === 'monster', '49F (4, 7) 左侧黑暗骑士存活');
+assert(f49Data.layout[7][6]?.type === 'monster', '49F (6, 7) 右侧黑暗骑士存活');
+
+// 撞击第二道铁门应被阻挡
+let door2BlockMsg = '';
+doorTestGame.move('up', undefined, (txt) => { door2BlockMsg = txt; });
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 7, '黑暗骑士存活时，第二道铁门阻挡勇士');
+assert(door2BlockMsg.includes('消灭门两侧守护的黑暗骑士'), '给出明确消灭两侧黑暗骑士的提示');
+
+// 消灭两侧黑暗骑士
+doorTestGame.move('left'); // 击杀 (4, 7)
+assert(f49Data.layout[6][5]?.type === 'door_iron', '只杀左侧黑暗骑士，铁门保持关闭');
+doorTestGame.move('right'); // 回到 (5, 7)
+doorTestGame.move('right'); // 击杀 (6, 7)
+assert(f49Data.layout[6][5]?.type === 'floor', '两侧黑暗骑士全部被灭，王座大门自动开启！');
+doorTestGame.move('left');  // 回到 (5, 7)
+doorTestGame.move('up');    // 走进 (5, 6)
+assert(doorTestGame.playerPos.x === 5 && doorTestGame.playerPos.y === 6, '勇士顺利穿过第二道铁门 (5, 6)');
+
+// 测试 10F 骷髅队长击败联动开启 (3, 3) 与 (7, 3) 铁门
+doorTestGame.changeFloor(10, 'up');
+const f10Data = doorTestGame.getCurrentFloorData();
+assert(f10Data.layout[3][3]?.type === 'door_iron', '10F (3, 3) 初始为铁门');
+assert(f10Data.layout[3][7]?.type === 'door_iron', '10F (7, 3) 初始为铁门');
+assert(f10Data.layout[3][5]?.type === 'monster', '10F (5, 3) 骷髅队长存活');
+
+// 未击杀队长前无法开门
+doorTestGame.playerPos = { x: 3, y: 4, dir: 'up' };
+let f10BlockMsg = '';
+doorTestGame.move('up', undefined, (txt) => { f10BlockMsg = txt; });
+assert(doorTestGame.playerPos.x === 3 && doorTestGame.playerPos.y === 4, '骷髅队长存活时无法开启 (3, 3) 铁门');
+assert(f10BlockMsg.includes('骷髅队长'), '给出击败骷髅队长的提示');
+
+// 击杀骷髅队长
+doorTestGame.playerPos = { x: 5, y: 4, dir: 'up' };
+doorTestGame.move('up'); // 击杀 (5, 3) 骷髅队长
+assert(f10Data.layout[3][3]?.type === 'floor', '骷髅队长被击败后，(3, 3) 铁门自动开启');
+assert(f10Data.layout[3][7]?.type === 'floor', '骷髅队长被击败后，(7, 3) 铁门自动开启');
+
+// 10b. 30F 铁门：必须消灭全部史莱姆；楼梯必须一上一下
+console.log('\n--- 10b. 验证 30F 铁门与上下楼梯 ---');
+const f30 = getFloor(30);
+assert(f30.layout[0][5]?.type === 'stairs_up', '30F 北侧为上楼光圈');
+assert(f30.layout[10][5]?.type === 'stairs_down', '30F 南侧为下楼光圈');
+assert(f30.layout[3][5]?.type === 'door_iron', '30F (5,3) 为机关铁门');
+
+doorTestGame.changeFloor(30, 'up');
+const f30Data = doorTestGame.getCurrentFloorData();
+doorTestGame.playerPos = { x: 5, y: 4, dir: 'up' };
+let f30Block = '';
+doorTestGame.move('up', undefined, (txt) => { f30Block = txt; });
+assert(doorTestGame.playerPos.y === 4, '史莱姆未清时 30F 铁门不可通行');
+assert(f30Block.includes('史莱姆'), '30F 铁门给出消灭史莱姆提示');
+
+// 清除全部 6 只史莱姆
+for (const x of [2, 3, 4, 6, 7, 8]) {
+  f30Data.layout[4][x] = { type: 'floor' };
+}
+// 在铁门南侧放一只临时怪并击杀，触发 checkPostBattleGuardedDoors
+doorTestGame.playerPos = { x: 5, y: 5, dir: 'up' };
+f30Data.layout[4][5] = { type: 'monster', monsterId: 'green_slime' };
+doorTestGame.move('up');
+assert(f30Data.layout[3][5]?.type === 'floor', '六只史莱姆清完后 30F 铁门自动开启');
+
+// 10c. 全层楼梯与铁门登记完整性
+console.log('\n--- 10c. 验证全层楼梯成对与铁门均已登记 ---');
+for (let f = 2; f <= 49; f++) {
+  const fl = getFloor(f);
+  let ups = 0;
+  let downs = 0;
+  for (let y = 0; y < 11; y++) {
+    for (let x = 0; x < 11; x++) {
+      const t = fl.layout[y][x];
+      if (!t) continue;
+      if (t.type === 'stairs_up') ups++;
+      if (t.type === 'stairs_down') downs++;
+      if (t.type === 'door_iron') {
+        assert(Boolean(findIronDoorRule(f, x, y)), `${f}F 铁门 (${x},${y}) 必须登记开启条件`);
+      }
+    }
+  }
+  assert(ups === 1, `${f}F 必须恰好 1 个上楼口 (实际 ${ups})`);
+  assert(downs === 1, `${f}F 必须恰好 1 个下楼口 (实际 ${downs})`);
+}
+assert(IRON_DOOR_RULES.length >= 20, '铁门规则表应覆盖全塔各扇铁门');
+
+// 11. 验证全怪物双语名称规范化（杜绝下划线与 Code Name）
+console.log('\n--- 11. 验证全怪物双语名称规范（杜绝下划线与 Code Name） ---');
+let allNamesValid = true;
+for (const [id, m] of Object.entries(MONSTERS)) {
+  const zh = getMonsterName(id, 'zh');
+  const en = getMonsterName(id, 'en');
+  const valid = !zh.includes('_') && !en.includes('_') && zh !== id && en !== id && zh.length > 0 && en.length > 0;
+  if (!valid) {
+    allNamesValid = false;
+    console.error(`Invalid name for ${id}: zh=${zh}, en=${en}`);
+  }
+}
+assert(allNamesValid, '全塔所有 40 种怪物均具备合规中文名与英文名（无下划线，杜绝 code name）');
+assert(getMonsterName('dark_knight', 'zh') === '黑暗骑士', 'dark_knight 中文显示为【黑暗骑士】');
+assert(getMonsterName('dark_knight', 'en') === 'Dark Knight', 'dark_knight 英文显示为【Dark Knight】');
+assert(getMonsterName('senior_wizard', 'zh') === '高级巫师', 'senior_wizard 中文显示为【高级巫师】');
+assert(getMonsterName('senior_wizard', 'en') === 'Senior Wizard', 'senior_wizard 英文显示为【Senior Wizard】');
+assert(getMonsterName('demon_lord', 'zh') === '魔王杰诺', 'demon_lord 中文显示为【魔王杰诺】');
+assert(getMonsterName('demon_lord', 'en') === 'Demon Lord Zeno', 'demon_lord 英文显示为【Demon Lord Zeno】');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
+

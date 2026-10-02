@@ -2,6 +2,7 @@ import { Direction, ItemType, PlayerStats, Tile, SaveSlot, MoveCommand } from '.
 import { ALL_FLOORS, getFloor } from '../data/floors';
 import { MONSTERS } from '../data/monsters';
 import { ITEMS } from '../data/items';
+import { findIronDoorRule, getIronDoorRulesForFloor } from '../data/ironDoors';
 import { calculateBattle } from './combat';
 import { sound } from '../audio/sound';
 import {
@@ -87,7 +88,10 @@ export class GameState {
     redKeys: 0,
     weapon: null,
     shield: null,
-    inventory: {},
+    inventory: {
+      monster_manual: 1,
+      compass: 1,
+    },
   };
 
   // 当前位置与楼层 (经典 50 层魔塔开局直接登入 1 层南侧大门入口，0层为下楼器开启之地下密室)
@@ -168,7 +172,10 @@ export class GameState {
       redKeys: 0,
       weapon: null,
       shield: null,
-      inventory: {},
+      inventory: {
+        monster_manual: 1,
+        compass: 1,
+      },
     };
     this.currentFloor = 1;
     this.playerPos = { x: 5, y: 10, dir: 'up' };
@@ -372,7 +379,17 @@ export class GameState {
     }
 
     if (tile.type === 'door_iron') {
-      // 铁门 / 机关门
+      const check = this.checkGuardedIronDoor(targetX, targetY);
+      if (!check.canOpen) {
+        sound.playError();
+        if (onFloating && check.reason) {
+          onFloating(check.reason, '#ef4444');
+        }
+        this.notify();
+        return;
+      }
+
+      // 铁门 / 机关门开启
       sound.playDoor();
       floor.layout[targetY][targetX] = { type: 'floor' };
       if (onTileChange) onTileChange(targetX, targetY, true);
@@ -639,12 +656,79 @@ export class GameState {
       if (onFloating) onFloating(notif.text, notif.color);
     }
 
+    // 击败怪物后检查联动开启机关铁门
+    this.checkPostBattleGuardedDoors(targetX, targetY, onTileChange, onFloating);
+
     // 判定濒死
     if (this.playerStats.hp <= 0) {
       this.isGameOver = true;
     }
 
     this.notify();
+  }
+
+  /** 指定守卫是否仍存活 */
+  private isGuardAlive(layout: (Tile | null)[][], x: number, y: number): boolean {
+    const tile = layout[y]?.[x];
+    return Boolean(tile && tile.type === 'monster');
+  }
+
+  // 检查机关铁门是否受到守卫封锁（全塔统一规则表）
+  public checkGuardedIronDoor(targetX: number, targetY: number): { canOpen: boolean; reason?: string } {
+    const rule = findIronDoorRule(this.currentFloor, targetX, targetY);
+    if (!rule) {
+      // 未登记的铁门一律不可开启，避免“白嫖”通行
+      return {
+        canOpen: false,
+        reason: this.language === 'zh'
+          ? '这扇机关铁门无法开启！'
+          : 'This iron gate cannot be opened!',
+      };
+    }
+
+    const floor = this.getCurrentFloorData();
+    const anyAlive = rule.guards.some((g) => this.isGuardAlive(floor.layout, g.x, g.y));
+    if (anyAlive) {
+      return {
+        canOpen: false,
+        reason: this.language === 'zh' ? rule.reasonZh : rule.reasonEn,
+      };
+    }
+
+    return { canOpen: true };
+  }
+
+  // 击败怪物后：扫描本层全部铁门规则，守卫清空则自动开启
+  private checkPostBattleGuardedDoors(
+    _targetX: number,
+    _targetY: number,
+    onTileChange?: (x: number, y: number, isDoor: boolean) => void,
+    onFloating?: (txt: string, col: string) => void
+  ) {
+    const floor = this.getCurrentFloorData();
+    const rules = getIronDoorRulesForFloor(this.currentFloor);
+    const openedMessages = new Set<string>();
+
+    for (const rule of rules) {
+      if (floor.layout[rule.doorY]?.[rule.doorX]?.type !== 'door_iron') continue;
+      const anyAlive = rule.guards.some((g) => this.isGuardAlive(floor.layout, g.x, g.y));
+      if (anyAlive) continue;
+
+      floor.layout[rule.doorY][rule.doorX] = { type: 'floor' };
+      if (onTileChange) onTileChange(rule.doorX, rule.doorY, true);
+
+      const msg = this.language === 'zh' ? rule.openZh : rule.openEn;
+      openedMessages.add(msg);
+    }
+
+    if (openedMessages.size > 0) {
+      sound.playDoor();
+      if (onFloating) {
+        for (const msg of openedMessages) {
+          onFloating(msg, '#fbbf24');
+        }
+      }
+    }
   }
 
   // 跨楼层切换

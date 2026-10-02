@@ -20,6 +20,7 @@ import { ITEMS } from '../data/items';
 import { calculateBattle } from '../game/combat';
 import { useI18n, getMonsterName, getItemName, getFloorName } from '../i18n';
 import { MonsterIcon } from './MonsterIcon';
+import { findIronDoorRule } from '../data/ironDoors';
 
 interface InspectCardProps {
   tile: Tile | null;
@@ -346,7 +347,11 @@ export const InspectCard: React.FC<InspectCardProps> = ({
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {isIron
-                  ? t.inspectDoorFree
+                  ? (() => {
+                      const rule = findIronDoorRule(game.currentFloor, gridX, gridY);
+                      if (!rule) return t.inspectDoorFree;
+                      return lang === 'zh' ? rule.reasonZh : rule.reasonEn;
+                    })()
                   : hasKey
                   ? t.inspectDoorOwned.replace('{count}', String(keyCount))
                   : t.inspectDoorMissing.replace('{count}', String(keyCount))}

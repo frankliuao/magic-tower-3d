@@ -30,7 +30,7 @@ function getFloor0(): FloorData {
     [T.wall(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.doorR(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.doorY(), T.floor(), T.doorB(), T.item('lucky_coin'), T.doorB(), T.floor(), T.doorY(), T.floor(), T.wall()],
-    [T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.doorI(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall()],
+    [T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.item('key_yellow'), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.item('key_yellow'), T.wall()],
     [T.wall(), T.item('potion_red'), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.item('potion_red'), T.wall()],
@@ -59,7 +59,7 @@ function getFloor1(): FloorData {
     [T.wall(), T.doorY(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.doorY(), T.wall(), T.wall(), T.wall(), T.doorY(), T.wall()],
     [T.item('potion_red'), T.floor(), T.item('key_yellow'), T.wall(), T.item('key_yellow'), T.floor(), T.npc('elder'), T.wall(), T.floor(), T.mon('small_bat'), T.floor()],
-    [T.item('potion_red'), T.item('compass'), T.item('key_yellow'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.mon('green_slime'), T.item('potion_blue'), T.mon('green_slime')],
+    [T.item('potion_red'), T.floor(), T.item('key_yellow'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.mon('green_slime'), T.item('potion_blue'), T.mon('green_slime')],
   ];
 
   return {
@@ -284,7 +284,7 @@ function getFloor10(): FloorData {
     [T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor()],
     [T.doorY(), T.wall(), T.doorY(), T.wall(), T.wall(), T.doorR(), T.wall(), T.wall(), T.doorY(), T.wall(), T.doorY()],
     [T.floor(), T.wall(), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.wall(), T.floor()],
-    [T.down(), T.wall(), T.floor(), T.mon('junior_mage'), T.floor(), T.floor(), T.floor(), T.mon('junior_mage'), T.floor(), T.wall(), T.item('potion_blue')],
+    [T.down(), T.wall(), T.floor(), T.mon('junior_mage'), T.floor(), T.up(), T.floor(), T.mon('junior_mage'), T.floor(), T.wall(), T.item('potion_blue')],
   ];
 
   return {
@@ -529,7 +529,7 @@ function getFloor20(): FloorData {
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.doorI(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
     [T.item('gem_red'), T.item('gem_blue'), T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.item('potion_red'), T.item('potion_blue')],
     [T.item('key_yellow'), T.floor(), T.wall(), T.floor(), T.mon('big_bat'), T.mon('big_bat'), T.mon('big_bat'), T.floor(), T.wall(), T.floor(), T.item('key_yellow')],
-    [T.wall(), T.doorB(), T.wall(), T.floor(), T.mon('big_bat'), T.floor(), T.mon('big_bat'), T.floor(), T.wall(), T.doorB(), T.wall()],
+    [T.wall(), T.doorB(), T.wall(), T.floor(), T.mon('big_bat'), T.mon('vampire'), T.mon('big_bat'), T.floor(), T.wall(), T.doorB(), T.wall()],
     [T.mon('small_bat'), T.floor(), T.wall(), T.floor(), T.mon('big_bat'), T.mon('big_bat'), T.mon('big_bat'), T.floor(), T.wall(), T.floor(), T.mon('small_bat')],
     [T.floor(), T.mon('small_bat'), T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.mon('small_bat'), T.floor()],
     [T.doorY(), T.wall(), T.wall(), T.wall(), T.wall(), T.doorR(), T.wall(), T.wall(), T.wall(), T.wall(), T.doorY()],
@@ -784,7 +784,7 @@ function getFloor30(): FloorData {
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.up(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.down(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
   ];
 
   return {
@@ -1024,9 +1024,9 @@ function getFloor39(): FloorData {
 
 function getFloor40(): FloorData {
   const layout: Tile[][] = [
-    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.mon('knight_captain'), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.up(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.mon('dual_swordsman'), T.mon('dual_swordsman'), T.mon('dual_swordsman'), T.floor(), T.floor(), T.floor(), T.mon('knight'), T.mon('knight'), T.mon('knight'), T.floor()],
-    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.mon('knight_captain'), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.mon('ghost_soldier'), T.mon('ghost_soldier'), T.mon('ghost_soldier'), T.floor(), T.mon('warrior'), T.mon('warrior'), T.mon('warrior'), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall()],
@@ -1134,7 +1134,7 @@ function getFloor44(): FloorData {
     [T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.doorI(), T.wall(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.floor(), T.mon('senior_guard'), T.floor(), T.mon('senior_guard'), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
-    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
+    [T.down(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor()],
   ];
 
   return {
@@ -1142,7 +1142,7 @@ function getFloor44(): FloorData {
     name: '44F 神秘星空 (神圣神盾)',
     layout,
     upStairsPos: { x: 0, y: 0 },
-    downStairsPos: { x: 0, y: 0 },
+    downStairsPos: { x: 0, y: 10 },
     theme: 'celestial',
   };
 }
