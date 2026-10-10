@@ -1484,11 +1484,14 @@ console.log('\n--- 28. 验证基于 .env.local 与环境变量的调试作弊控
 // 1. 验证配置文件与 .gitignore 安全策略
 import fs from 'fs';
 const envContent = fs.readFileSync('.env', 'utf-8');
-const envLocalContent = fs.readFileSync('.env.local', 'utf-8');
 const gitignoreContent = fs.readFileSync('.gitignore', 'utf-8');
-
 assert(envContent.includes('VITE_ENABLE_DEBUG=false'), '.env 文件默认声明 VITE_ENABLE_DEBUG=false，保障生产环境安全');
-assert(envLocalContent.includes('VITE_ENABLE_DEBUG=true'), '.env.local 本地声明 VITE_ENABLE_DEBUG=true，为开发者提供调试能力');
+if (fs.existsSync('.env.local')) {
+  const envLocalContent = fs.readFileSync('.env.local', 'utf-8');
+  assert(envLocalContent.includes('VITE_ENABLE_DEBUG=true'), '.env.local 本地声明 VITE_ENABLE_DEBUG=true，为开发者提供调试能力');
+} else {
+  assert(!fs.existsSync('.env.local'), 'CI/生产环境下 .env.local 绝不应存在，严格遵循 .gitignore 隔离策略');
+}
 assert(gitignoreContent.includes('.env.local'), '.gitignore 必须明确忽略 .env.local，防止本地作弊配置泄露至 GitHub 生产');
 
 // 2. 模拟 GitHub Pages 生产构建与线上环境 (仅加载 .env，无 .env.local)：严格禁用
