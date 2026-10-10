@@ -246,12 +246,19 @@ export const InspectCard: React.FC<InspectCardProps> = ({
             ? '掌握暗门与密道机关的开锁大师，告知楼层中隐藏的神兵密道。'
             : 'Lockpick master who reveals secret false walls and passages.';
         avatar = '🥷';
-      } else if (npcId === 'old_man_manual' || npcId === 'elder' || npcId === 'old_man') {
-        npcName = lang === 'zh' ? '神秘老人' : 'Mystic Sage';
+      } else if (npcId === 'elder_exp') {
+        npcName = lang === 'zh' ? '经验老人' : 'Experience Elder';
         npcDesc =
           lang === 'zh'
-            ? '洞悉万物弱点的古老学者，传授【怪物手册】并点拨战斗临界点。'
-            : 'Ancient sage who offers the Monster Manual and strategic tips.';
+            ? '参透战阵玄机的避世宗师，能将杀敌积攒的【经验值】转化为通天战力与体魄属性。'
+            : 'Venerable grandmaster who harnesses combat Experience to augment your attributes.';
+        avatar = '🧙‍♂️';
+      } else if (npcId === 'old_man_manual' || npcId === 'elder' || npcId === 'old_man') {
+        npcName = lang === 'zh' ? '智慧老人' : 'Wise Sage';
+        npcDesc =
+          lang === 'zh'
+            ? '洞悉魔塔奥秘的古老学者，点拨钥匙分配、寻找暗墙与探秘技巧。'
+            : 'Ancient sage who offers guidance on keys, secret walls, and tower mysteries.';
         avatar = '🧙‍♂️';
       } else if (npcId === 'trader' || npcId === 'merchant') {
         npcName = lang === 'zh' ? '神秘商人' : 'Merchant';

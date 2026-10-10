@@ -13,7 +13,33 @@
   }
 }
 
-/* 浮动文字升腾渐隐动画 */
+/* 浮动文字与提示卡片升腾渐隐动画 (高可读性、优雅停留、杜绝重叠与过快消失) */
+@keyframes toast-enter-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.92);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  88% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
+.floating-toast-card {
+  pointer-events: none;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
 @keyframes float-up {
   0% {
     transform: translate(-50%, 0) scale(0.9);
@@ -34,7 +60,7 @@
 }
 
 .floating-text-anim {
-  animation: float-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: float-up 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px currentColor;
 }

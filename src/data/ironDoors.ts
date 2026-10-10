@@ -97,16 +97,20 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Senior Mages defeated, the iron gate opens!',
   },
 
-  // 15F：击败大乌贼后通往上楼光圈
+  // 15F：击败大乌贼后通往上楼光圈 (大乌贼横跨 x=4, 5, 6 三格)
   {
     floor: 15,
     doorX: 5,
     doorY: 2,
-    guards: [{ x: 5, y: 4 }],
+    guards: [
+      { x: 4, y: 4 },
+      { x: 5, y: 4 },
+      { x: 6, y: 4 },
+    ],
     reasonZh: '必须击败大乌贼才能开启！',
     reasonEn: 'Defeat the Giant Squid first!',
-    openZh: '大乌贼败亡，铁门轰然开启！',
-    openEn: 'Giant Squid fallen, the iron gate opens!',
+    openZh: '大乌贼败亡，通往上层的铁门开启！',
+    openEn: 'Giant Squid fallen, the upper floor gate opens!',
   },
 
   // 17F：四扇铁门分别由两侧守卫看守
@@ -173,6 +177,18 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     reasonEn: 'Defeat the Vampire first!',
     openZh: '吸血鬼败亡，铁门轰然开启！',
     openEn: 'Vampire fallen, the iron gate opens!',
+  },
+
+  // 25F：击败红衣大法师后开启通往 26 层的铁门
+  {
+    floor: 25,
+    doorX: 5,
+    doorY: 3,
+    guards: [{ x: 5, y: 5 }],
+    reasonZh: '必须击败红衣大法师才能开启通往 26 层的铁门！',
+    reasonEn: 'Defeat the Archmage to open the iron gate to 26F!',
+    openZh: '红衣大法师败亡，通往 26 层的铁门开启！',
+    openEn: 'The Archmage is defeated — the iron gate opens!',
   },
 
   // 30F：击败全部 6 只史莱姆后开启
@@ -294,7 +310,7 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Magic Guards defeated — the sacred vault opens!',
   },
 
-  // 49F：两道王座铁门
+  // 49F：两道走廊铁门与一道王座圣门
   {
     floor: 49,
     doorX: 5,
@@ -320,6 +336,16 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     reasonEn: 'Defeat the guarding dark knights on both sides first!',
     openZh: '黑暗骑士已灭，王座大门开启！',
     openEn: 'Dark knights fallen, throne gate opens!',
+  },
+  {
+    floor: 49,
+    doorX: 5,
+    doorY: 1,
+    guards: [{ x: 5, y: 3 }],
+    reasonZh: '必须消灭假面王座上的假魔王才能开启通往魔塔之巅的圣门！',
+    reasonEn: 'Defeat the False Sorcerer to open the gate to the tower peak!',
+    openZh: '假魔王已败！通往 50F 魔塔之巅的圣门轰然开启！',
+    openEn: 'False Sorcerer defeated! The gate to 50F opens!',
   },
 ];
 

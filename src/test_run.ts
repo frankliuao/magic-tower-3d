@@ -5,7 +5,12 @@ import { MONSTERS } from './data/monsters';
 import { IRON_DOOR_RULES, findIronDoorRule } from './data/ironDoors';
 import { calculateBattle } from './game/combat';
 import { findPathToAdjacent } from './game/pathfinding';
-import { getMonsterName } from './i18n';
+import { getMonsterName, NPC_DIALOGUES, translations, getCombatNotification, getDialogueData } from './i18n';
+import { ModelFactory } from './engine/ModelFactory';
+import { ThreeCanvas } from './engine/ThreeCanvas';
+import { isDebugAllowed } from './utils/env';
+import * as THREE from 'three';
+import * as fs from 'fs';
 
 console.log('==============================================');
 console.log('   魔塔 3D (Magic Tower 3D) 核心逻辑全栈自检');
@@ -105,12 +110,27 @@ assert(game.getShopCost() === 220, 'n=5 价格为 220 G');
 // 4. 测试游戏交互行动 (移动、拾取、开门、楼梯)
 console.log('\n--- 4. 验证游戏行动状态机 ---');
 game.initGame();
-assert(game.currentFloor === 1, '初始处于经典第 1 层');
-assert(game.playerPos.x === 5 && game.playerPos.y === 10, '玩家出生在 1 层入口 (5, 10)');
+assert(game.currentFloor === 0, '初始处于第 0 层仙灵密境');
+assert(game.playerPos.x === 5 && game.playerPos.y === 9, '玩家出生在 0 层神殿入口 (5, 9)');
 assert(game.playerStats.inventory.monster_manual === 1, '勇士开局默认自带【怪物手册】神器');
 assert(game.playerStats.inventory.compass === 1, '勇士开局默认自带【楼层罗盘】神器');
+assert(getFloor(1).layout[10][5]?.type === 'stairs_down', '1F 入口严格设有 stairs_down 可随时返回 0F');
 assert(getFloor(1).layout[10][1]?.type === 'floor', '1F 取消地面多余罗盘拾取道具，直接为畅通地面');
+assert(getFloor(3).layout[3][10]?.type === 'floor', '3F (10, 3) 移除多余重复的神秘老人，恢复为通畅地面');
+assert(getFloor(1).layout[9][6]?.type === 'npc' && getFloor(1).layout[9][6]?.npcId === 'elder', '1F (6, 9) 保留智慧老人指导新手');
 
+// 切换到 1 层测试经典 1 层行动状态机
+game.changeFloor(1, 'up');
+assert(game.currentFloor === 1, '通过光圈上行至 1 层');
+assert(game.playerPos.x === 5 && game.playerPos.y === 10, '到达 1 层入口 (5, 10)');
+
+// 测试在 1 层 (5, 10) 随时向下走入 stairs_down 返回 0 层
+game.playerPos = { x: 5, y: 9, dir: 'down' };
+game.move('down'); // 踩在 (5, 10) 下楼光圈
+assert(game.currentFloor === 0, '成功从 1 层下楼光圈返回 0 层仙灵密境！');
+
+// 再次上楼到 1 层继续测试移动、拾取、开门、楼梯
+game.changeFloor(1, 'up');
 // 向上移动一步到 (5, 9)
 game.move('up');
 assert(game.playerPos.x === 5 && game.playerPos.y === 9, '成功向上移动一步到走廊 (5, 9)');
@@ -459,7 +479,7 @@ assert(f30Data.layout[3][5]?.type === 'floor', '六只史莱姆清完后 30F 铁
 
 // 10c. 全层楼梯与铁门登记完整性
 console.log('\n--- 10c. 验证全层楼梯成对与铁门均已登记 ---');
-for (let f = 2; f <= 49; f++) {
+for (let f = 1; f <= 49; f++) {
   const fl = getFloor(f);
   let ups = 0;
   let downs = 0;
@@ -498,8 +518,1024 @@ assert(getMonsterName('senior_wizard', 'zh') === '高级巫师', 'senior_wizard 
 assert(getMonsterName('senior_wizard', 'en') === 'Senior Wizard', 'senior_wizard 英文显示为【Senior Wizard】');
 assert(getMonsterName('demon_lord', 'zh') === '魔王杰诺', 'demon_lord 中文显示为【魔王杰诺】');
 assert(getMonsterName('demon_lord', 'en') === 'Demon Lord Zeno', 'demon_lord 英文显示为【Demon Lord Zeno】');
+assert(MONSTERS.demon_lord.hp === 5000, '50F 魔王杰诺生命值严格回归原版 5000 HP');
+assert(MONSTERS.demon_lord.atk === 1580, '50F 魔王杰诺攻击力严格回归原版 1580 ATK (杜绝 5000 变态剧情杀误填数值)');
+assert(MONSTERS.demon_lord.def === 190, '50F 魔王杰诺防御力严格回归原版 190 DEF (确保 500+ 攻击力勇士可顺畅破防决战)');
+
+// 12. 验证 0F 仙灵密境地图布局、传送口与仙女新手教学
+console.log('\n--- 12. 验证 0F 仙灵密境地图布局、传送口与仙女新手教学 ---');
+const f0 = getFloor(0);
+assert(f0.upStairsPos.x === 5 && f0.upStairsPos.y === 1, '0F 上楼口坐标必须在 (5, 1)');
+assert(f0.layout[1][5]?.type === 'stairs_up', '0F (5, 1) 瓦片必须为 stairs_up 传送光圈');
+assert(f0.layout[2][5]?.type === 'npc' && f0.layout[2][5]?.npcId === 'fairy', '0F (5, 2) 必须为仙女 NPC');
+assert(f0.layout[1][5]?.type === 'stairs_up' && f0.layout[2][5]?.npcId === 'fairy', '传送口严格位于仙女正后方');
+
+// 验证 0F 圣殿大门与四个角落宝物配置
+let f0Doors = { yellow: 0, red: 0, blue: 0, iron: 0 };
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    const t = f0.layout[y][x];
+    if (!t) continue;
+    if (t.type === 'door_yellow') f0Doors.yellow++;
+    if (t.type === 'door_red') f0Doors.red++;
+    if (t.type === 'door_blue') f0Doors.blue++;
+    if (t.type === 'door_iron') f0Doors.iron++;
+  }
+}
+assert(f0Doors.yellow === 0, '0F 彻底移除 4 扇多余杂乱的黄色大门 (door_yellow 数量为 0)');
+assert(f0Doors.blue === 0, '0F 不使用蓝色大门 (door_blue 数量为 0)');
+assert(f0Doors.red === 1, '0F 中央圣殿大门为红色大门，增加幸运金币获取难度与挑战成就感');
+assert(f0.layout[4][5]?.type === 'door_red', '0F (5, 4) 必须为红色大门');
+assert(f0.layout[5][5]?.type === 'item' && f0.layout[5][5]?.itemType === 'lucky_coin', '0F (5, 5) 密藏幸运金币神器');
+
+// 验证四个角落精准精简宝物神台配置
+assert(f0.layout[1][1]?.type === 'item' && f0.layout[1][1]?.itemType === 'gem_red', '西北神台配备 1 个红宝石 (1, 1)');
+assert(f0.layout[2][1]?.type === 'item' && f0.layout[2][1]?.itemType === 'potion_red', '西北神台配备 1 个红血瓶 (1, 2)');
+assert(f0.layout[1][9]?.type === 'item' && f0.layout[1][9]?.itemType === 'gem_blue', '东北神台配备 1 个蓝宝石 (9, 1)');
+assert(f0.layout[2][9]?.type === 'item' && f0.layout[2][9]?.itemType === 'potion_red', '东北神台配备 1 个红血瓶 (9, 2)');
+assert(f0.layout[9][1]?.type === 'item' && f0.layout[9][1]?.itemType === 'key_yellow', '西南神台配备 1 把黄钥匙 (1, 9)');
+assert(f0.layout[8][1]?.type === 'item' && f0.layout[8][1]?.itemType === 'potion_red', '西南神台配备 1 个红血瓶 (1, 8)');
+assert(f0.layout[9][9]?.type === 'item' && f0.layout[9][9]?.itemType === 'key_blue', '东南神台配备 1 把蓝钥匙 (9, 9)');
+assert(f0.layout[8][9]?.type === 'item' && f0.layout[8][9]?.itemType === 'potion_red', '东南神台配备 1 个红血瓶 (9, 8)');
+
+// 验证 0F 可达性 (四周神台开放可达，中央幸运金币密室必须开红门才能进入)
+function f0Reachable(startX: number, startY: number, openDoors: Set<string> = new Set()) {
+  const visited = new Set<string>();
+  const queue = [{ x: startX, y: startY }];
+  visited.add(`${startX},${startY}`);
+  while (queue.length > 0) {
+    const { x, y } = queue.shift()!;
+    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || nx >= 11 || ny < 0 || ny >= 11) continue;
+      const key = `${nx},${ny}`;
+      if (visited.has(key)) continue;
+      const t = f0.layout[ny][nx];
+      if (!t || t.type === 'wall') continue;
+      if (t.type.startsWith('door_') && !openDoors.has(key)) continue;
+      visited.add(key);
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  return visited;
+}
+
+const f0InitialReached = f0Reachable(5, 9);
+assert(f0InitialReached.has('5,2'), '出生点 (5, 9) 可畅通直达仙女 (5, 2)');
+assert(f0InitialReached.has('5,1'), '出生点 (5, 9) 可畅通直达仙女身后上楼光圈 (5, 1)');
+assert(f0InitialReached.has('1,1') && f0InitialReached.has('1,2'), '西北神台开放：直接拾取红宝石与血瓶');
+assert(f0InitialReached.has('9,1') && f0InitialReached.has('9,2'), '东北神台开放：直接拾取蓝宝石与血瓶');
+assert(f0InitialReached.has('1,9') && f0InitialReached.has('1,8'), '西南神台开放：直接拾取黄钥匙与血瓶');
+assert(f0InitialReached.has('9,9') && f0InitialReached.has('9,8'), '东南神台开放：直接拾取蓝钥匙与血瓶');
+assert(!f0InitialReached.has('5,5'), '未开红门绝无法绕过并拾取中央幸运金币 (5, 5)');
+
+const f0UnlockedReached = f0Reachable(5, 9, new Set(['5,4']));
+assert(f0UnlockedReached.has('5,5'), '消耗红钥匙开启 (5, 4) 红门后，顺利拾取幸运金币');
+
+// 验证仙女交谈完毕后消失
+const fairyTestGame = new GameState();
+fairyTestGame.initGame();
+assert(fairyTestGame.currentFloor === 0, '初始在 0 层');
+assert(fairyTestGame.getCurrentFloorData().layout[2][5]?.type === 'npc', '初始 (5, 2) 为仙女 NPC');
+fairyTestGame.triggerNPC('fairy', 5, 2);
+assert(fairyTestGame.isDialogueOpen === true, '触发仙女对话');
+fairyTestGame.closeDialogue();
+assert(fairyTestGame.isDialogueOpen === false, '对话顺利关闭');
+assert(fairyTestGame.getCurrentFloorData().layout[2][5]?.type === 'floor', '仙女对话完毕后化作灵光隐去消失，原位置变为畅通地面');
+
+// 验证仙女教学内容覆盖用户要求的关键操作与快捷键，且不含 A* 算法术语
+const fairyZh = NPC_DIALOGUES.fairy.lines.zh.join('\n');
+assert(!fairyZh.includes('A*'), '仙女对话不含突兀的【A* 算法】技术术语');
+assert(fairyZh.includes('右键双击'), '仙女对话包含通俗的【右键双击】说明');
+assert(fairyZh.includes('最优路径'), '仙女对话包含【选择最优路径】到达目标说明');
+assert(fairyZh.includes('单击'), '仙女对话包含左键【单击】查看信息教学');
+assert(fairyZh.includes('Ctrl') && fairyZh.includes('拖拽'), '仙女对话包含【Ctrl】拖拽平移视角教学');
+assert(fairyZh.includes('Shift') && fairyZh.includes('拖拽'), '仙女对话包含【Shift】拖拽旋转视角教学');
+assert(fairyZh.includes('空格') || fairyZh.includes('Space'), '仙女对话包含【空格键】复位视角教学');
+assert(fairyZh.includes('身后') && fairyZh.includes('1F'), '仙女对话包含身后传送门前往 1F 指引');
+
+// --- 13. 验证金币能力商店命名与经验老人 (Option A) 加点机制及 3D 建模 ---
+console.log('\n--- 13. 验证金币商店命名规范与经验老人 (Option A) 机制及建模 ---');
+const zhT = translations.zh;
+assert(!zhT.shopTitle.includes('祈祷'), '金币商店标题去除【祈祷】术语，显示为【' + zhT.shopTitle + '】');
+assert(!zhT.shopPrayerCost.includes('祈祷'), '金币商店消耗提示去除【祈祷】术语，显示为【' + zhT.shopPrayerCost + '】');
+assert(!zhT.shopBlessingHp.includes('祈愿'), '金币商店选项去除【祈愿】术语，显示为【' + zhT.shopBlessingHp + '】');
+
+// 经验老人分布验证
+const checkF5 = getFloor(5);
+const checkF11 = getFloor(11);
+const checkF27 = getFloor(27);
+const checkF42 = getFloor(42);
+assert(checkF5.layout[0][6]?.type === 'npc' && checkF5.layout[0][6]?.npcId === 'elder_exp', '5F (6, 0) 成功配置经验老人且未阻挡门');
+assert(checkF5.layout[0][5]?.type === 'floor', '5F (5, 0) 为畅通平地，允许玩家开启 (4, 0) 房门');
+assert(checkF11.layout[8][6]?.type === 'npc' && checkF11.layout[8][6]?.npcId === 'elder_exp', '11F (6, 8) 成功配置经验老人');
+assert(checkF27.layout[0][5]?.type === 'npc' && checkF27.layout[0][5]?.npcId === 'elder_exp', '27F (5, 0) 成功配置经验老人');
+assert(checkF42.layout[3][0]?.type === 'npc' && checkF42.layout[3][0]?.npcId === 'elder_exp', '42F (0, 3) 成功配置经验老人');
+
+// 经验加点逻辑测试
+const expGame = new GameState();
+expGame.initGame();
+expGame.currentFloor = 5;
+const gainZone1 = expGame.getExpUpgradeGain();
+assert(gainZone1.costAtk === 30 && gainZone1.atk === 5, '1区经验老人 30 经验提升 5 攻击');
+assert(gainZone1.costDef === 30 && gainZone1.def === 5, '1区经验老人 30 经验提升 5 防御');
+assert(gainZone1.costLevel === 100, '1区经验老人 100 经验提升等级');
+
+// 经验不足测试
+expGame.playerStats.exp = 20;
+assert(expGame.buyExpUpgrade('atk') === false, '经验值不足时无法购买加点');
+assert(expGame.playerStats.atk === 10, '攻击力保持不变');
+
+// 经验充足购买测试
+expGame.playerStats.exp = 150;
+const prevAtk = expGame.playerStats.atk;
+assert(expGame.buyExpUpgrade('atk') === true, '经验值充足时成功购买攻击力强化');
+assert(expGame.playerStats.atk === prevAtk + 5, '攻击力正确增加 +5');
+assert(expGame.playerStats.exp === 120, '经验值正确扣除 30 点');
+
+// 突破升级测试
+const prevHp = expGame.playerStats.hp;
+const prevDef = expGame.playerStats.def;
+const prevAtk2 = expGame.playerStats.atk;
+assert(expGame.buyExpUpgrade('level') === true, '经验充足时成功突破等级');
+assert(expGame.playerStats.hp === prevHp + gainZone1.levelGain.hp, '生命值大幅提升');
+assert(expGame.playerStats.atk === prevAtk2 + gainZone1.levelGain.atk, '攻击力大幅提升');
+assert(expGame.playerStats.def === prevDef + gainZone1.levelGain.def, '防御力大幅提升');
+assert(expGame.playerStats.exp === 20, '经验值正确扣除 100 点');
+
+// 验证高品质 3D 老人建模结构
+const elderNormalMesh = ModelFactory.createOldManMesh('normal');
+const elderExpMesh = ModelFactory.createOldManMesh('exp');
+assert(elderNormalMesh.name === 'npc_old_man', '普通智慧老人 Mesh 标识正确');
+assert(elderExpMesh.name === 'npc_elder_exp', '经验老人 Mesh 标识正确');
+assert(elderNormalMesh.children.length >= 5, '长者建模包含皮靴、微驼身躯、长袍、五官头颅、古木拐杖等多重精致组件');
+assert(elderExpMesh.children.length >= 5, '经验老人建模包含完整长者写实组件');
+
+// --- 14. 验证 3D 场景对象生命周期与换层清理规范 (杜绝跨层穿模与幽灵商店) ---
+console.log('\n--- 14. 验证 3D 场景对象生命周期与换层清理规范 ---');
+const floor3Data = getFloor(3);
+const floor4Data = getFloor(4);
+let f3ShopCount = 0;
+let f4ShopCount = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    if (floor3Data.layout[y][x]?.type === 'shop') f3ShopCount++;
+    if (floor4Data.layout[y][x]?.type === 'shop') f4ShopCount++;
+  }
+}
+assert(f4ShopCount === 3, '4F 地图数据中正确包含 3 格一体化商铺');
+assert(f3ShopCount === 0, '3F 地图数据中绝无商铺瓦片 (0 格 shop)');
+assert(floor3Data.layout[0][6]?.type === 'wall', '3F (6, 0) 为砖石墙体');
+
+// 静态分析 ThreeCanvas 源码生命周期绑定：商铺必须加入 floorGroup 而非 scene，换层时彻底销毁
+const threeCanvasCode = fs.readFileSync('src/engine/ThreeCanvas.ts', 'utf-8');
+assert(!threeCanvasCode.includes('this.scene.add(shopObj)'), '禁止将商铺模型直接挂载至全局根场景 this.scene');
+assert(threeCanvasCode.includes('this.floorGroup.add(shopObj)'), '商铺模型必须挂载至楼层容器 this.floorGroup');
+assert(threeCanvasCode.includes('this.clearPathTarget()'), '换层 setFloor 时必须联动清空寻路目标标记');
+assert(threeCanvasCode.includes('this.setSelectedTile(null, null)'), '换层 setFloor 时必须联动复位检视选中标记');
+
+// --- 15. 验证打怪 0 损血无伤提示词规范（未受到伤害） ---
+console.log('\n--- 15. 验证打怪 0 损血提示词规范 ---');
+const notifZh = getCombatNotification('win_flawless', { gold: 5 }, 'zh');
+const notifEn = getCombatNotification('win_flawless', { gold: 5 }, 'en');
+assert(notifZh.text.includes('未受到伤害'), '中文浮动击杀提示词包含【未受到伤害】');
+assert(!notifZh.text.includes('完全无伤防杀'), '杜绝【完全无伤防杀】复杂术语');
+assert(notifEn.text.includes('No damage taken'), '英文浮动击杀提示词包含【No damage taken】');
+assert(translations.zh.flawlessVictory === '未受到伤害', '中文手册与检视卡片预估损血词条为【未受到伤害】');
+assert(translations.en.flawlessVictory === 'No damage taken', '英文手册与检视卡片预估损血词条为【No damage taken】');
+
+// 战斗计算说明验证
+const strongHeroTest = { ...baseHero, atk: 30, def: 20 };
+const slimeTest = MONSTERS.green_slime;
+const battleCalc = calculateBattle(strongHeroTest, slimeTest);
+assert(battleCalc.damage === 0, '防御力高于怪物攻击力时损血为 0');
+assert(battleCalc.specialNotes.some((n) => n.includes('未受到伤害')), '战力推演日志正确记录【未受到伤害】');
+
+// --- 16. 验证实心饱满墙体 (杜绝细柱与薄壁) 与记事本 (Notepad) 高精 3D 建模 ---
+console.log('\n--- 16. 验证实心墙体规范与记事本高精建模 ---');
+// 墙体模型验证
+const testWallMesh = ModelFactory.createWallMesh('castle') as any;
+assert(testWallMesh.name === 'wall', '墙体 Mesh 命名正确');
+const wallGeo = testWallMesh.geometry as any;
+assert(wallGeo && wallGeo.parameters.width === 1.0, '墙体完整占据单格宽度 1.0 (非 0.20/0.58)');
+assert(wallGeo && wallGeo.parameters.depth === 1.0, '墙体完整占据单格深度 1.0 (非 0.16 纸片厚度)');
+
+// 记事本 3D 建模验证
+const notepadMesh = ModelFactory.createItemMesh('notepad');
+assert(notepadMesh.name === 'item_notepad', '记事本 Mesh 命名正确');
+assert(notepadMesh.children.length > 0, '记事本包含多部件精致子模型结构');
+// 验证记事本包含封面、书芯、书脊、护角、魔晶徽章、羽毛笔等组件
+const bookGroup = notepadMesh.children[0] as any;
+assert(bookGroup.children.length >= 8, '记事本手札包含皮革封面、羊皮纸内页、金黄护角、星光魔晶、书签丝带与羽毛笔');
+
+// 5F 蓝宝石区域墙体与骷髅兵相邻坐标验证
+const f5Data = getFloor(5);
+assert(f5Data.layout[6][0]?.type === 'wall', '5F 骷髅兵左侧 (0, 6) 为实心墙体瓦片');
+assert(f5Data.layout[6][1]?.type === 'monster' && f5Data.layout[6][1]?.monsterId === 'skeleton_soldier', '5F (1, 6) 为骷髅士兵');
+assert(f5Data.layout[6][2]?.type === 'wall', '5F 骷髅兵右侧 (2, 6) 为实心墙体瓦片');
+assert(f5Data.layout[6][3]?.type === 'wall' && f5Data.layout[6][4]?.type === 'wall', '5F (3, 6) 与 (4, 6) 连续实心隔墙');
+assert(f5Data.layout[8][0]?.type === 'item' && f5Data.layout[8][0]?.itemType === 'gem_blue', '5F (0, 8) 蓝宝石宝藏配置正确');
+assert(f5Data.layout[8][3]?.type === 'item' && f5Data.layout[8][3]?.itemType === 'notepad', '5F (3, 8) 记事本手札配置正确');
+
+// --- 17. 验证 6F 地图门结构修复、神秘商人交易系统与智慧老人楼层专属指引 ---
+console.log('\n--- 17. 验证 6F 门朝向修复、神秘商人交易与智慧老人指引 ---');
+const f6Data = getFloor(6);
+// 6F 左上密室单门结构验证
+assert(f6Data.layout[3][1]?.type === 'wall', '6F (1, 3) 修复为实心西墙');
+assert(f6Data.layout[3][2]?.type === 'floor', '6F (2, 3) 移除错误横向怪门，恢复为通畅地面');
+assert(f6Data.layout[3][3]?.type === 'floor', '6F (3, 3) 为密室通畅地面');
+assert(f6Data.layout[3][4]?.type === 'door_yellow', '6F (4, 3) 为面向走廊的唯一入口黄门');
+assert(f6Data.layout[7][6]?.type === 'door_yellow', '6F (6, 7) 为药水房唯一入口黄门');
+assert(f6Data.layout[7][7]?.type === 'floor', '6F (7, 7) 移除错误横向怪门，恢复为通畅地面');
+assert(f6Data.layout[7][8]?.type === 'floor', '6F (8, 7) 为药水房内部通畅地面');
+assert(f6Data.layout[7][9]?.type === 'wall', '6F (9, 7) 为连续平整东墙');
+
+// 验证 6F 全图无任何紧挨双门笔误
+let f6AdjacentDoorCount = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 10; x++) {
+    const t1 = f6Data.layout[y][x];
+    const t2 = f6Data.layout[y][x + 1];
+    if (t1 && t2 && t1.type.startsWith('door_') && t2.type.startsWith('door_')) {
+      f6AdjacentDoorCount++;
+    }
+  }
+}
+assert(f6AdjacentDoorCount === 0, '6F 彻底消除相邻门粘连笔误 (数量为 0)');
+
+// 验证 6F 彻底移除冗余商人与老人 (避免与 7F 重复，还原纯正地宫探险)
+let f6NpcCount = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    const tile = f6Data.layout[y][x];
+    if (tile?.type === 'npc') {
+      f6NpcCount++;
+    }
+  }
+}
+assert(f6NpcCount === 0, '6F 彻底移除商人与老人 NPC (NPC 数量为 0，杜绝与 7F 重复)');
+assert(f6Data.layout[3][7]?.type === 'item' && f6Data.layout[3][7]?.itemType === 'gem_red', '6F (7, 3) 密室宝藏配置为红宝石');
+assert(f6Data.layout[7][3]?.type === 'item' && f6Data.layout[7][3]?.itemType === 'potion_red', '6F (3, 7) 密室宝藏配置为红药水');
+
+// 7F 神秘商人交易测试 (50 金币购买 5 把黄钥匙)
+const tradeGame = new GameState();
+tradeGame.initGame();
+tradeGame.currentFloor = 7;
+tradeGame.triggerNPC('trader', 4, 0);
+assert(tradeGame.activeDialogue !== null, '成功触发 7F 神秘商人对话');
+assert(tradeGame.activeDialogue?.trade?.tradeId === 'trader_7f', '商人挂载 7F 交易配置');
+assert(tradeGame.activeDialogue?.trade?.costGold === 50, '7F 商人明码标价 50 金币');
+assert(tradeGame.activeDialogue?.trade?.title.includes('5 把黄钥匙'), '7F 商人出售 5 把黄钥匙');
+
+// 金币不足时购买失败
+assert(tradeGame.buyTraderItem('trader_7f') === false, '金币不足 50 时无法购买黄钥匙礼包');
+const prevYellow = tradeGame.playerStats.yellowKeys;
+
+// 增加金币后购买成功
+tradeGame.playerStats.gold = 60;
+assert(tradeGame.buyTraderItem('trader_7f') === true, '金币充足时成功购买黄钥匙礼包');
+assert(tradeGame.playerStats.gold === 10, '金币正确扣除 50 点');
+assert(tradeGame.playerStats.yellowKeys === prevYellow + 5, '黄钥匙数量正确增加 +5 把');
+
+// 再次对话呈现已售罄台词
+tradeGame.closeDialogue();
+tradeGame.triggerNPC('trader', 4, 0);
+assert(tradeGame.activeDialogue?.trade === undefined, '已购商品不再重复挂载交易');
+
+// 智慧老人楼层专属指引与首遇赠礼测试
+const elderGame = new GameState();
+elderGame.initGame();
+
+// 1F 老人赠送黄钥匙
+elderGame.currentFloor = 1;
+const prev1FKeys = elderGame.playerStats.yellowKeys;
+elderGame.triggerNPC('elder', 6, 9);
+assert(elderGame.playerStats.yellowKeys === prev1FKeys + 1, '1F 智慧老人初次对话赠送新手黄钥匙 x1');
+assert(elderGame.activeDialogue?.lines[2]?.includes('黄钥匙'), '1F 老人台词包含赠送黄钥匙');
+
+// 4F 老人提示机关门
+elderGame.currentFloor = 4;
+elderGame.triggerNPC('elder', 9, 0);
+assert(elderGame.activeDialogue?.lines.some(l => l.includes('机关铁门')), '4F 智慧老人讲解机关铁门与首领感应机制');
+
+// 7F 老人提示战斗临界点并赠送蓝宝石 (+3 防御力)
+elderGame.currentFloor = 7;
+const prev7FDef = elderGame.playerStats.def;
+elderGame.triggerNPC('elder', 6, 0);
+assert(elderGame.playerStats.def === prev7FDef + 3, '7F 智慧老人初次对话赠送蓝宝石 x1 (防御力+3)');
+assert(elderGame.activeDialogue?.lines.some(l => l.includes('蓝宝石')), '7F 智慧老人台词包含赠送蓝宝石');
+assert(elderGame.activeDialogue?.lines.some(l => l.includes('攻击力低于怪物的防御力')), '7F 智慧老人传授破防与无伤受击秘诀');
+
+// 9F 老人提示暗墙与铁盾
+elderGame.currentFloor = 9;
+elderGame.triggerNPC('elder', 10, 3);
+assert(elderGame.activeDialogue?.lines.some(l => l.includes('铁盾')), '9F 智慧老人揭秘暗墙内封藏铁盾');
+
+// 12F 智慧老人暗室资助 300 金币与蓝宝石测试
+elderGame.currentFloor = 12;
+const prev12Gold = elderGame.playerStats.gold;
+const prev12Def = elderGame.playerStats.def;
+elderGame.triggerNPC('elder', 10, 0);
+assert(elderGame.playerStats.gold === prev12Gold + 300, '12F 智慧老人初次对话直接资助 300 金币');
+assert(elderGame.playerStats.def === prev12Def + 3, '12F 智慧老人初次对话赠送蓝宝石 x1 (防御力+3)');
+assert(elderGame.activeDialogue?.lines.some(l => l.includes('300金币')), '12F 老人台词明确提及资助 300 金币与蓝宝石');
+
+// 12F 神秘商人 200 金币特惠红钥匙测试
+tradeGame.currentFloor = 12;
+tradeGame.playerStats.gold = 300;
+tradeGame.triggerNPC('trader', 0, 0);
+assert(tradeGame.activeDialogue?.trade?.tradeId === 'trader_12f', '12F 商人挂载 12F 交易配置');
+assert(tradeGame.activeDialogue?.trade?.costGold === 200, '12F 商人红钥匙特惠降价为 200 金币');
+const prevRedKeys = tradeGame.playerStats.redKeys;
+assert(tradeGame.buyTraderItem('trader_12f') === true, '使用老人资助的金币顺利购买 1 把特惠红钥匙');
+assert(tradeGame.playerStats.redKeys === prevRedKeys + 1, '红钥匙数量正确增加 +1 把');
+assert(tradeGame.playerStats.gold === 100, '金币正确扣除 200 点 (剩余 100 金币)');
+
+// 18. 验证全塔 NPC 有意义机制（地牢小偷、勘探暗道、全楼层商人特惠与长者专属赠礼）
+console.log('\n--- 18. 验证全塔 NPC 有意义机制（杜绝空话、全部具备剧情线索与实质回馈） ---');
+const npcAuditGame = new GameState();
+npcAuditGame.initGame();
+
+// (1) 2F 幽暗地牢测试
+npcAuditGame.currentFloor = 2;
+// 2F 小偷
+npcAuditGame.triggerNPC('thief', 10, 9);
+assert(npcAuditGame.activeDialogue !== null, '2F 成功触发地牢小偷解救对话');
+assert(
+  npcAuditGame.activeDialogue?.lines.some(l => l.includes('铁剑')) &&
+  npcAuditGame.activeDialogue?.lines.some(l => l.includes('铁盾')),
+  '2F 小偷答谢透露 5F 铁剑与 9F 铁盾重宝位置'
+);
+assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('开辟暗道')), '2F 小偷承诺后续将为勇士开辟暗道');
+npcAuditGame.closeDialogue();
+
+// 2F 智慧老人
+const prev2FGold = npcAuditGame.playerStats.gold;
+npcAuditGame.triggerNPC('elder', 10, 3);
+assert(npcAuditGame.playerStats.gold === prev2FGold + 300, '2F 被囚老人获救后赠送 300 金币启动资金');
+assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('300金币')), '2F 老人台词明确提及赠送 300 金币');
+npcAuditGame.closeDialogue();
+
+// 2F 商人
+npcAuditGame.triggerNPC('trader', 10, 6);
+assert(npcAuditGame.activeDialogue?.trade?.tradeId === 'trader_2f', '2F 商人挂载 2F 交易');
+assert(npcAuditGame.activeDialogue?.trade?.costGold === 50, '2F 商人报恩特惠 50 金币');
+assert(npcAuditGame.activeDialogue?.trade?.title.includes('4 把黄钥匙'), '2F 商人出售 4 把黄钥匙礼包');
+npcAuditGame.playerStats.gold = 100;
+assert(npcAuditGame.buyTraderItem('trader_2f') === true, '2F 顺利购买 4 把黄钥匙');
+npcAuditGame.closeDialogue();
+
+// (2) 29F 勘探小偷与暗道
+npcAuditGame.currentFloor = 29;
+const prev29Keys = npcAuditGame.playerStats.yellowKeys;
+npcAuditGame.triggerNPC('thief', 5, 1);
+assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('30 层的暗道已经被我挖通了')), '29F 小偷成功挖通 30 层暗道');
+assert(npcAuditGame.playerStats.yellowKeys === prev29Keys + 2, '29F 小偷勘探暗道报恩赠送黄钥匙 x2');
+npcAuditGame.closeDialogue();
+
+// 再次对话不重复赠礼
+npcAuditGame.triggerNPC('thief', 5, 1);
+assert(npcAuditGame.playerStats.yellowKeys === prev29Keys + 2, '29F 小偷不重复赠送钥匙');
+assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('暗道已经被我挖通了，快去 30 层吧')), '29F 小偷展示暗道挖通后续台词');
+npcAuditGame.closeDialogue();
+
+// (3) 各楼层智慧老人专属赠礼与线索全面检验
+const elderTests: Array<{ floor: number; stat: 'hp' | 'atk' | 'def' | 'gold' | 'blueKeys'; delta: number; desc: string }> = [
+  { floor: 4, stat: 'hp', delta: 200, desc: '4F 智慧老人赠送初级红药水 (+200 HP)' },
+  { floor: 9, stat: 'atk', delta: 3, desc: '9F 智慧老人赠送红宝石 (+3 ATK)' },
+  { floor: 15, stat: 'hp', delta: 500, desc: '15F 暗室老人赠送高级蓝药水 (+500 HP)' },
+  { floor: 16, stat: 'atk', delta: 3, desc: '16F 智慧老人赠送红宝石 (+3 ATK)' },
+  { floor: 18, stat: 'atk', delta: 3, desc: '18F 智慧老人赠送红宝石 (+3 ATK)' },
+  { floor: 21, stat: 'hp', delta: 500, desc: '21F 智慧老人赠送高级蓝药水 (+500 HP)' },
+  { floor: 24, stat: 'def', delta: 3, desc: '24F 智慧老人决战前赠送蓝宝石 (+3 DEF)' },
+  { floor: 31, stat: 'def', delta: 3, desc: '31F 智慧老人赠送蓝宝石 (+3 DEF)' },
+  { floor: 33, stat: 'atk', delta: 3, desc: '33F 智慧老人赠送红宝石 (+3 ATK)' },
+  { floor: 36, stat: 'hp', delta: 500, desc: '36F 智慧老人赠送高级蓝药水 (+500 HP)' },
+  { floor: 37, stat: 'def', delta: 3, desc: '37F 智慧老人赠送蓝宝石 (+3 DEF)' },
+  { floor: 38, stat: 'hp', delta: 500, desc: '38F 智慧老人赠送高级蓝药水 (+500 HP)' },
+  { floor: 39, stat: 'blueKeys', delta: 1, desc: '39F 智慧老人赠送蓝钥匙 x1' },
+  { floor: 41, stat: 'atk', delta: 3, desc: '41F 智慧老人赠送红宝石 (+3 ATK)' },
+  { floor: 45, stat: 'hp', delta: 500, desc: '45F 智慧老人赠送高级蓝药水 (+500 HP)' },
+  { floor: 46, stat: 'gold', delta: 500, desc: '46F 智慧老人终极神坛资助 500 金币' },
+  { floor: 47, stat: 'atk', delta: 6, desc: '47F 智慧老人赠送红宝石 x2 (+6 ATK)' },
+  { floor: 48, stat: 'hp', delta: 1000, desc: '48F 智慧老人赠送神圣圣水 (+1000 HP)' },
+];
+
+for (const t of elderTests) {
+  npcAuditGame.currentFloor = t.floor;
+  const beforeVal = (npcAuditGame.playerStats as any)[t.stat];
+  npcAuditGame.triggerNPC('elder', 0, 0);
+  const afterVal = (npcAuditGame.playerStats as any)[t.stat];
+  assert(afterVal === beforeVal + t.delta, t.desc);
+  assert(npcAuditGame.activeDialogue !== null && npcAuditGame.activeDialogue.lines.length > 0, `${t.floor}F 智慧老人对话丰富且无空话`);
+  npcAuditGame.closeDialogue();
+
+  // 验证不重复赠礼
+  npcAuditGame.triggerNPC('elder', 0, 0);
+  const reval = (npcAuditGame.playerStats as any)[t.stat];
+  assert(reval === afterVal, `${t.floor}F 智慧老人不重复发放赠礼`);
+  npcAuditGame.closeDialogue();
+}
+
+// (4) 全塔所有神秘商人交易配置完备性检查
+const traderCheckGame = new GameState();
+traderCheckGame.initGame();
+const allTraderFloors = [2, 7, 12, 15, 28, 31, 38, 39, 45, 47];
+for (const fl of allTraderFloors) {
+  traderCheckGame.currentFloor = fl;
+  traderCheckGame.triggerNPC('trader', 0, 0);
+  assert(traderCheckGame.activeDialogue?.trade !== undefined, `${fl}F 神秘商人具备正式交易配置`);
+  assert(traderCheckGame.activeDialogue?.trade?.costGold! > 0, `${fl}F 商人具有合规金币价格 (实际 ${traderCheckGame.activeDialogue?.trade?.costGold})`);
+  assert(traderCheckGame.activeDialogue?.trade?.title.length! > 0, `${fl}F 商人商品具有清晰描述`);
+  traderCheckGame.closeDialogue();
+}
+
+// 19. 验证 15F 核心守卫【大乌贼】高精 3D 专属生物建模与横跨 3 格宏伟 Boss 机制
+console.log('\n--- 19. 验证 15F 核心守卫【大乌贼】高精 3D 专属生物建模与横跨 3 格机制 ---');
+const squidMesh = ModelFactory.createMonsterMesh('giant_squid');
+assert(squidMesh !== null && squidMesh.isGroup, '大乌贼 3D 模型生成成功且为 Group 实体');
+assert(squidMesh.name === 'monster_giant_squid', '大乌贼模型节点命名为 monster_giant_squid');
+
+// 严禁错位使用大魔王翅膀与重装战甲组件
+let hasDemonWings = false;
+squidMesh.traverse((c) => {
+  if (c.name === 'wing_l' || c.name === 'wing_r') {
+    hasDemonWings = true;
+  }
+});
+assert(!hasDemonWings, '大乌贼彻底摒弃大魔王骨架龙翼 (杜绝错位为大魔王)');
+
+// 验证乌贼软体动物与深海巨兽特征（包含圆锥胴体、肉鳍、巨瞳、漏斗管、角质喙与带吸盘触手）
+let meshCount = 0;
+squidMesh.traverse((c) => {
+  if ((c as any).isMesh) meshCount++;
+});
+assert(meshCount >= 50, `大乌贼由多层精细软体部件组成 (包含 ${meshCount} 个 3D 网格部件)`);
+
+// 验证横跨 3 格宏伟跨度 (包围盒 X 轴宽度 >= 2.6，实际 ~2.84 跨越 3 个走廊网格)
+const squidBBox = new THREE.Box3().setFromObject(squidMesh);
+const squidSpanX = squidBBox.max.x - squidBBox.min.x;
+assert(squidSpanX >= 2.6, `大乌贼横向跨度达到 ${squidSpanX.toFixed(2)} (>= 2.6)，完美横跨封锁走廊 3 个网格`);
+
+// 验证包含左翼与右翼触手群、核心胴体与前方长触腕
+assert(Boolean(squidMesh.getObjectByName('squid_mantle')), '大乌贼包含核心圆锥胴体 (squid_mantle)');
+assert(Boolean(squidMesh.getObjectByName('squid_head')), '大乌贼包含头部与巨瞳中枢 (squid_head)');
+assert(Boolean(squidMesh.getObjectByName('squid_left_flank')), '大乌贼包含左翼触手群 (squid_left_flank)');
+assert(Boolean(squidMesh.getObjectByName('squid_right_flank')), '大乌贼包含右翼触手群 (squid_right_flank)');
+assert(Boolean(squidMesh.getObjectByName('squid_striking_l')), '大乌贼包含左前方捕食触腕 (squid_striking_l)');
+assert(Boolean(squidMesh.getObjectByName('squid_striking_r')), '大乌贼包含右前方捕食触腕 (squid_striking_r)');
+
+// 验证 15F 地图布局中走廊 (4,4), (5,4), (6,4) 均配置为大乌贼
+const f15Check = new GameState();
+f15Check.currentFloor = 15;
+const f15Layout = f15Check.getCurrentFloorData().layout;
+assert(f15Layout[4][4]?.type === 'monster' && f15Layout[4][4]?.monsterId === 'giant_squid', '15F 走廊左格 (4,4) 归属大乌贼');
+assert(f15Layout[4][5]?.type === 'monster' && f15Layout[4][5]?.monsterId === 'giant_squid', '15F 走廊中格 (5,4) 归属大乌贼');
+assert(f15Layout[4][6]?.type === 'monster' && f15Layout[4][6]?.monsterId === 'giant_squid', '15F 走廊右格 (6,4) 归属大乌贼');
+
+// 验证战斗逻辑：击破大乌贼任意格，三格 (4,4), (5,4), (6,4) 均被整体清除贯通，且联动铁门顺利感应开启
+f15Check.playerStats.hp = 99999;
+f15Check.playerStats.atk = 9999;
+f15Check.playerStats.def = 9999;
+f15Check.playerPos = { x: 4, y: 5, dir: 'up' };
+
+const clearedTiles: { x: number; y: number }[] = [];
+f15Check.move('up', (tx, ty) => {
+  clearedTiles.push({ x: tx, y: ty });
+});
+
+assert(f15Layout[4][4]?.type === 'floor', '击溃大乌贼后左格 (4,4) 恢复为通道地面');
+assert(f15Layout[4][5]?.type === 'floor', '击溃大乌贼后中格 (5,4) 恢复为通道地面');
+assert(f15Layout[4][6]?.type === 'floor', '击溃大乌贼后右格 (6,4) 恢复为通道地面');
+assert(clearedTiles.some(t => t.x === 4 && t.y === 4), 'onTileChange 触发 (4,4) 移除通知');
+assert(clearedTiles.some(t => t.x === 5 && t.y === 4), 'onTileChange 触发 (5,4) 移除通知');
+assert(clearedTiles.some(t => t.x === 6 && t.y === 4), 'onTileChange 触发 (6,4) 移除通知');
+
+// 验证 15F (5,2) 机关铁门在守卫大乌贼消灭后能够开启
+const ironDoorCheck = f15Check.checkGuardedIronDoor(5, 2);
+assert(ironDoorCheck.canOpen, '大乌贼被消灭后 15F (5,2) 机关铁门允许开启');
+
+// --- 20. 验证首领战提示与机关铁门防重叠、独立持续时间与多语种通报 ---
+console.log('\n--- 20. 验证首领战提示与机关铁门防重叠、独立持续时间与多语种通报 ---');
+const f15NotifGame = new GameState();
+f15NotifGame.currentFloor = 15;
+f15NotifGame.playerStats.hp = 99999;
+f15NotifGame.playerStats.atk = 9999;
+f15NotifGame.playerStats.def = 9999;
+f15NotifGame.playerPos = { x: 4, y: 5, dir: 'up' };
+
+const capturedNotifs: { text: string; color: string; duration?: number }[] = [];
+f15NotifGame.move('up', undefined, (txt, col, dur) => {
+  capturedNotifs.push({ text: txt, color: col, duration: dur });
+});
+
+assert(capturedNotifs.length >= 3, '击破大乌贼共派发 3 条阶段通报 (战果、首领消灭、机关门开启)');
+const combatWinNotif = capturedNotifs.find(n => n.text.includes('未受到伤害') || n.text.includes('HP'));
+const bossSquidNotif = capturedNotifs.find(n => n.text.includes('大乌贼已被消灭') || n.text.includes('走廊畅通'));
+const ironDoorNotif = capturedNotifs.find(n => n.text.includes('铁门开启'));
+
+assert(Boolean(combatWinNotif), '捕获战果结算提示 (未受到伤害/HP损失)');
+assert(Boolean(bossSquidNotif), '捕获大乌贼首领专属消灭通报');
+assert(Boolean(ironDoorNotif), '捕获 15F 机关铁门解除联动通报');
+
+assert(bossSquidNotif!.duration !== undefined && bossSquidNotif!.duration >= 4500, '大乌贼首领通报停留时长 >= 4500ms (杜绝一闪而过)');
+assert(ironDoorNotif!.duration !== undefined && ironDoorNotif!.duration >= 4200, '机关铁门开启通报停留时长 >= 4200ms (确保从容阅览)');
+assert(combatWinNotif!.duration !== undefined && combatWinNotif!.duration >= 2500, '战斗结算通报停留时长 >= 2500ms');
+
+// 验证所有通报文字互不相同 (杜绝文字重复覆盖与视觉混淆)
+const uniqueTexts = new Set(capturedNotifs.map(n => n.text));
+assert(uniqueTexts.size === capturedNotifs.length, '各条通报内容彼此独立且无文字重合');
+
+// 英文模式下大乌贼击溃与铁门通报验证
+const f15EnGame = new GameState();
+f15EnGame.setLanguage('en');
+f15EnGame.currentFloor = 15;
+f15EnGame.playerStats.hp = 99999;
+f15EnGame.playerStats.atk = 9999;
+f15EnGame.playerStats.def = 9999;
+f15EnGame.playerPos = { x: 4, y: 5, dir: 'up' };
+
+const enCapturedNotifs: { text: string; color: string; duration?: number }[] = [];
+f15EnGame.move('up', undefined, (txt, col, dur) => {
+  enCapturedNotifs.push({ text: txt, color: col, duration: dur });
+});
+
+const enSquidNotif = enCapturedNotifs.find(n => n.text.includes('Giant Squid defeated'));
+const enDoorNotif = enCapturedNotifs.find(n => n.text.includes('upper floor gate opens'));
+assert(Boolean(enSquidNotif), '英文模式捕获大乌贼击败提示: Giant Squid defeated! The hallway is clear!');
+assert(Boolean(enDoorNotif), '英文模式捕获铁门开启提示: Giant Squid fallen, the upper floor gate opens!');
+assert(enSquidNotif!.duration !== undefined && enSquidNotif!.duration >= 4500, '英文大乌贼提示时长 >= 4500ms');
+
+// 验证 20F 吸血鬼伯爵击败后合并为单一精炼核心提示 (杜绝双重弹窗刷屏)
+const f20VampGame = new GameState();
+f20VampGame.currentFloor = 20;
+f20VampGame.playerStats.hp = 99999;
+f20VampGame.playerStats.atk = 9999;
+f20VampGame.playerStats.def = 9999;
+f20VampGame.playerPos = { x: 5, y: 6, dir: 'up' };
+
+const f20Notifs: { text: string; color: string; duration?: number }[] = [];
+f20VampGame.move('up', undefined, (txt, col, dur) => {
+  f20Notifs.push({ text: txt, color: col, duration: dur });
+});
+
+const vampBossNotifs = f20Notifs.filter(n => n.text.includes('吸血鬼') || n.text.includes('二区通关') || n.text.includes('21 层'));
+assert(vampBossNotifs.length === 1, '20F 击败吸血鬼仅弹出 1 个合并剧情通报 (杜绝两个弹窗)');
+assert(vampBossNotifs[0].text.includes('二区通关') && vampBossNotifs[0].text.includes('铁门开启'), '通报完整囊括二区通关与通往 21 层铁门开启');
+assert(f20VampGame.getCurrentFloorData().layout[2][5]?.type === 'floor', '20F (5,2) 铁门在吸血鬼败亡后顺利联动开启');
+
+// --- 21. 验证 24F 走廊畅通性与红门决战要塞密室宝藏 ---
+console.log('\n--- 21. 验证 24F 走廊畅通性与红门决战要塞密室宝藏 ---');
+const f24TestGame = new GameState();
+f24TestGame.currentFloor = 24;
+const f24Layout = f24TestGame.getCurrentFloorData().layout;
+
+assert(f24Layout[9][5]?.type === 'floor', '24F 走廊入口 (5,9) 为通畅地面');
+assert(f24Layout[9][2]?.type === 'npc' && f24Layout[9][2]?.npcId === 'elder', '24F 智慧老人安置于上楼梯旁的壁龛 (2,9)，既便于对话又彻底解放底部单格走廊');
+assert(f24Layout[10][4]?.type === 'floor', '24F (4,10) 为通畅地面，整条 10 行主干道彻底连通');
+assert(f24Layout[7][5]?.type === 'door_red', '24F (5,7) 设有决战要塞红门');
+
+// 验证红门密室宝藏
+assert(f24Layout[5][5]?.type === 'item' && f24Layout[5][5]?.itemType === 'holy_water', '24F 红门密室核心配置【圣水】(生命值翻倍)');
+assert(f24Layout[4][4]?.type === 'item' && f24Layout[4][4]?.itemType === 'gem_red', '24F 密室包含红宝石 (+3 ATK)');
+assert(f24Layout[4][6]?.type === 'item' && f24Layout[4][6]?.itemType === 'gem_blue', '24F 密室包含蓝宝石 (+3 DEF)');
+assert(f24Layout[5][4]?.type === 'item' && f24Layout[5][4]?.itemType === 'key_yellow', '24F 密室包含补给黄钥匙');
+assert(f24Layout[5][6]?.type === 'item' && f24Layout[5][6]?.itemType === 'key_blue', '24F 密室包含补给蓝钥匙');
+assert(f24Layout[6][5]?.type === 'item' && f24Layout[6][5]?.itemType === 'potion_blue', '24F 密室包含高级蓝血瓶');
+
+// 模拟勇士从 (0, 10) 下楼梯出发，沿底行走廊畅行无阻前往红门
+f24TestGame.playerStats.redKeys = 1;
+f24TestGame.playerPos = { x: 0, y: 10, dir: 'right' };
+f24TestGame.move('right'); // 到达 (1, 10)
+f24TestGame.move('right'); // 到达 (2, 10)
+assert(f24TestGame.playerPos.x === 2 && f24TestGame.playerPos.y === 10, '勇士到达老人正下方 (2, 10)');
+// 勇士朝上触发智慧老人对话与礼物
+const defBefore24 = f24TestGame.playerStats.def;
+f24TestGame.move('up');
+assert(f24TestGame.playerStats.def === defBefore24 + 3, '勇士在 (2, 10) 成功与老人互动并获得蓝宝石 (+3 DEF)');
+assert(f24TestGame.playerPos.x === 2 && f24TestGame.playerPos.y === 10, '勇士与老人互动后依然稳稳立于通道 (2, 10)');
+f24TestGame.closeDialogue(); // 勇士对话完毕，关闭对话框继续踏上征程
+
+// 勇士继续向右畅通通行，穿过原先被堵塞的 (4, 10)
+f24TestGame.move('right'); // (3, 10)
+f24TestGame.move('right'); // (4, 10)
+assert(f24TestGame.playerPos.x === 4 && f24TestGame.playerPos.y === 10, '勇士顺利通过原先被堵塞的 (4, 10) 通道！');
+f24TestGame.move('right'); // (5, 10)
+f24TestGame.move('up');    // (5, 9)
+f24TestGame.move('up');    // (5, 8)
+f24TestGame.move('up');    // 开门进入 (5, 7)
+assert(f24TestGame.playerPos.x === 5 && f24TestGame.playerPos.y === 7, '勇士顺利耗费红钥匙开启并进入红门');
+assert(f24TestGame.playerStats.redKeys === 0, '红钥匙正确消耗 1 把');
+assert(f24Layout[7][5]?.type === 'floor', '红门已开启并变为通行地面');
+
+// --- 22. 验证 0-50 层全塔地图连通性与零 NPC 阻塞点 (BFS 全量检测) ---
+console.log('\n--- 22. 验证 0-50 层全塔地图连通性与零 NPC 阻塞点 ---');
+for (let f = 0; f <= 50; f++) {
+  const floorData = getFloor(f);
+  if (!floorData) continue;
+  const layout = floorData.layout;
+  const down = floorData.downStairsPos;
+  const up = floorData.upStairsPos;
+  const allowLava = f === 13 || f === 26;
+
+  const isPassable = (x: number, y: number): boolean => {
+    if (x < 0 || x >= 11 || y < 0 || y >= 11) return false;
+    const t = layout[y][x];
+    if (t.type === 'wall' || t.type === 'npc' || t.type === 'shop') return false;
+    if (t.type === 'lava' && !allowLava) return false;
+    return true;
+  };
+
+  const bfs = (start: { x: number; y: number }): boolean[][] => {
+    const visited: boolean[][] = Array.from({ length: 11 }, () => Array(11).fill(false));
+    const q = [{ x: start.x, y: start.y }];
+    visited[start.y][start.x] = true;
+    while (q.length > 0) {
+      const cur = q.shift()!;
+      for (const [dx, dy] of [[0,1], [0,-1], [1,0], [-1,0]]) {
+        const nx = cur.x + dx, ny = cur.y + dy;
+        if (nx >= 0 && nx < 11 && ny >= 0 && ny < 11 && !visited[ny][nx]) {
+          if (isPassable(nx, ny)) {
+            visited[ny][nx] = true;
+            q.push({ x: nx, y: ny });
+          }
+        }
+      }
+    }
+    return visited;
+  };
+
+  const visitedDown = bfs(down);
+  const upReachable = visitedDown[up.y][up.x];
+  assert(upReachable, `楼层 ${f}F (${floorData.name}) 下楼梯至上楼梯双向完全连通`);
+
+  // 验证所有 NPC 均有可触达的邻居格子
+  for (let y = 0; y < 11; y++) {
+    for (let x = 0; x < 11; x++) {
+      if (layout[y][x].type === 'npc') {
+        const hasNeighbor = [[0,1], [0,-1], [1,0], [-1,0]].some(([dx, dy]) => {
+          const nx = x + dx, ny = y + dy;
+          return nx >= 0 && nx < 11 && ny >= 0 && ny < 11 && visitedDown[ny][nx];
+        });
+        assert(hasNeighbor, `楼层 ${f}F NPC '${layout[y][x].npcId}' at (${x}, ${y}) 可正常对话互动`);
+      }
+    }
+  }
+
+  // 验证无任何 NPC 成为物理卡死瓶颈 (Bottleneck / Articulation Point)
+  for (let y = 0; y < 11; y++) {
+    for (let x = 0; x < 11; x++) {
+      if (layout[y][x].type === 'npc') {
+        const visitedIfPass = Array.from({ length: 11 }, () => Array(11).fill(false));
+        const q = [{ x: down.x, y: down.y }];
+        visitedIfPass[down.y][down.x] = true;
+        while (q.length > 0) {
+          const cur = q.shift()!;
+          for (const [dx, dy] of [[0,1], [0,-1], [1,0], [-1,0]]) {
+            const nx = cur.x + dx, ny = cur.y + dy;
+            if (nx >= 0 && nx < 11 && ny >= 0 && ny < 11 && !visitedIfPass[ny][nx]) {
+              const pass = (nx === x && ny === y) || isPassable(nx, ny);
+              if (pass) {
+                visitedIfPass[ny][nx] = true;
+                q.push({ x: nx, y: ny });
+              }
+            }
+          }
+        }
+        let newlyReachable = 0;
+        for (let ny = 0; ny < 11; ny++) {
+          for (let nx = 0; nx < 11; nx++) {
+            if (nx === x && ny === y) continue;
+            if (layout[ny][nx].type !== 'wall' && (layout[ny][nx].type !== 'lava' || allowLava)) {
+              if (visitedIfPass[ny][nx] && !visitedDown[ny][nx]) {
+                newlyReachable++;
+              }
+            }
+          }
+        }
+        assert(newlyReachable === 0, `楼层 ${f}F NPC '${layout[y][x].npcId}' at (${x}, ${y}) 不阻碍任何后续地图区域通行 (阻碍格数: 0)`);
+      }
+    }
+  }
+}
+
+// 专项验证重点修正楼层
+assert(getFloor(25).layout[2][5]?.type === 'stairs_up', '25F 上楼梯安置于王座深殿 (5,2)，杜绝绕行首领');
+assert(getFloor(25).layout[3][5]?.type === 'door_iron', '25F 上楼梯前配置机关铁门 (5,3)');
+assert(getFloor(25).layout[5][5]?.type === 'monster' && getFloor(25).layout[5][5]?.monsterId === 'archmage', '25F 中央镇守红衣大法师 (5,5)');
+assert(getFloor(25).layout[10][0]?.type === 'floor', '25F 外圈走廊 (0,10) 为普通地面，不再有直接上楼的漏洞楼梯');
+
+// 25F 决战红衣大法师模拟：验证击败大法师掉落 4 把红钥匙并开门
+const f25Game = new GameState();
+f25Game.currentFloor = 25;
+f25Game.playerStats.atk = 500; // 强力勇士
+f25Game.playerStats.def = 400;
+f25Game.playerStats.hp = 5000;
+f25Game.playerStats.redKeys = 0;
+// 勇士身处 (5,6)，向上攻击大法师 (5,5)
+f25Game.playerPos = { x: 5, y: 6, dir: 'up' };
+f25Game.move('up');
+assert(f25Game.playerStats.redKeys === 4, '消灭红衣大法师后掉落 4 把珍贵红钥匙');
+assert(f25Game.getCurrentFloorData().layout[3][5]?.type === 'floor', '红衣大法师败亡，通往 26 层的铁门轰然开启！');
+
+// 26F 与 27F 传送口对称与原版单老人规范验证
+assert(getFloor(26).upStairsPos.x === 10 && getFloor(26).upStairsPos.y === 10, '26F 上楼梯位于右下方 (10,10)');
+assert(getFloor(26).downStairsPos.x === 0 && getFloor(26).downStairsPos.y === 10, '26F 下楼梯位于左下方 (0,10)');
+assert(getFloor(27).downStairsPos.x === 0 && getFloor(27).downStairsPos.y === 10, '27F 下楼传送口对称位于左下方 (0,10)');
+assert(getFloor(27).upStairsPos.x === 10 && getFloor(27).upStairsPos.y === 10, '27F 上楼传送口对称位于右下方 (10,10)');
+assert(getFloor(27).layout[10][0]?.type === 'stairs_down' && getFloor(27).layout[10][10]?.type === 'stairs_up', '27F 第 10 行底边左右两端呈完美轴对称双传送口');
+
+// 验证 27F 符合原版魔塔设定（全层仅 1 位老人）
+const f27NpcCount = getFloor(27).layout.flat().filter(t => t.type === 'npc').length;
+assert(f27NpcCount === 1, '27F 全层严格保留且仅有 1 位老人 (北端经验老人)，与原版魔塔 50 层版图设计完全一致');
+
+assert(getFloor(29).layout[1][4]?.type === 'npc' && getFloor(29).layout[1][5]?.type === 'floor', '29F 小偷安置于 (4,1)，(5,1) 通畅，暗墙与上楼梯直通');
+assert(getFloor(37).layout[4][1]?.type === 'fake_wall' && getFloor(37).layout[4][9]?.type === 'fake_wall', '37F 坚不可摧四大宝库配置暗墙，尊循老人提示可探寻搜刮');
+assert(getFloor(41).layout[3][4]?.type === 'npc' && getFloor(41).layout[5][5]?.type === 'floor', '41F (5,5) 核心十字路口彻底解放，老人安置于 (4,3) 壁龛');
+assert(getFloor(47).layout[9][7]?.type === 'floor' && getFloor(47).layout[9][9]?.type === 'npc', '47F (7,9) 走廊通畅，老人移至 (9,9) 楼梯旁休息区');
+
+// 21. 验证【中级卫兵】与【皇家骑士】3D 建模彻底区分，杜绝复用雷同模型
+console.log('\n--- 21. 验证中级卫兵与皇家骑士专属建模区分 ---');
+const midGuardMesh = ModelFactory.createMonsterMesh('mid_guard');
+const knightMesh = ModelFactory.createMonsterMesh('knight');
+
+assert(midGuardMesh !== null && midGuardMesh.isGroup, '中级卫兵 3D 模型生成成功且为 Group');
+assert(midGuardMesh.name === 'monster_mid_guard', '中级卫兵命名节点为 monster_mid_guard');
+assert(knightMesh !== null && knightMesh.isGroup, '皇家骑士 3D 模型生成成功且为 Group');
+assert(knightMesh.name === 'monster_knight', '皇家骑士命名节点为 monster_knight');
+
+// 验证中级卫兵与骑士部件数量与网格数量结构差异
+let midGuardMeshes = 0;
+let knightMeshes = 0;
+midGuardMesh.traverse((c) => { if ((c as any).isMesh) midGuardMeshes++; });
+knightMesh.traverse((c) => { if ((c as any).isMesh) knightMeshes++; });
+
+assert(midGuardMeshes >= 25, `中级卫兵具备精细多层次部件 (实际部件数: ${midGuardMeshes})`);
+assert(knightMeshes >= 15, `皇家骑士具备精细板甲部件 (实际部件数: ${knightMeshes})`);
+assert(midGuardMeshes !== knightMeshes, `中级卫兵部件数 (${midGuardMeshes}) 与骑士 (${knightMeshes}) 完全不同，彻底杜绝模型一模一样复用`);
+
+// 验证守卫系列与骑士系列其余怪兽模型均生成正常
+const juniorGuardMesh = ModelFactory.createMonsterMesh('junior_guard');
+const seniorGuardMesh = ModelFactory.createMonsterMesh('senior_guard');
+const ironGuardMesh = ModelFactory.createMonsterMesh('iron_guard');
+const magicGuardMesh = ModelFactory.createMonsterMesh('magic_guard');
+const knightCaptainMesh = ModelFactory.createMonsterMesh('knight_captain');
+const darkKnightMesh = ModelFactory.createMonsterMesh('dark_knight');
+const dualSwordsmanMesh = ModelFactory.createMonsterMesh('dual_swordsman');
+
+assert(juniorGuardMesh.name === 'monster_junior_guard', '初级卫兵专属建模生成成功');
+assert(seniorGuardMesh.name === 'monster_senior_guard', '高级卫兵专属建模生成成功');
+assert(ironGuardMesh.name === 'monster_iron_guard', '铁甲卫兵专属建模生成成功');
+assert(magicGuardMesh.name === 'monster_magic_guard', '魔法警卫专属建模生成成功');
+assert(knightCaptainMesh.name === 'monster_knight_captain', '骑士队长专属建模生成成功');
+assert(darkKnightMesh.name === 'monster_dark_knight', '黑暗骑士专属建模生成成功');
+assert(dualSwordsmanMesh.name === 'monster_dual_swordsman', '双手剑士专属建模生成成功');
+
+
+// 22. 验证魔塔全套 40 种怪物均具备 100% 独立专属 3D 建模，绝无任何共用与雷同
+console.log('\n--- 22. 验证魔塔全套 40 种怪物均具备 100% 独立专属 3D 建模 ---');
+const allMonsterIds = Object.keys(MONSTERS);
+assert(allMonsterIds.length === 40, `魔塔当前登记怪物总数为 40 种 (实际数量: ${allMonsterIds.length})`);
+
+const monsterMeshes: Record<string, any> = {};
+const monsterMeshCounts: Record<string, number> = {};
+
+for (const mId of allMonsterIds) {
+  const m = ModelFactory.createMonsterMesh(mId);
+  assert(m !== null && m.isGroup, `怪物 '${mId}' (${MONSTERS[mId].name}) 3D 模型生成成功且为 Group 实体`);
+  assert(m.name === `monster_${mId}`, `怪物 '${mId}' 根节点命名空间必须为 'monster_${mId}'`);
+
+  let meshCount = 0;
+  m.traverse((c) => {
+    if ((c as any).isMesh) meshCount++;
+  });
+  assert(meshCount >= 5, `怪物 '${mId}' 拥有丰富精细的立体几何网格组件 (实际部件数: ${meshCount})`);
+  monsterMeshes[mId] = m;
+  monsterMeshCounts[mId] = meshCount;
+}
+
+// 专项验证各大特色代表性怪物的专属特征几何体：
+// 1. 史莱姆系列
+assert(monsterMeshes.green_slime !== undefined, '绿史莱姆具备翡翠流体基底');
+assert(monsterMeshes.red_slime.children.some((c: any) => c.geometry?.type === 'ConeGeometry'), '红史莱姆具备专属小恶魔果冻犄角 (Hornlets)');
+assert(monsterMeshes.big_slime.children.some((c: any) => c.geometry?.type === 'DodecahedronGeometry'), '大史莱姆具备专属暗翠远古矿石结晶 (Emerald Geodes)');
+let slimeKingMeshCount = 0;
+monsterMeshes.slime_king.traverse((c: any) => { if (c.isMesh) slimeKingMeshCount++; });
+assert(slimeKingMeshCount >= 15, `史莱姆王具备专属六峰帝皇金冠与悬浮权杖 (实际部件数: ${slimeKingMeshCount})`);
+
+// 2. 幽灵系列
+assert(monsterMeshes.ghost.name === 'monster_ghost', '幽灵为专属幽浮怨灵模型，彻底告别史莱姆复用');
+let ghostMeshCount = 0;
+monsterMeshes.ghost.traverse((c: any) => { if (c.isMesh) ghostMeshCount++; });
+assert(ghostMeshCount >= 15, `幽灵拥有幽浮斗篷披风、尖角兜帽、鬼爪与环绕游魂鬼火 (实际部件数: ${ghostMeshCount})`);
+
+// 3. 蝙蝠系列
+assert(monsterMeshes.big_bat.children.some((c: any) => c.children?.length >= 6), '大蝙蝠装备精铸钉刺重型项圈与护耳');
+assert(monsterMeshes.red_bat.children.some((c: any) => c.geometry?.type === 'TorusGeometry'), '红蝙蝠具备倒勾恶魔犄角与卷曲长尾');
+
+// 4. 骷髅系列
+assert(monsterMeshes.skeleton_captain.name === 'monster_skeleton_captain', '骷髅队长具备翼状骷髅盔、破损赤红披风与金柄马刀');
+assert(monsterMeshes.ghost_soldier.name === 'monster_ghost_soldier', '鬼战士具备深紫幽冥透光骨骼与摄魂战镰');
+
+// 5. 法师与巫师系列
+assert(monsterMeshes.junior_wizard.name === 'monster_junior_wizard', '初级巫师具备深邃暗红兜帽与展开的悬浮远古魔法书');
+assert(monsterMeshes.senior_wizard.name === 'monster_senior_wizard', '高级巫师具备背部悬浮金色奥术符文光轮');
+
+// 6. 卫士系列 (5大卫士各有专属武器与盾牌)
+assert(monsterMeshes.junior_guard.name === 'monster_junior_guard', '初级卫兵持步兵长直枪与圆木盾');
+assert(monsterMeshes.mid_guard.name === 'monster_mid_guard', '中级卫兵身披赤红金边制服罩袍、高脊羽翎铁盔、长柄战戟与要塞守备盾');
+assert(monsterMeshes.senior_guard.name === 'monster_senior_guard', '高级卫兵持重型双刃斧枪与金纹纹章塔盾');
+assert(monsterMeshes.iron_guard.name === 'monster_iron_guard', '铁甲卫兵持六棱带刺狼牙破甲战锤与黑铁十字铆钉方盾');
+assert(monsterMeshes.magic_guard.name === 'monster_magic_guard', '魔法警卫持奥术晶刃光矛与悬浮六边形奥术力场盾');
+
+// 7. 骑士与武士系列 (8位骑士与武士各具独立建模)
+assert(monsterMeshes.warrior.name === 'monster_warrior', '战士身披锁子甲交叉皮带、佩戴诺曼鼻甲盔并手持维京破阵战斧与圆木盾');
+assert(monsterMeshes.dual_swordsman.name === 'monster_dual_swordsman', '双手剑士采用疾风刺客蒙面兜帽，双持弧刃弯月斩马刀');
+assert(monsterMeshes.yellow_knight.name === 'monster_yellow_knight', '黄衣武士双臂前伸横握双手处决者大剑，威武无双');
+assert(monsterMeshes.blue_knight.name === 'monster_blue_knight', '蓝衣武士手持细长刺剑并装备晶蓝冰霜圆盾');
+assert(monsterMeshes.white_knight.name === 'monster_white_knight', '白衣武士身披圣洁白袍披风、晨曦十字大盾');
+assert(monsterMeshes.dark_knight.name === 'monster_dark_knight', '黑暗骑士佩戴深渊尖角大头盔并手持锯齿黑炎巨剑');
+assert(monsterMeshes.knight_captain.name === 'monster_knight_captain', '骑士队长身披鲜红天鹅绒将领披风与黄金阔剑');
+assert(monsterMeshes.knight.name === 'monster_knight', '皇家骑士配备亮银十字板甲盔与圣殿十字大盾');
+
+// 8. 首领与史诗级怪物
+assert(monsterMeshes.giant_squid.name === 'monster_giant_squid', '大乌贼为 3 格超大体型鲜红深海巨兽，拥有 8 根立体蜿蜒吸盘触手与双眼');
+assert(monsterMeshes.dragon.name === 'monster_dragon', '远古魔龙拥有壮阔龙头、獠牙、长颈、粗壮四肢利爪、展翅双翼与破阵尾刃');
+assert(monsterMeshes.archmage.name === 'monster_archmage', '帝国大法师拥有飘逸银白长髯仙须、悬浮日曜神圣光轮与双蛇浑天仪星辰权杖');
+assert(monsterMeshes.ghost_commander.name === 'monster_ghost_commander', '冥队长拥有冥骨犄角头盔、青蓝幽冥摄魂巨镰与噬魂哀嚎战盾');
+assert(monsterMeshes.false_sorcerer.name === 'monster_false_sorcerer', '假魔王拥有苍白笑面瓷白恶魔假面、四翼虚影幻翼与虚空日蚀权杖');
+assert(monsterMeshes.demon_lord.name === 'monster_demon_lord', '真魔王杰诺拥有九峰黑炎王冠、盘旋恶魔巨角、末日狱火巨剑与雄浑龙翼');
+
+// --- 24. 验证全塔门的 3D 程序化朝向算法 (全走廊屏障、岩浆与连续通道门自适应) ---
+console.log('\n--- 24. 验证门朝向算法 (岩浆屏障、南北与东西向走廊门旋转一致性) ---');
+const floor26 = getFloor(26);
+assert(floor26.layout[7][5]?.type === 'floor', '26F 岩浆室入口 (5, 7) 为畅通地面，彻底去除冗余的第三道红门');
+assert(floor26.layout[8][5]?.type === 'door_red', '26F 仅保留两道红门：通道中段红门 (5, 8)');
+assert(floor26.layout[9][5]?.type === 'door_red', '26F 仅保留两道红门：通道外门 (5, 9)');
+assert(ThreeCanvas.isDoorVertical(floor26.layout, 5, 8) === false, '26F 通道中段红门 (5, 8) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor26.layout, 5, 9) === false, '26F 通道外门 (5, 9) 正确横向平齐');
+
+const floor41 = getFloor(41);
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 0, 1) === false, '41F 西侧长廊红门入口 (0, 1) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 0, 2) === false, '41F 西侧长廊门 (0, 2) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 0, 3) === false, '41F 西侧长廊门 (0, 3) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 10, 1) === false, '41F 东侧长廊门 (10, 1) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 10, 2) === false, '41F 东侧长廊门 (10, 2) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 10, 3) === false, '41F 东侧长廊门 (10, 3) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 5, 6) === false, '41F 中央核心门 (5, 6) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 5, 7) === false, '41F 中央核心门 (5, 7) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 5, 8) === false, '41F 中央核心门 (5, 8) 正确横向平齐');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 4, 5) === true, '41F 横向走廊十字门 (4, 5) 正确纵向旋转 90 度以阻挡横向通路');
+assert(ThreeCanvas.isDoorVertical(floor41.layout, 6, 5) === true, '41F 横向走廊十字门 (6, 5) 正确纵向旋转 90 度以阻挡横向通路');
+
+const floor8 = getFloor(8);
+assert(ThreeCanvas.isDoorVertical(floor8.layout, 2, 0) === true, '8F 顶部东西向长廊门 (2, 0) 正确纵向旋转 90 度');
+assert(ThreeCanvas.isDoorVertical(floor8.layout, 3, 0) === true, '8F 顶部东西向长廊门 (3, 0) 正确纵向旋转 90 度');
+
+const floor9 = getFloor(9);
+assert(ThreeCanvas.isDoorVertical(floor9.layout, 7, 3) === true, '9F 东西向密道门 (7, 3) 正确纵向旋转 90 度');
+assert(ThreeCanvas.isDoorVertical(floor9.layout, 8, 3) === true, '9F 东西向密道门 (8, 3) 正确纵向旋转 90 度');
+
+console.log('\n--- 26. 验证 49F 假魔王王座大殿与八名魔法警卫十字阵机制 ---');
+const f49Check = getFloor(49);
+assert(f49Check.upStairsPos.x === 5 && f49Check.upStairsPos.y === 0, '49F 上楼口坐标必须为 (5, 0)');
+assert(f49Check.layout[0][5]?.type === 'stairs_up', '49F (5, 0) 为通往 50F 的上楼梯');
+assert(f49Check.layout[1][5]?.type === 'door_iron', '49F (5, 1) 为守护上楼梯的机关铁门');
+assert(f49Check.layout[3][5]?.type === 'monster' && f49Check.layout[3][5]?.monsterId === 'false_sorcerer', '49F 王座中央 (5, 3) 坐镇假魔王');
+
+// 验证围绕假魔王的 8 名魔法警卫
+const expectedGuards = [
+  [4, 2], [5, 2], [6, 2],
+  [4, 3],         [6, 3],
+  [4, 4], [5, 4], [6, 4],
+];
+for (const [gx, gy] of expectedGuards) {
+  assert(f49Check.layout[gy][gx]?.type === 'monster' && f49Check.layout[gy][gx]?.monsterId === 'magic_guard', `49F 坐标 (${gx}, ${gy}) 必须部署魔法警卫`);
+}
+
+// 模拟 49F 战斗与结界测试
+const f49Game = new GameState();
+f49Game.changeFloor(49, 'up');
+f49Game.playerStats.hp = 30000;
+f49Game.playerStats.atk = 650;
+f49Game.playerStats.def = 550;
+
+// 1. 尝试直接攻击假魔王（由于十字警卫尚存，应被结界拦截）
+let barrierMsg = '';
+f49Game.playerPos = { x: 5, y: 5, dir: 'up' }; // 站在大殿 (5, 5) 处，准备消灭下方警卫 (5, 4)
+// 先消灭下方警卫 (5, 4)
+f49Game.move('up');
+assert(f49Game.playerPos.x === 5 && f49Game.playerPos.y === 4, '消灭下方魔法警卫来到 (5, 4)');
+// 此时 (5, 2), (4, 3), (6, 3) 仍存活，向上撞击假魔王 (5, 3) 应被结界阻隔
+f49Game.move('up', undefined, (txt) => { barrierMsg = txt; });
+assert(f49Game.playerPos.x === 5 && f49Game.playerPos.y === 4, '十字警卫未清空，假魔王受结界保护不可攻击');
+assert(barrierMsg.includes('十字魔法阵庇护') || barrierMsg.includes('结界未除'), '提示十字魔法阵结界保护');
+
+// 2. 清理其余 3 名十字警卫：左 (4, 3)、右 (6, 3)、上 (5, 2)
+// 绕路击杀左警卫 (4, 3)
+f49Game.playerPos = { x: 3, y: 3, dir: 'right' };
+f49Game.move('right');
+assert(f49Game.playerPos.x === 4 && f49Game.playerPos.y === 3, '消灭左侧十字警卫 (4, 3)');
+
+// 绕路击杀右警卫 (6, 3)
+f49Game.playerPos = { x: 7, y: 3, dir: 'left' };
+f49Game.move('left');
+assert(f49Game.playerPos.x === 6 && f49Game.playerPos.y === 3, '消灭右侧十字警卫 (6, 3)');
+
+// 绕路击杀上警卫 (5, 2)
+f49Game.playerPos = { x: 5, y: 1, dir: 'down' };
+// 注意 (5, 1) 初始是铁门，先临时设为 floor 便于测试寻路
+f49Game.getCurrentFloorData().layout[1][5] = { type: 'floor' };
+f49Game.move('down');
+assert(f49Game.playerPos.x === 5 && f49Game.playerPos.y === 2, '消灭上方十字警卫 (5, 2)');
+
+// 恢复 (5, 1) 铁门状态
+f49Game.getCurrentFloorData().layout[1][5] = { type: 'door_iron' };
+
+// 3. 四名十字警卫已全部被消灭，结界破除，勇士挑战假魔王 (5, 3)
+const initialRedKeys = f49Game.playerStats.redKeys;
+f49Game.move('down'); // 从 (5, 2) 向下挑战 (5, 3)
+assert(f49Game.playerPos.x === 5 && f49Game.playerPos.y === 3, '结界解除后成功挑战假魔王并踏入 (5, 3)');
+assert(f49Game.playerStats.redKeys === initialRedKeys + 1, '击败假魔王奖励获得红钥匙 x1');
+assert(f49Game.getCurrentFloorData().layout[1][5]?.type === 'floor', '击败假魔王后，守护 50F 阶梯的铁门 (5, 1) 自动开启！');
+
+console.log('\n--- 27. 验证 35F 魔龙掉落【冰冻雪花】与 26F 假公主剧情揭秘 ---');
+const dragonGame = new GameState();
+dragonGame.changeFloor(35, 'up');
+dragonGame.playerStats.hp = 20000;
+dragonGame.playerStats.atk = 700;
+dragonGame.playerStats.def = 600;
+dragonGame.playerPos = { x: 5, y: 6, dir: 'up' }; // 站在魔龙 (5, 5) 下方
+assert(Boolean(dragonGame.playerStats.inventory.snow_crystal) === false, '击败魔龙前玩家尚未拥有冰冻雪花');
+assert(dragonGame.getCurrentFloorData().layout[2][5]?.type === 'door_iron', '击败魔龙前 (5, 2) 机关铁门保持关闭');
+dragonGame.move('up'); // 挑战魔龙 (5, 5)
+assert(dragonGame.playerPos.x === 5 && dragonGame.playerPos.y === 5, '击败魔龙踏入 (5, 5)');
+assert(dragonGame.playerStats.inventory.snow_crystal === 1, '击败魔龙获得关键道具【冰冻雪花】');
+assert(dragonGame.getCurrentFloorData().layout[2][5]?.type === 'floor', '魔龙伏诛，(5, 2) 铁门自动开启');
+
+// 验证 26F 假公主剧情
+const f26PrincessDlg = getDialogueData('princess', 'zh', 26);
+assert(f26PrincessDlg !== undefined, '26F 假公主具备专属剧情配置');
+assert(f26PrincessDlg?.name.includes('假公主'), '26F 公主名称明确标注为【假公主】');
+assert(f26PrincessDlg?.lines[0].includes('愚蠢的勇士') || f26PrincessDlg?.lines[1].includes('50 层'), '26F 假公主揭露真正的公主被掠至 50 层魔塔之巅');
+
+console.log('\n--- 28. 验证基于 .env.local 与环境变量的调试作弊控制台隔离机制 ---');
+// 1. 验证配置文件与 .gitignore 安全策略
+import fs from 'fs';
+const envContent = fs.readFileSync('.env', 'utf-8');
+const envLocalContent = fs.readFileSync('.env.local', 'utf-8');
+const gitignoreContent = fs.readFileSync('.gitignore', 'utf-8');
+
+assert(envContent.includes('VITE_ENABLE_DEBUG=false'), '.env 文件默认声明 VITE_ENABLE_DEBUG=false，保障生产环境安全');
+assert(envLocalContent.includes('VITE_ENABLE_DEBUG=true'), '.env.local 本地声明 VITE_ENABLE_DEBUG=true，为开发者提供调试能力');
+assert(gitignoreContent.includes('.env.local'), '.gitignore 必须明确忽略 .env.local，防止本地作弊配置泄露至 GitHub 生产');
+
+// 2. 模拟 GitHub Pages 生产构建与线上环境 (仅加载 .env，无 .env.local)：严格禁用
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'frankliuao.github.io', protocol: 'https:' } }) === false,
+  '生产环境 (.env: VITE_ENABLE_DEBUG=false 且运行在 github.io) 严格禁用作弊与调试控制台'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'magictower.github.io', protocol: 'https:' } }) === false,
+  '任何 GitHub Pages (*.github.io) 生产构建均禁止开启作弊'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'play-magictower.com', protocol: 'https:' } }) === false,
+  '独立公网生产域名下默认严格禁用作弊与调试控制台'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: 'frankliuao.github.io', protocol: 'https:' } }) === false,
+  '即便构建变量意外泄漏，生产域名熔断保护亦能阻止在 *.github.io 上开启作弊'
+);
+
+// 3. 模拟本地开发环境 (.env.local: VITE_ENABLE_DEBUG=true)：允许开启调试
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: 'localhost', protocol: 'http:' } }) === true,
+  '本地通过 .env.local (VITE_ENABLE_DEBUG=true) 成功启用开发者作弊控制台'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: '127.0.0.1', protocol: 'http:' } }) === true,
+  '本地 127.0.0.1 环境通过 .env.local 正常启用调试控制台'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: '0.0.0.0', protocol: 'http:' } }) === true,
+  '本地 0.0.0.0 环境通过 .env.local 正常启用调试控制台'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: '', protocol: 'file:' } }) === true,
+  '本地 file: 协议环境通过 .env.local 正常启用调试控制台'
+);
+
+// 4. 模拟开发者本地将 .env.local 设为 false 以体验纯正无作弊通关
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'localhost', protocol: 'http:' } }) === false,
+  '本地若将 .env.local 切换为 VITE_ENABLE_DEBUG=false，控制台即刻关闭，便于本地自测正统通关体验'
+);
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
+
+
 
