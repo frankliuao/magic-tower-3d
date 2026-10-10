@@ -3,6 +3,7 @@ import React from 'react';
 import { GameState } from '../game/gameState';
 import { sound } from '../audio/sound';
 import { useI18n } from '../i18n';
+import { isDebugAllowed } from '../utils/env';
 import {
   Compass,
   BookOpen,
@@ -121,14 +122,16 @@ export const Topbar: React.FC<TopbarProps> = ({
           <Music2 className={`w-4 h-4 ${bgmEnabled ? 'text-amber-400' : 'text-rose-400 opacity-50'}`} />
         </button>
 
-        {/* 调试菜单 */}
-        <button
-          onClick={onOpenDebug}
-          className="p-1.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 rounded-lg text-purple-300 transition-all"
-          title={t.debugTip}
-        >
-          <Wrench className="w-4 h-4" />
-        </button>
+        {/* 调试菜单 (仅在本地开发环境可见，生产环境与 GitHub Pages 彻底隐匿以保障可玩性) */}
+        {isDebugAllowed() && (
+          <button
+            onClick={onOpenDebug}
+            className="p-1.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 rounded-lg text-purple-300 transition-all"
+            title={t.debugTip}
+          >
+            <Wrench className="w-4 h-4" />
+          </button>
+        )}
 
         {/* 重新开始 */}
         <button

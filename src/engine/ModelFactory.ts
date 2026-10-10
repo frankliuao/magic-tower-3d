@@ -571,105 +571,216 @@ export class ModelFactory {
   }
 
   // =========================================================================
-  // 3. 神秘老人 / 仙人 (Old Man / Sage NPC) - 仙风道骨白鹤仙袍智者，绝非蓝袍法师怪
-  // 拥有寿星长者仙袍、长寿白须、挽发道髻金簪、灵木手杖与宝葫芦、头顶友好互动气泡
+  // 3. 智者 / 经验老人 (Elder / Sage NPC) - 真正逼真传神的长者形象
+  // 拥有慈祥微驼的长者身姿、深邃法袍金丝滚边、秃顶白发、茂密垂胸长髯与胡髭、
+  // 枯木盘龙拐杖与古朴灵晶、挽袖褶皱与脚蹬皮靴，彻底告别粗糙几何方块
   // =========================================================================
-  static createOldManMesh(): THREE.Group {
+  static createOldManMesh(variant: 'normal' | 'exp' = 'normal'): THREE.Group {
     const group = new THREE.Group();
-    group.name = 'npc_old_man';
+    group.name = variant === 'exp' ? 'npc_elder_exp' : 'npc_old_man';
 
-    const robeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.65 }); // 鹤羽素白仙袍
-    const azureMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }); // 天青色云纹边饰
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.25 });
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.5 });
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7 });
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+    // 材质定义
+    // 经验老人着深邃翠绿长袍 (0x065f46)，普通智慧老人着经典宝蓝长袍 (0x1e3a8a)
+    const robeColor = variant === 'exp' ? 0x065f46 : 0x1e3a8a;
+    const robeMat = new THREE.MeshStandardMaterial({ color: robeColor, roughness: 0.68 });
+    const innerTunicMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.75 }); // 象牙麻布内衬
+    const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.3 }); // 金丝锦绣滚边
+    const leatherMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 }); // 皮革腰带
+    const buckleMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.25 }); // 铜扣
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.85 }); // 磨损长者深褐皮靴
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfad1b0, roughness: 0.55 }); // 慈祥红润长者肤色
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.85 }); // 苍白银丝须发
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3818, roughness: 0.9 }); // 饱经风霜的古木拐杖
 
-    // 1. 宽袖仙风道袍 (Torso & Flowing Sleeves)
-    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.36, 0.72, 16), robeMat);
-    robe.position.y = 0.36;
-    const sash = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.08, 16), azureMat);
-    sash.position.y = 0.44;
-    const sashKnot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.03), goldMat);
-    sashKnot.position.set(0, 0.38, 0.23);
+    // 拐杖顶端灵晶 (经验老人为翡翠荧光，普通老人为苍蓝符文灵石)
+    const staffCrystalMat = new THREE.MeshStandardMaterial({
+      color: variant === 'exp' ? 0x10b981 : 0x38bdf8,
+      emissive: variant === 'exp' ? 0x059669 : 0x0284c7,
+      emissiveIntensity: 0.75,
+      metalness: 0.2,
+      roughness: 0.15,
+    });
 
-    // 宽袍大袖
-    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 0.32, 10), robeMat);
-    sleeveL.position.set(-0.26, 0.46, 0.02);
-    sleeveL.rotation.z = -0.4;
-    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 0.32, 10), robeMat);
-    sleeveR.position.set(0.26, 0.46, 0.02);
-    sleeveR.rotation.z = 0.4;
+    // 1. 站姿与步伐：皮靴 (Boots & Feet)
+    const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.14), bootMat);
+    bootL.position.set(-0.08, 0.025, 0.05);
+    const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.14), bootMat);
+    bootR.position.set(0.08, 0.025, 0.05);
 
-    // 2. 慈祥长者面容 (Serene Kind Face & Flowing White Beard)
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 14), skinMat);
-    head.position.set(0, 0.82, 0);
+    // 2. 长者微驼身躯与宽袍大袖 (Torso & Layered Robe with natural elder stoop)
+    const bodyG = new THREE.Group();
+    bodyG.position.y = 0;
+    bodyG.rotation.x = 0.06; // 慈祥睿智长者自然微驼前倾姿态
 
-    // 飘逸仙翁长白须 (三缕长须飘逸垂胸，长达腹部)
-    const beardMain = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 10), hairMat);
-    beardMain.position.set(0, 0.60, 0.10);
-    beardMain.rotation.x = 0.18;
-    const beardL = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.30, 8), hairMat);
-    beardL.position.set(-0.06, 0.64, 0.09);
-    beardL.rotation.x = 0.15;
-    beardL.rotation.z = -0.15;
-    const beardR = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.30, 8), hairMat);
-    beardR.position.set(0.06, 0.64, 0.09);
-    beardR.rotation.x = 0.15;
-    beardR.rotation.z = 0.15;
+    // 下摆长袍 (Flared Robe Gown)
+    const robeSkirt = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.38, 0.65, 16), robeMat);
+    robeSkirt.position.y = 0.35;
+    // 底部金丝滚边
+    const hemTrim = new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.385, 0.04, 16), goldTrimMat);
+    hemTrim.position.y = 0.04;
+    // 正面中央对襟金丝锦条
+    const frontTrim = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.65, 0.02), goldTrimMat);
+    frontTrim.position.set(0, 0.35, 0.29);
 
-    // 慈祥长寿白眉与和蔼眼眸
-    const browL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.02), hairMat);
-    browL.position.set(-0.05, 0.88, 0.14);
-    browL.rotation.z = -0.2;
-    const browR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.02), hairMat);
-    browR.position.set(0.05, 0.88, 0.14);
-    browR.rotation.z = 0.2;
+    // 上身长袍 (Upper Robe Torso)
+    const upperTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.32, 16), robeMat);
+    upperTorso.position.y = 0.58;
 
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.018), eyeMat);
-    eyeL.position.set(-0.045, 0.84, 0.13);
-    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.018), eyeMat);
-    eyeR.position.set(0.045, 0.84, 0.13);
+    // 内衬衣领 V-领口露出米白象牙布料
+    const innerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.14, 12), innerTunicMat);
+    innerNeck.position.set(0, 0.70, 0.02);
 
-    // 3. 道骨仙风发型：银白发髻与碧玉发簪 (Silver Topknot & Jade Hairpin - 绝无巫师尖帽)
-    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), hairMat);
-    hairTop.position.set(0, 0.98, -0.02);
-    const hairpin = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.24, 6), goldMat);
-    hairpin.rotation.z = Math.PI / 2;
-    hairpin.position.set(0, 0.98, -0.02);
+    // 皮革腰带与黄铜搭扣 (Leather Belt & Buckle)
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.23, 0.06, 16), leatherMat);
+    belt.position.y = 0.46;
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 0.03), buckleMat);
+    buckle.position.set(0, 0.46, 0.23);
 
-    const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.34, 10), hairMat);
-    hairBack.position.set(0, 0.74, -0.08);
+    // 左右宽大袍袖 (Draped Robe Sleeves)
+    // 左臂与左手自然下垂
+    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.13, 0.30, 10), robeMat);
+    sleeveL.position.set(-0.25, 0.54, 0.02);
+    sleeveL.rotation.z = -0.35;
+    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), skinMat);
+    handL.position.set(-0.30, 0.38, 0.02);
 
-    // 4. 寿星盘龙灵木手杖与宝葫芦 (Immortal Walking Cane & Golden Gourd)
-    const staffG = new THREE.Group();
-    const caneShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.028, 0.96, 8), woodMat);
-    caneShaft.position.y = 0.48;
-    const caneKnob = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), woodMat);
-    caneKnob.position.y = 0.98;
+    // 右臂抬起、右手紧握拐杖
+    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.13, 0.26, 10), robeMat);
+    sleeveR.position.set(0.24, 0.56, 0.08);
+    sleeveR.rotation.x = 0.35;
+    sleeveR.rotation.z = 0.30;
+    const handR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), skinMat);
+    handR.position.set(0.28, 0.50, 0.18);
+    // 右手拇指紧扣握柄
+    const thumbR = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.04, 6), skinMat);
+    thumbR.position.set(0.26, 0.52, 0.18);
+    thumbR.rotation.z = -0.5;
 
-    // 悬挂红绳小金葫芦 (Calabash of Longevity)
-    const gourdUpper = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), goldMat);
-    gourdUpper.position.set(0.06, 0.88, 0);
-    const gourdLower = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), goldMat);
-    gourdLower.position.set(0.06, 0.82, 0);
-    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.08), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-    cord.position.set(0.03, 0.92, 0);
-
-    staffG.add(caneShaft, caneKnob, gourdUpper, gourdLower, cord);
-    staffG.position.set(0.34, 0, 0.10);
-
-    group.add(
-      robe, sash, sashKnot, sleeveL, sleeveR,
-      head, beardMain, beardL, beardR, browL, browR, eyeL, eyeR,
-      hairTop, hairpin, hairBack, staffG
+    bodyG.add(
+      robeSkirt, hemTrim, frontTrim, upperTorso, innerNeck, belt, buckle,
+      sleeveL, handL, sleeveR, handR, thumbR
     );
+
+    // 3. 头部与五官神韵 (Dignified Kind Elder Face, Ears, Nose & Hair)
+    const headG = new THREE.Group();
+    headG.position.set(0, 0.80, 0.06);
+
+    // 长者头部基座 (Head cranium)
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), skinMat);
+
+    // 左右真实长者耳朵 (Ears)
+    const earL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), skinMat);
+    earL.scale.set(0.5, 1.3, 0.8);
+    earL.position.set(-0.14, 0, 0.01);
+    const earR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), skinMat);
+    earR.scale.set(0.5, 1.3, 0.8);
+    earR.position.set(0.14, 0, 0.01);
+
+    // 真正老人的发型：光亮智者顶秃，两鬓与脑后白发环绕 (Bald Crown with Silver Fringe Hair)
+    // 脑后丰满长卷白发 (Back Hair flowing down to collar)
+    const backHair = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, 0.26, 12), hairMat);
+    backHair.position.set(0, -0.06, -0.07);
+    backHair.rotation.x = -0.15;
+
+    // 两鬓苍白发丝 (Sideburn Tufts)
+    const templeHairL = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), hairMat);
+    templeHairL.scale.set(0.7, 1.2, 0.9);
+    templeHairL.position.set(-0.12, 0.02, -0.03);
+    const templeHairR = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), hairMat);
+    templeHairR.scale.set(0.7, 1.2, 0.9);
+    templeHairR.position.set(0.12, 0.02, -0.03);
+
+    // 慈祥深邃眼眸 (Kind squinting elder eyes)
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+    const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const eyeLW = new THREE.Mesh(new THREE.SphereGeometry(0.024), eyeWhiteMat);
+    eyeLW.scale.set(1.1, 0.55, 0.5);
+    eyeLW.position.set(-0.045, 0.02, 0.13);
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.015), eyeMat);
+    eyeL.position.set(-0.045, 0.02, 0.142);
+
+    const eyeRW = new THREE.Mesh(new THREE.SphereGeometry(0.024), eyeWhiteMat);
+    eyeRW.scale.set(1.1, 0.55, 0.5);
+    eyeRW.position.set(0.045, 0.02, 0.13);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.015), eyeMat);
+    eyeR.position.set(0.045, 0.02, 0.142);
+
+    // 浓密微垂白眉毛 (Bushy Arching White Eyebrows)
+    const browL = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.026, 0.026), hairMat);
+    browL.position.set(-0.05, 0.055, 0.138);
+    browL.rotation.z = -0.18;
+    browL.rotation.y = 0.12;
+
+    const browR = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.026, 0.026), hairMat);
+    browR.position.set(0.05, 0.055, 0.138);
+    browR.rotation.z = 0.18;
+    browR.rotation.y = -0.12;
+
+    // 立体长者鹰钩/圆润鼻梁与鼻头 (Distinct Elder Nose)
+    const noseBridge = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.022, 0.07, 8), skinMat);
+    noseBridge.position.set(0, -0.01, 0.142);
+    noseBridge.rotation.x = 0.22;
+    const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.030, 8, 8), skinMat);
+    noseTip.position.set(0, -0.035, 0.155);
+
+    // 浓密八字大白胡髭 (Thick White Mustache curving over lips)
+    const mustL = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.13, 8), hairMat);
+    mustL.position.set(-0.045, -0.065, 0.148);
+    mustL.rotation.z = 1.35;
+    mustL.rotation.x = 0.25;
+
+    const mustR = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.13, 8), hairMat);
+    mustR.position.set(0.045, -0.065, 0.148);
+    mustR.rotation.z = -1.35;
+    mustR.rotation.x = 0.25;
+
+    // 层次丰满的垂胸长者白髯 (Majestic Layered Flowing White Beard)
+    // 1) 颔下基座
+    const chinBeard = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), hairMat);
+    chinBeard.position.set(0, -0.10, 0.11);
+    // 2) 胸前飘垂主须
+    const mainBeard = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.42, 12), hairMat);
+    mainBeard.position.set(0, -0.28, 0.12);
+    mainBeard.rotation.x = 0.20;
+    // 3) 飘逸下垂须尖 (延伸至腹部腰带上方)
+    const beardTip = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.26, 8), hairMat);
+    beardTip.position.set(0, -0.42, 0.16);
+    beardTip.rotation.x = 0.15;
+
+    headG.add(
+      head, earL, earR, backHair, templeHairL, templeHairR,
+      eyeLW, eyeL, eyeRW, eyeR, browL, browR,
+      noseBridge, noseTip, mustL, mustR,
+      chinBeard, mainBeard, beardTip
+    );
+
+    // 4. 苍劲古木灵杖 (Realistic Gnarled Wooden Staff with Focus Crystal)
+    const staffG = new THREE.Group();
+    // 直抵地面的木杖杆身
+    const staffShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.98, 8), woodMat);
+    staffShaft.position.y = 0.49;
+
+    // 拐杖上部树瘤盘结与曲木弯柄
+    const staffKnot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), woodMat);
+    staffKnot.position.y = 0.96;
+    const staffHeadCurved = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.038, 0.14, 8), woodMat);
+    staffHeadCurved.position.set(-0.02, 1.02, 0);
+    staffHeadCurved.rotation.z = -0.35;
+
+    // 拐杖顶峰镶嵌的古朴高亮灵晶
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.048), staffCrystalMat);
+    crystal.position.set(-0.04, 1.09, 0);
+
+    staffG.add(staffShaft, staffKnot, staffHeadCurved, crystal);
+    staffG.position.set(0.28, 0, 0.18);
+
+    group.add(bootL, bootR, bodyG, headG, staffG);
 
     // 5. 挂载友好交互指示器 (头顶气泡与脚底光环)
     group.add(this.createNpcBubble());
 
-    // 角色体型等比缩减 20%
+    // 整体等比缩小 20% 契合魔塔 0.8x 角色比例标准
     group.scale.multiplyScalar(0.8);
     return group;
   }
@@ -1153,7 +1264,23 @@ export class ModelFactory {
     const color = new THREE.Color(data.color);
     let group: THREE.Group;
 
-    if (data.modelType === 'slime') {
+    if (monsterId === 'giant_squid') {
+      group = this.createGiantSquidMesh(monsterId, data, color);
+    } else if (monsterId === 'ghost') {
+      group = this.createGhostMesh(monsterId, data, color);
+    } else if (monsterId === 'dragon') {
+      group = this.createDragonMesh(monsterId, data, color);
+    } else if (monsterId === 'archmage') {
+      group = this.createArchmageMesh(monsterId, data, color);
+    } else if (monsterId === 'ghost_commander') {
+      group = this.createGhostCommanderMesh(monsterId, data, color);
+    } else if (monsterId === 'false_sorcerer') {
+      group = this.createFalseSorcererMesh(monsterId, data, color);
+    } else if (monsterId === 'demon_lord') {
+      group = this.createDemonLordMesh(monsterId, data, color);
+    } else if (monsterId === 'skeleton_captain') {
+      group = this.createSkeletonMesh(monsterId, data, color);
+    } else if (data.modelType === 'slime') {
       group = this.createSlimeMesh(monsterId, data, color);
     } else if (data.modelType === 'bat') {
       group = this.createBatMesh(monsterId, data, color);
@@ -1161,7 +1288,9 @@ export class ModelFactory {
       group = this.createSkeletonMesh(monsterId, data, color);
     } else if (data.modelType === 'mage') {
       group = this.createMageMesh(monsterId, data, color);
-    } else if (data.modelType === 'guard' || data.modelType === 'knight') {
+    } else if (data.modelType === 'guard') {
+      group = this.createGuardMesh(monsterId, data, color);
+    } else if (data.modelType === 'knight') {
       group = this.createKnightMesh(monsterId, data, color);
     } else {
       group = this.createBossMesh(monsterId, data, color);
@@ -1175,13 +1304,15 @@ export class ModelFactory {
       }
     });
 
-    // 角色体型等比缩减 20%
-    group.scale.multiplyScalar(0.8);
+    // 角色体型等比缩减 20% (大乌贼为横跨 3 格的超大型深海巨兽，保持 3 格宽幅原生物理体量)
+    if (monsterId !== 'giant_squid') {
+      group.scale.multiplyScalar(0.8);
+    }
     return group;
   }
 
   // -------------------------------------------------------------------------
-  // 7.1 史莱姆系列 (Slime)
+  // 7.1 史莱姆系列 (Slime: Green Slime, Red Slime, Big Slime, Slime King)
   // -------------------------------------------------------------------------
   private static createSlimeMesh(monsterId: string, _data: any, color: THREE.Color): THREE.Group {
     const group = new THREE.Group();
@@ -1267,9 +1398,45 @@ export class ModelFactory {
 
     group.add(body, core, b1, b2, createEye(-0.13), createEye(0.13));
 
-    if (monsterId === 'big_slime') {
-      group.scale.set(1.25, 1.25, 1.25);
+    if (monsterId === 'red_slime') {
+      // 红史莱姆专属：头顶一对小恶魔果冻犄角 (Demon Jelly Hornlets)
+      const hornMat = new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        emissive: 0xdc2626,
+        emissiveIntensity: 0.65,
+        roughness: 0.2,
+      });
+      const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 8), hornMat);
+      hornL.position.set(-0.12, 0.70, 0.04);
+      hornL.rotation.z = 0.45;
+      hornL.rotation.x = -0.2;
+      const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 8), hornMat);
+      hornR.position.set(0.12, 0.70, 0.04);
+      hornR.rotation.z = -0.45;
+      hornR.rotation.x = -0.2;
+      group.add(hornL, hornR);
+    } else if (monsterId === 'big_slime') {
+      // 大史莱姆专属：体表多块墨绿远古矿石结晶 (Embedded Emerald Geodes)
+      const rockMat = new THREE.MeshStandardMaterial({
+        color: 0x064e3b,
+        roughness: 0.85,
+      });
+      const rockOffsets = [
+        [-0.32, 0.28, 0.12, 0.08],
+        [0.34, 0.25, 0.10, 0.09],
+        [-0.24, 0.46, -0.15, 0.07],
+        [0.26, 0.44, -0.16, 0.07],
+        [0.0, 0.62, -0.18, 0.08],
+        [0.18, 0.15, 0.28, 0.06],
+      ];
+      for (const [rx, ry, rz, rs] of rockOffsets) {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rs, 0), rockMat);
+        rock.position.set(rx, ry, rz);
+        group.add(rock);
+      }
+      group.scale.set(1.3, 1.3, 1.3);
     } else if (monsterId === 'slime_king') {
+      // 史莱姆王专属：六角华美王冠与右侧悬浮黄金权杖
       const crownG = new THREE.Group();
       const crownGold = new THREE.MeshStandardMaterial({
         color: 0xfacc15,
@@ -1301,10 +1468,138 @@ export class ModelFactory {
       }
 
       crownG.position.y = 0.74;
-      group.add(crownG);
+
+      const scepterG = new THREE.Group();
+      const scepterStaff = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.65, 8),
+        crownGold
+      );
+      scepterStaff.position.y = 0.32;
+      const scepterHead = new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), crownGold);
+      scepterHead.position.y = 0.64;
+      const scepterGem = new THREE.Mesh(
+        new THREE.SphereGeometry(0.045, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.5 })
+      );
+      scepterGem.position.y = 0.64;
+      scepterG.add(scepterStaff, scepterHead, scepterGem);
+      scepterG.position.set(0.48, 0.15, 0.10);
+      scepterG.rotation.z = -0.2;
+
+      group.add(crownG, scepterG);
       group.scale.set(1.4, 1.35, 1.4);
     }
 
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.1.1 幽灵系列 (Ghost: 游荡冤魂 / 怨念幽灵)
+  // 标志性特征：半空漂浮灵体、残破深紫幽灵长袍兜帽、幽暗深渊面腔、幽蓝摄魄凶瞳、悬浮鬼爪与环绕阴火
+  // -------------------------------------------------------------------------
+  private static createGhostMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const ghostMat = new THREE.MeshPhysicalMaterial({
+      color: 0x9333ea,
+      emissive: 0x6b21a8,
+      emissiveIntensity: 0.5,
+      transmission: 0.45,
+      transparent: true,
+      opacity: 0.88,
+      roughness: 0.35,
+      metalness: 0.05,
+    });
+    const darkVoidMat = new THREE.MeshBasicMaterial({ color: 0x050508 });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 }); // 幽蓝勾魂寒眸
+    const wispMat = new THREE.MeshStandardMaterial({
+      color: 0xc084fc,
+      emissive: 0xa855f7,
+      emissiveIntensity: 2.2,
+      transparent: true,
+      opacity: 0.9,
+    });
+
+    // 1. 悬浮躯干与波浪形灵体长尾 (Floating Torso & Spectral Tail)
+    const torsoPts: THREE.Vector2[] = [
+      new THREE.Vector2(0, 0.05),
+      new THREE.Vector2(0.08, 0.15),
+      new THREE.Vector2(0.16, 0.30),
+      new THREE.Vector2(0.22, 0.48),
+      new THREE.Vector2(0.20, 0.68),
+      new THREE.Vector2(0.12, 0.78),
+      new THREE.Vector2(0.0, 0.82),
+    ];
+    const ghostTorso = new THREE.Mesh(new THREE.LatheGeometry(torsoPts, 20), ghostMat);
+    ghostTorso.position.y = 0.15;
+
+    // 弯曲飘荡的幽灵尾部 (Wispy Ghost Tail)
+    const tailG = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const segR = 0.07 - i * 0.012;
+      const seg = new THREE.Mesh(new THREE.ConeGeometry(segR, 0.16, 8), ghostMat);
+      seg.position.set(Math.sin(i * 0.7) * 0.06, -0.08 - i * 0.10, Math.cos(i * 0.7) * 0.05);
+      seg.rotation.x = 0.35 + i * 0.15;
+      seg.rotation.z = Math.sin(i) * 0.3;
+      tailG.add(seg);
+    }
+    tailG.position.y = 0.25;
+
+    // 2. 幽灵深斗篷兜帽与深邃面腔 (Ghost Cowl Hood & Deep Shadow Cavity)
+    const hoodG = new THREE.Group();
+    const hoodCowl = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), ghostMat);
+    hoodCowl.position.set(0, 0.88, 0);
+
+    const faceVoid = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 12), darkVoidMat);
+    faceVoid.position.set(0, 0.88, 0.06);
+
+    // 幽冷勾魂双眸
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), eyeMat);
+    eyeL.position.set(-0.048, 0.89, 0.16);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), eyeMat);
+    eyeR.position.set(0.048, 0.89, 0.16);
+
+    // 尖翘兜帽尖端 (Pointed Hood Peak)
+    const hoodPeak = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 8), ghostMat);
+    hoodPeak.position.set(0, 1.05, -0.08);
+    hoodPeak.rotation.x = -0.55;
+
+    hoodG.add(hoodCowl, faceVoid, eyeL, eyeR, hoodPeak);
+
+    // 3. 悬浮利爪 (Floating Ghost Claws)
+    const createClaw = (x: number) => {
+      const cg = new THREE.Group();
+      const sleeve = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.20, 8), ghostMat);
+      sleeve.rotation.x = Math.PI / 2 + 0.3;
+      sleeve.rotation.z = x > 0 ? -0.4 : 0.4;
+      sleeve.position.set(0, 0, 0);
+
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), ghostMat);
+      hand.position.set(0, -0.05, 0.12);
+
+      for (let f = -1; f <= 1; f++) {
+        const finger = new THREE.Mesh(new THREE.ConeGeometry(0.010, 0.06, 4), ghostMat);
+        finger.position.set(f * 0.018, -0.08, 0.15);
+        finger.rotation.x = 0.5;
+        cg.add(finger);
+      }
+      cg.add(sleeve, hand);
+      cg.position.set(x, 0.60, 0.10);
+      return cg;
+    };
+
+    // 4. 环绕幽魂鬼火 (Orbiting Will-o'-Wisps)
+    const wispsG = new THREE.Group();
+    for (let w = 0; w < 3; w++) {
+      const angle = (w * Math.PI * 2) / 3;
+      const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), wispMat);
+      wisp.position.set(Math.cos(angle) * 0.36, 0.50 + Math.sin(angle * 2) * 0.15, Math.sin(angle) * 0.36);
+      wispsG.add(wisp);
+    }
+
+    group.add(ghostTorso, tailG, hoodG, createClaw(-0.26), createClaw(0.26), wispsG);
+    group.scale.set(1.15, 1.15, 1.15);
     return group;
   }
 
@@ -1596,8 +1891,51 @@ export class ModelFactory {
     );
 
     if (monsterId === 'big_bat') {
+      // 大蝙蝠专属：黑铁钉刺项圈 (Spiked Iron Collar) 与角质耳铠
+      const ironCollarMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.85,
+        roughness: 0.30,
+      });
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.024, 8, 16), ironCollarMat);
+      collar.position.set(0, 0.61, 0.03);
+      collar.rotation.x = 0.55;
+      for (let s = 0; s < 6; s++) {
+        const ang = (s * Math.PI * 2) / 6;
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 6), ironCollarMat);
+        spike.position.set(Math.cos(ang) * 0.12, 0.61, Math.sin(ang) * 0.12 + 0.03);
+        spike.rotation.x = Math.PI / 2;
+        group.add(spike);
+      }
+      group.add(collar);
       group.scale.set(1.28, 1.28, 1.28);
     } else if (monsterId === 'red_bat') {
+      // 红蝙蝠专属：血魔双弯角 (Blood Demon Horns) 与恶魔尖尾 (Devil Tail)
+      const hornMat = new THREE.MeshStandardMaterial({
+        color: 0x881337,
+        roughness: 0.3,
+        metalness: 0.1,
+      });
+      const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.22, 8), hornMat);
+      hornL.position.set(-0.10, 0.94, -0.06);
+      hornL.rotation.x = -0.65;
+      hornL.rotation.z = -0.35;
+
+      const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.22, 8), hornMat);
+      hornR.position.set(0.10, 0.94, -0.06);
+      hornR.rotation.x = -0.65;
+      hornR.rotation.z = 0.35;
+
+      // 恶魔尖尾
+      const tailMat = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.6 });
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.008, 0.28, 8), tailMat);
+      tail.position.set(0, 0.18, -0.15);
+      tail.rotation.x = -0.7;
+      const tailSpade = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.09, 4), tailMat);
+      tailSpade.position.set(0, 0.08, -0.24);
+      tailSpade.rotation.x = Math.PI - 0.7;
+
+      group.add(hornL, hornR, tail, tailSpade);
       group.scale.set(1.45, 1.45, 1.45);
     }
 
@@ -1848,8 +2186,55 @@ export class ModelFactory {
       cape.position.set(0, 0.44, -0.16);
       cape.rotation.x = -0.12;
 
-      group.add(captainHelm, hornL, hornR, cape);
+      // 队长金尖弯刀与黄金盾钉
+      const cutlass = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.60, 0.02),
+        goldArmorMat
+      );
+      cutlass.position.set(0.32, 0.40, 0.22);
+      cutlass.rotation.x = Math.PI / 4;
+
+      const shieldSpike = new THREE.Mesh(
+        new THREE.ConeGeometry(0.04, 0.12, 8),
+        goldArmorMat
+      );
+      shieldSpike.position.set(-0.26, 0.44, 0.26);
+      shieldSpike.rotation.x = Math.PI / 2;
+
+      group.add(captainHelm, hornL, hornR, cape, cutlass, shieldSpike);
       group.scale.set(1.25, 1.25, 1.25);
+    } else if (monsterId === 'ghost_soldier') {
+      // 鬼战士专属：幽蓝灵光虚影、摄魂长柄战镰 (Soul Scythe) 与双肩魂火
+      const soulScytheG = new THREE.Group();
+      const scythePole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 1.35, 8),
+        new THREE.MeshStandardMaterial({ color: 0x312e81, roughness: 0.6 })
+      );
+      scythePole.position.y = 0.50;
+
+      const scytheBlade = new THREE.Mesh(
+        new THREE.ConeGeometry(0.06, 0.52, 4),
+        new THREE.MeshStandardMaterial({ color: 0xc7d2fe, emissive: 0x6366f1, emissiveIntensity: 1.5, metalness: 0.9 })
+      );
+      scytheBlade.position.set(0.24, 1.10, 0);
+      scytheBlade.rotation.z = Math.PI / 2 + 0.3;
+      soulScytheG.add(scythePole, scytheBlade);
+      soulScytheG.position.set(0.32, 0.15, 0.18);
+      soulScytheG.rotation.x = 0.2;
+
+      // 幽火护肩
+      const fireMat = new THREE.MeshStandardMaterial({
+        color: 0xa5b4fc,
+        emissive: 0x6366f1,
+        emissiveIntensity: 2.2,
+      });
+      const soulFireL = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), fireMat);
+      soulFireL.position.set(-0.25, 0.68, 0);
+      const soulFireR = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), fireMat);
+      soulFireR.position.set(0.25, 0.68, 0);
+
+      group.add(soulScytheG, soulFireL, soulFireR);
+      group.scale.set(1.15, 1.15, 1.15);
     }
 
     return group;
@@ -1877,6 +2262,16 @@ export class ModelFactory {
       trimHex = 0xfacc15; // 黄金符文
       hatHex = 0xb91c1c;
       orbHex = 0xff0033; // 烈焰血红
+    } else if (monsterId === 'junior_wizard') {
+      robeHex = 0xea580c; // 初级巫师：秘术炽橙
+      trimHex = 0xfef08a; // 浅金符文
+      hatHex = 0xc2410c;
+      orbHex = 0xfbbf24; // 琥珀金魔球
+    } else if (monsterId === 'senior_wizard') {
+      robeHex = 0xb91c1c; // 高级巫师：深邃猩红
+      trimHex = 0xf59e0b; // 纯金符文
+      hatHex = 0x991b1b;
+      orbHex = 0xf43f5e; // 绯红魔核
     }
 
     const robeMat = new THREE.MeshStandardMaterial({
@@ -1946,28 +2341,39 @@ export class ModelFactory {
       metalness: 0.1,
     });
 
-    // 宽大的圆弧帽檐 (Wide Brim - 俯视一眼即可认出是巫师帽)
-    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.025, 24), hatMat);
-    brim.position.y = 0.86;
-    brim.rotation.x = -0.1;
+    const isWizard = monsterId === 'junior_wizard' || monsterId === 'senior_wizard';
 
-    // 尖锥帽冠 (Tall Conical Crown)
-    const crownBase = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 16), hatMat);
-    crownBase.position.set(0, 1.01, -0.02);
-    crownBase.rotation.x = -0.15;
+    if (isWizard) {
+      // 巫师专属：深邃神秘兜帽 (Mystic Hood Cowl)
+      const cowlDome = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), hatMat);
+      cowlDome.position.set(0, 0.84, 0);
+      const cowlBrim = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 8, 16), hatMat);
+      cowlBrim.position.set(0, 0.82, 0.05);
+      const cowlTail = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 8), hatMat);
+      cowlTail.position.set(0, 0.95, -0.12);
+      cowlTail.rotation.x = -0.7;
+      hatG.add(cowlDome, cowlBrim, cowlTail);
+    } else {
+      // 法师专属：经典尖顶宽檐巫师帽 (Pointed Wizard Hat)
+      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.025, 24), hatMat);
+      brim.position.y = 0.86;
+      brim.rotation.x = -0.1;
 
-    // 帽顶微曲尖端 (Crooked Pointy Tip)
-    const crownTip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 12), hatMat);
-    crownTip.position.set(0, 1.22, -0.1);
-    crownTip.rotation.x = -0.45;
-    crownTip.rotation.z = -0.2;
+      const crownBase = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 16), hatMat);
+      crownBase.position.set(0, 1.01, -0.02);
+      crownBase.rotation.x = -0.15;
 
-    // 帽子上的金色装饰带 (Golden Hatband)
-    const hatBand = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.02, 8, 20), trimMat);
-    hatBand.rotation.x = Math.PI / 2 - 0.1;
-    hatBand.position.set(0, 0.88, -0.01);
+      const crownTip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 12), hatMat);
+      crownTip.position.set(0, 1.22, -0.1);
+      crownTip.rotation.x = -0.45;
+      crownTip.rotation.z = -0.2;
 
-    hatG.add(brim, crownBase, crownTip, hatBand);
+      const hatBand = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.02, 8, 20), trimMat);
+      hatBand.rotation.x = Math.PI / 2 - 0.1;
+      hatBand.position.set(0, 0.88, -0.01);
+
+      hatG.add(brim, crownBase, crownTip, hatBand);
+    }
 
     // 4. 双手与宽大袖袍 (Connected Sleeved Arms & Hands)
     // 右手紧握法杖
@@ -1991,15 +2397,33 @@ export class ModelFactory {
     const handL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), skinMat);
     handL.position.set(-0.32, 0.54, 0.16);
 
-    const castGlowMat = new THREE.MeshStandardMaterial({
-      color: orbHex,
-      emissive: orbHex,
-      emissiveIntensity: 2.0,
-      roughness: 0.1,
-    });
-    const castGlow = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), castGlowMat);
-    castGlow.position.set(-0.32, 0.62, 0.16);
-    armL.add(sleeveL, handL, castGlow);
+    if (monsterId === 'junior_wizard') {
+      // 展开的远古秘术魔导书 (Open Ancient Grimoire)
+      const bookG = new THREE.Group();
+      const coverMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.7 });
+      const pageMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.9 });
+      const coverL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.015), coverMat);
+      coverL.position.set(-0.06, 0, 0);
+      coverL.rotation.y = 0.3;
+      const coverR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.015), coverMat);
+      coverR.position.set(0.06, 0, 0);
+      coverR.rotation.y = -0.3;
+      const pages = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.03), pageMat);
+      bookG.add(coverL, coverR, pages);
+      bookG.position.set(-0.34, 0.58, 0.20);
+      bookG.rotation.x = 0.5;
+      armL.add(sleeveL, handL, bookG);
+    } else {
+      const castGlowMat = new THREE.MeshStandardMaterial({
+        color: orbHex,
+        emissive: orbHex,
+        emissiveIntensity: 2.0,
+        roughness: 0.1,
+      });
+      const castGlow = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), castGlowMat);
+      castGlow.position.set(-0.32, 0.62, 0.16);
+      armL.add(sleeveL, handL, castGlow);
+    }
 
     // 5. 远古魔法权杖 (Ancient Magic Staff - 稳固握在手中)
     const staffG = new THREE.Group();
@@ -2024,32 +2448,598 @@ export class ModelFactory {
     staffG.add(shaft, headCrescent, orb);
     staffG.position.set(0.32, 0, 0.16);
 
+    // 高级巫师专属：背部悬浮金色奥术符文光轮 (Arcane Halo Glyph Ring)
+    if (monsterId === 'senior_wizard') {
+      const haloMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xd97706,
+        emissiveIntensity: 1.5,
+        metalness: 0.9,
+      });
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.02, 12, 32), haloMat);
+      halo.position.set(0, 0.65, -0.15);
+      group.add(halo);
+    }
+
     group.add(robe, stole, belt, buckle, headG, hatG, armR, armL, staffG);
 
     if (monsterId === 'senior_mage') {
       group.scale.set(1.15, 1.15, 1.15);
     } else if (monsterId === 'red_mage') {
       group.scale.set(1.25, 1.25, 1.25);
+    } else if (monsterId === 'junior_wizard') {
+      group.scale.set(1.18, 1.18, 1.18);
+    } else if (monsterId === 'senior_wizard') {
+      group.scale.set(1.28, 1.28, 1.28);
     }
 
     return group;
   }
 
   // -------------------------------------------------------------------------
-  // 7.5 卫兵与骑士系列 (Guard & Knight) - 完整铠甲双臂与武器大盾
+  // 7.5.1 城堡守卫/卫兵系列 (Guard: Junior Guard, Medium Guard, Senior Guard, Iron Guard, Magic Guard)
+  // 5大守卫各具特色：
+  // - junior_guard: 朴素步兵圆顶盔、长直枪(Infantry Pike，无斧钩)、步兵圆木盾(Wooden Buckler)
+  // - mid_guard: 经典高脊前檐红翎头盔、长柄战戟(Royal Halberd，带月牙斧刃刺矛背钩与红流苏)、金塔要塞守备方盾(Castle Garrison Shield)
+  // - senior_guard: 紫金重装护面盔、双面重型斧枪(Double Poleaxe)、金纹重型纹章塔盾(Heavy Pavise Shield)
+  // - iron_guard: 沉重黑铁全覆面桶盔、六棱带刺狼牙破甲战锤(Spiked Morningstar Polearm)、黑铁十字铆钉方盾(Heavy Iron Pavise)
+  // - magic_guard: 奥术兜帽护面盔镶嵌发光晶石、奥术能量晶刃光矛(Arcane Crystal Glaive)、悬浮六边形奥术力场结界盾(Hexagonal Barrier Shield)
+  // -------------------------------------------------------------------------
+  private static createGuardMesh(monsterId: string, data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    // 配色方案定制
+    let tabardColor = 0xdc2626;     // 战袍（中级卫兵基准：猩红）
+    let tabardTrimColor = 0xfbbf24; // 饰边金色
+    let armorMetalColor = 0x64748b; // 锻造精钢
+    let armorTrimColor = 0xd97706;  // 铜金铆钉与扣件
+    let helmetCombColor = 0xf59e0b; // 盔脊颜色
+    let plumeColor = 0xef4444;      // 盔翎颜色
+    let eyeGlowColor = 0xfef08a;     // 面罩内冷酷警戒目光
+
+    if (monsterId === 'junior_guard') {
+      tabardColor = 0x15803d;
+      tabardTrimColor = 0xa3e635;
+      armorMetalColor = 0x64748b;
+      armorTrimColor = 0x94a3b8;
+      helmetCombColor = 0x94a3b8;
+      plumeColor = 0x16a34a;
+      eyeGlowColor = 0xe2e8f0;
+    } else if (monsterId === 'mid_guard') {
+      tabardColor = 0xdc2626;
+      tabardTrimColor = 0xfbbf24;
+      armorMetalColor = 0x64748b;
+      armorTrimColor = 0xd97706;
+      helmetCombColor = 0xf59e0b;
+      plumeColor = 0xef4444;
+      eyeGlowColor = 0xfef08a;
+    } else if (monsterId === 'senior_guard') {
+      tabardColor = 0x581c87;
+      tabardTrimColor = 0xfbbf24;
+      armorMetalColor = 0x334155;
+      armorTrimColor = 0xf59e0b;
+      helmetCombColor = 0xf59e0b;
+      plumeColor = 0xa855f7;
+      eyeGlowColor = 0xf43f5e;
+    } else if (monsterId === 'iron_guard') {
+      tabardColor = 0x1e293b;
+      tabardTrimColor = 0x475569;
+      armorMetalColor = 0x0f172a;
+      armorTrimColor = 0x64748b;
+      helmetCombColor = 0x475569;
+      plumeColor = 0x475569;
+      eyeGlowColor = 0xffffff;
+    } else if (monsterId === 'magic_guard') {
+      tabardColor = 0x4338ca;
+      tabardTrimColor = 0x38bdf8;
+      armorMetalColor = 0x312e81;
+      armorTrimColor = 0x67e8f9;
+      helmetCombColor = 0x38bdf8;
+      plumeColor = 0x06b6d4;
+      eyeGlowColor = 0x38bdf8;
+    }
+
+    const tabardMat = new THREE.MeshStandardMaterial({
+      color: tabardColor,
+      roughness: 0.65,
+    });
+    const tabardTrimMat = new THREE.MeshStandardMaterial({
+      color: tabardTrimColor,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const armorMat = new THREE.MeshStandardMaterial({
+      color: armorMetalColor,
+      metalness: 0.85,
+      roughness: 0.28,
+    });
+    const armorTrimMat = new THREE.MeshStandardMaterial({
+      color: armorTrimColor,
+      metalness: 0.90,
+      roughness: 0.22,
+    });
+    const beltMat = new THREE.MeshStandardMaterial({
+      color: 0x3e2723,
+      roughness: 0.80,
+    });
+    const buckleMat = new THREE.MeshStandardMaterial({
+      color: armorTrimColor,
+      metalness: 0.92,
+      roughness: 0.20,
+    });
+    const mailMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      metalness: 0.80,
+      roughness: 0.50,
+    });
+
+    // 1. 躯干、锁甲底衬与卫士制服罩袍 (Torso & Heraldic Tabard)
+    const torsoG = new THREE.Group();
+    const breastplate = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.42, 0.26), armorMat);
+    breastplate.position.set(0, 0.46, 0);
+
+    const gorget = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.08, 10), armorMat);
+    gorget.position.set(0, 0.65, 0);
+
+    const tabardFront = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.38, 0.03), tabardMat);
+    tabardFront.position.set(0, 0.46, 0.13);
+
+    const tabardBack = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.38, 0.03), tabardMat);
+    tabardBack.position.set(0, 0.46, -0.13);
+
+    const tabardStripe = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.38, 0.035), tabardTrimMat);
+    tabardStripe.position.set(0, 0.46, 0.132);
+
+    const chestBadge = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), tabardTrimMat);
+    chestBadge.position.set(0, 0.52, 0.145);
+
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.065, 12), beltMat);
+    belt.position.set(0, 0.29, 0);
+
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.075, 0.04), buckleMat);
+    buckle.position.set(0, 0.29, 0.14);
+
+    const skirtFront = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.20, 0.025), tabardMat);
+    skirtFront.position.set(0, 0.18, 0.12);
+
+    const skirtBack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.20, 0.025), tabardMat);
+    skirtBack.position.set(0, 0.18, -0.12);
+
+    const skirtTrimFront = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.03), tabardTrimMat);
+    skirtTrimFront.position.set(0, 0.085, 0.12);
+
+    const tassetL = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.18), armorMat);
+    tassetL.position.set(-0.19, 0.19, 0);
+    const tassetR = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.18), armorMat);
+    tassetR.position.set(0.19, 0.19, 0);
+
+    torsoG.add(
+      breastplate, gorget, tabardFront, tabardBack, tabardStripe, chestBadge,
+      belt, buckle, skirtFront, skirtBack, skirtTrimFront, tassetL, tassetR
+    );
+
+    // 2. 卫兵头盔 (五种不同盔型)
+    const helmG = new THREE.Group();
+    const headInner = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0x0f172a })
+    );
+    headInner.position.set(0, 0.81, 0);
+
+    const eyeMat = new THREE.MeshBasicMaterial({ color: eyeGlowColor });
+    const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.016, 0.02), eyeMat);
+    eyeL.position.set(-0.045, 0.815, 0.12);
+    const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.016, 0.02), eyeMat);
+    eyeR.position.set(0.045, 0.815, 0.12);
+    helmG.add(headInner, eyeL, eyeR);
+
+    if (monsterId === 'junior_guard') {
+      // 初级卫兵：朴素步兵圆顶锅盔 (Kettle Hat / Footman Sallet)，无高耸盔脊与羽翎
+      const kettleDome = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), armorMat);
+      kettleDome.position.set(0, 0.84, 0);
+      const kettleBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.025, 16), armorTrimMat);
+      kettleBrim.position.set(0, 0.83, 0);
+      const chinStrap = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.012, 6, 12, Math.PI), beltMat);
+      chinStrap.position.set(0, 0.78, 0.02);
+      chinStrap.rotation.x = Math.PI;
+      helmG.add(kettleDome, kettleBrim, chinStrap);
+    } else if (monsterId === 'iron_guard') {
+      // 铁甲卫兵：全覆面重型黑铁桶盔 (Heavy Iron Bucket Helm)
+      const ironHelm = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.28, 12), armorMat);
+      ironHelm.position.set(0, 0.85, 0);
+      // 十字观察铁缝
+      const slitH = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.04), new THREE.MeshBasicMaterial({ color: 0x050505 }));
+      slitH.position.set(0, 0.83, 0.16);
+      const slitV = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.04), armorTrimMat);
+      slitV.position.set(0, 0.83, 0.162);
+      // 顶部加固铁钉
+      const topSpike = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 6), armorTrimMat);
+      topSpike.position.set(0, 1.01, 0);
+      helmG.add(ironHelm, slitH, slitV, topSpike);
+    } else if (monsterId === 'magic_guard') {
+      // 魔法警卫：奥术兜帽护面盔，前额镶嵌奥术晶石 (Arcane Gem Visored Helm)
+      const arcaneHelm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.22, 14), armorMat);
+      arcaneHelm.position.set(0, 0.86, 0);
+      const hoodBrim = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 8, 16), tabardMat);
+      hoodBrim.position.set(0, 0.85, 0.03);
+      // 前额发光奥术晶石
+      const foreheadGem = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.04, 0),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x06b6d4, emissiveIntensity: 2.0 })
+      );
+      foreheadGem.position.set(0, 0.94, 0.15);
+      helmG.add(arcaneHelm, hoodBrim, foreheadGem);
+    } else if (monsterId === 'senior_guard') {
+      // 高级卫兵：紫金重装双翎护面盔 (Visored Barbute with Twin Plumes)
+      const helmDome = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.24, 14), armorMat);
+      helmDome.position.set(0, 0.86, 0);
+      const visorTrim = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 6, 12, Math.PI), tabardTrimMat);
+      visorTrim.position.set(0, 0.83, 0.04);
+      visorTrim.rotation.x = Math.PI / 2;
+      // 左右双翎羽
+      const plumeMat = new THREE.MeshStandardMaterial({ color: plumeColor, roughness: 0.75 });
+      const plumeL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 6), plumeMat);
+      plumeL.position.set(-0.11, 1.02, -0.05);
+      plumeL.rotation.z = 0.25;
+      const plumeR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 6), plumeMat);
+      plumeR.position.set(0.11, 1.02, -0.05);
+      plumeR.rotation.z = -0.25;
+      helmG.add(helmDome, visorTrim, plumeL, plumeR);
+    } else {
+      // 中级卫兵（基准）：经典高脊前檐红翎头盔 (Morion with Brass Comb & Red Plume)
+      const helmDome = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.165, 0.20, 14), armorMat);
+      helmDome.position.set(0, 0.86, 0);
+      const brim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.20, 0.20, 0.025, 12, 1, false, 0, Math.PI),
+        armorTrimMat
+      );
+      brim.rotation.x = 0.25;
+      brim.position.set(0, 0.83, 0.08);
+
+      const combMat = new THREE.MeshStandardMaterial({
+        color: helmetCombColor,
+        metalness: 0.90,
+        roughness: 0.20,
+      });
+      const comb = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.08, 0.32), combMat);
+      comb.position.set(0, 0.98, -0.01);
+
+      const plumeMat = new THREE.MeshStandardMaterial({ color: plumeColor, roughness: 0.75 });
+      const plume = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.26, 8), plumeMat);
+      plume.rotation.x = -0.35;
+      plume.position.set(0, 1.06, -0.07);
+
+      helmG.add(helmDome, brim, comb, plume);
+    }
+
+    // 3. 双腿与长靴
+    const legG = new THREE.Group();
+    const createGuardLeg = (x: number) => {
+      const g = new THREE.Group();
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.18, 8), mailMat);
+      thigh.position.set(0, 0.18, 0);
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), armorTrimMat);
+      knee.position.set(0, 0.09, 0.02);
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.05, 0.18, 8), armorMat);
+      shin.position.set(0, 0.0, 0);
+      const boot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), armorMat);
+      boot.position.set(0, -0.08, 0.03);
+      g.add(thigh, knee, shin, boot);
+      g.position.set(x, 0, 0);
+      return g;
+    };
+    legG.add(createGuardLeg(-0.11), createGuardLeg(0.11));
+
+    const createGuardSpaulder = (x: number) => {
+      const spG = new THREE.Group();
+      const topPlate = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), armorMat);
+      topPlate.scale.set(1.1, 0.7, 1.1);
+      const rimPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.04, 10), armorTrimMat);
+      rimPlate.position.set(0, -0.05, 0);
+      spG.add(topPlate, rimPlate);
+      spG.position.set(x, 0.62, 0);
+      return spG;
+    };
+
+    // 4. 右臂与专属武器 (5大卫兵各自专属武器)
+    const armR = new THREE.Group();
+    const shoulderR = createGuardSpaulder(0.24);
+    const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.18, 8), armorMat);
+    upperArmR.position.set(0.24, 0.48, 0.02);
+    upperArmR.rotation.z = -0.25;
+    upperArmR.rotation.x = 0.20;
+
+    const elbowR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), armorTrimMat);
+    elbowR.position.set(0.27, 0.40, 0.06);
+
+    const forearmR = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.18, 8), armorMat);
+    forearmR.position.set(0.28, 0.34, 0.14);
+    forearmR.rotation.x = 0.55;
+
+    const gauntletR = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.075, 0.075), armorTrimMat);
+    gauntletR.position.set(0.28, 0.28, 0.20);
+
+    const weaponG = new THREE.Group();
+
+    if (monsterId === 'junior_guard') {
+      // 初级卫兵：长直枪 (Infantry Pike - 纯长木杆 + 柳叶精钢枪尖 + 绿枪缨，无斧刃与背钩)
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.016, 1.50, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5c3818, roughness: 0.7 })
+      );
+      shaft.position.y = 0.38;
+      const spearHead = new THREE.Mesh(
+        new THREE.ConeGeometry(0.032, 0.38, 4),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 })
+      );
+      spearHead.position.y = 1.15;
+      const greenTassel = new THREE.Mesh(
+        new THREE.ConeGeometry(0.04, 0.12, 6),
+        new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.8 })
+      );
+      greenTassel.position.y = 0.92;
+      weaponG.add(shaft, spearHead, greenTassel);
+    } else if (monsterId === 'senior_guard') {
+      // 高级卫兵：双面重型斧枪 (Double Battle-Axe Poleaxe - 左右对称宽刃双斧 + 顶端重矛)
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 1.45, 8),
+        new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
+      );
+      shaft.position.y = 0.35;
+      const topSpike = new THREE.Mesh(
+        new THREE.ConeGeometry(0.03, 0.36, 4),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.15 })
+      );
+      topSpike.position.y = 1.12;
+      const axeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.15 });
+      const axeL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.018), axeMat);
+      axeL.position.set(-0.11, 0.90, 0);
+      const axeR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.018), axeMat);
+      axeR.position.set(0.11, 0.90, 0);
+      const goldCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.10), armorTrimMat);
+      goldCollar.position.y = 0.88;
+      weaponG.add(shaft, topSpike, axeL, axeR, goldCollar);
+    } else if (monsterId === 'iron_guard') {
+      // 铁甲卫兵：重型破甲狼牙铁战锤 (Spiked Morningstar Polearm - 黑铁手柄 + 六棱带钉实心锤头 + 顶端穿甲锥)
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 1.35, 8),
+        new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.85, roughness: 0.3 })
+      );
+      shaft.position.y = 0.32;
+      const hammerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 6), armorMat);
+      hammerHead.position.y = 0.90;
+      for (let i = 0; i < 6; i++) {
+        const ang = (i * Math.PI) / 3;
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 4), armorTrimMat);
+        spike.position.set(Math.cos(ang) * 0.08, 0.90, Math.sin(ang) * 0.08);
+        spike.rotation.z = Math.cos(ang) * -1.57;
+        spike.rotation.x = Math.sin(ang) * 1.57;
+        weaponG.add(spike);
+      }
+      const topPick = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.18, 4), armorTrimMat);
+      topPick.position.y = 1.08;
+      weaponG.add(shaft, hammerHead, topPick);
+    } else if (monsterId === 'magic_guard') {
+      // 魔法警卫：奥术晶刃光矛 (Arcane Crystal Glaive - 发光水晶刀刃 + 符文环)
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 1.45, 8),
+        new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.5 })
+      );
+      shaft.position.y = 0.35;
+      const crystalBlade = new THREE.Mesh(
+        new THREE.ConeGeometry(0.045, 0.45, 4),
+        new THREE.MeshStandardMaterial({
+          color: 0x67e8f9,
+          emissive: 0x06b6d4,
+          emissiveIntensity: 1.8,
+          roughness: 0.1,
+        })
+      );
+      crystalBlade.position.y = 1.15;
+      const runeRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.065, 0.012, 8, 16),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 2.0 })
+      );
+      runeRing.position.y = 0.92;
+      runeRing.rotation.x = Math.PI / 2;
+      weaponG.add(shaft, crystalBlade, runeRing);
+    } else {
+      // 中级卫兵（基准）：经典长柄战戟 (Royal Halberd - 精钢宽弧斧刃、破甲背钩、挺直刺矛尖、赤红丝绦)
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.016, 1.45, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3f1d0b, roughness: 0.65 })
+      );
+      shaft.position.y = 0.35;
+      const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.022, 0.08), armorTrimMat);
+      socket.position.y = 0.88;
+      const tassel = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 8), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+      tassel.position.y = 0.82;
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.95, roughness: 0.15 });
+      const spearSpike = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.36, 4), headMat);
+      spearSpike.position.y = 1.10;
+      const axeBlade = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.016), headMat);
+      axeBlade.position.set(0.10, 0.92, 0);
+      const rearBeak = new THREE.Mesh(new THREE.ConeGeometry(0.020, 0.14, 4), armorTrimMat);
+      rearBeak.rotation.z = Math.PI / 2;
+      rearBeak.position.set(-0.08, 0.92, 0);
+      weaponG.add(shaft, socket, tassel, spearSpike, axeBlade, rearBeak);
+    }
+
+    weaponG.position.set(0.28, 0.28, 0.20);
+    weaponG.rotation.x = 0.12;
+    armR.add(shoulderR, upperArmR, elbowR, forearmR, gauntletR, weaponG);
+
+    // 5. 左臂与专属盾牌 (5大卫兵各自专属盾牌)
+    const armL = new THREE.Group();
+    const shoulderL = createGuardSpaulder(-0.24);
+    const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.18, 8), armorMat);
+    upperArmL.position.set(-0.24, 0.48, 0.02);
+    upperArmL.rotation.z = 0.25;
+    upperArmL.rotation.x = 0.20;
+
+    const elbowL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), armorTrimMat);
+    elbowL.position.set(-0.27, 0.40, 0.06);
+
+    const forearmL = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.18, 8), armorMat);
+    forearmL.position.set(-0.28, 0.34, 0.14);
+    forearmL.rotation.x = 0.55;
+
+    const gauntletL = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.075, 0.075), armorTrimMat);
+    gauntletL.position.set(-0.28, 0.28, 0.20);
+
+    const shieldG = new THREE.Group();
+
+    if (monsterId === 'junior_guard') {
+      // 初级卫兵：小型步兵圆木盾 (Round Wooden Buckler - 绿色盘面、铁圈包边、凸起铁盾脐)
+      const bucklerDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.19, 0.19, 0.03, 16),
+        new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.7 })
+      );
+      bucklerDisc.rotation.x = Math.PI / 2;
+      const bucklerRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.19, 0.015, 6, 16),
+        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 })
+      );
+      const bucklerBoss = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85 })
+      );
+      bucklerBoss.position.z = 0.025;
+      shieldG.add(bucklerDisc, bucklerRim, bucklerBoss);
+    } else if (monsterId === 'iron_guard') {
+      // 铁甲卫兵：沉重黑铁十字铆钉方盾 (Heavy Iron Cross-Reinforced Pavise)
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.54, 0.05), armorMat);
+      // 十字加固黑铁板
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.54, 0.06), armorTrimMat);
+      crossV.position.z = 0.01;
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.06, 0.06), armorTrimMat);
+      crossH.position.z = 0.01;
+      shieldG.add(slab, crossV, crossH);
+      // 沉重铆钉
+      const rivetPositions = [
+        [-0.14, 0.22], [0.14, 0.22], [-0.14, -0.22], [0.14, -0.22], [0, 0]
+      ];
+      rivetPositions.forEach(([rx, ry]) => {
+        const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), armorTrimMat);
+        rivet.position.set(rx, ry, 0.04);
+        shieldG.add(rivet);
+      });
+    } else if (monsterId === 'magic_guard') {
+      // 魔法警卫：悬浮六边形奥术结界力场盾 (Hexagonal Arcane Barrier Shield - 半透明青蓝光盾)
+      const barrierMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.24, 0.02, 6),
+        new THREE.MeshPhysicalMaterial({
+          color: 0x38bdf8,
+          emissive: 0x0284c7,
+          emissiveIntensity: 1.5,
+          transmission: 0.65,
+          transparent: true,
+          opacity: 0.85,
+          roughness: 0.1,
+        })
+      );
+      barrierMesh.rotation.x = Math.PI / 2;
+      const runeRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.20, 0.012, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0x67e8f9, emissive: 0x06b6d4, emissiveIntensity: 2.0 })
+      );
+      runeRing.position.z = 0.015;
+      shieldG.add(barrierMesh, runeRing);
+    } else if (monsterId === 'senior_guard') {
+      // 高级卫兵：金纹重型纹章塔盾 (Royal Pavise Shield with Crown Crest)
+      const shieldPlate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38, 0.56, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.55 })
+      );
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
+      const rimTop = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.04, 0.05), rimMat);
+      rimTop.position.set(0, 0.27, 0);
+      const rimBottom = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.05), rimMat);
+      rimBottom.position.set(0, -0.27, 0);
+      const crownCrest = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.03), rimMat);
+      crownCrest.position.set(0, 0.06, 0.03);
+      shieldG.add(shieldPlate, rimTop, rimBottom, crownCrest);
+    } else {
+      // 中级卫兵（基准）：要塞守备盾 (Castle Garrison Shield - 红底、铜金包边、金色城堡浮雕)
+      const shieldPlate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.54, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.55 })
+      );
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.88, roughness: 0.25 });
+      const rimTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.035, 0.05), rimMat);
+      rimTop.position.set(0, 0.26, 0);
+      const rimBottom = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.05), rimMat);
+      rimBottom.position.set(0, -0.26, 0);
+      const rimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.54, 0.05), rimMat);
+      rimLeft.position.set(-0.17, 0, 0);
+      const rimRight = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.54, 0.05), rimMat);
+      rimRight.position.set(0.17, 0, 0);
+
+      const crestMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.92, roughness: 0.18 });
+      const towerBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.025), crestMat);
+      towerBody.position.set(0, 0.02, 0.026);
+      const crenelL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, 0.025), crestMat);
+      crenelL.position.set(-0.05, 0.12, 0.026);
+      const crenelR = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, 0.025), crestMat);
+      crenelR.position.set(0.05, 0.12, 0.026);
+
+      shieldG.add(shieldPlate, rimTop, rimBottom, rimLeft, rimRight, towerBody, crenelL, crenelR);
+    }
+
+    shieldG.position.set(-0.28, 0.38, 0.18);
+    shieldG.rotation.y = 0.32;
+    armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+
+    // 组装整体守卫
+    group.add(torsoG, helmG, legG, armR, armL);
+
+    // 体量细化
+    if (monsterId === 'mid_guard') {
+      group.scale.set(1.08, 1.08, 1.08);
+    } else if (monsterId === 'senior_guard') {
+      group.scale.set(1.18, 1.18, 1.18);
+    } else if (monsterId === 'iron_guard') {
+      group.scale.set(1.15, 1.15, 1.15);
+    }
+
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.5.2 皇家骑士与重装武士系列 (Knight: Knight, Knight Captain, Dark Knight, White Knight, Yellow Knight, Blue Knight, Warrior, Dual Swordsman)
+  // 8位骑士与战士各具独一无二建模：
+  // - warrior: 维京诺曼鼻甲盔、锁子甲胸铠、宽刃破阵战斧、北欧彩绘圆木盾 (与板甲骑士决然不同)
+  // - dual_swordsman: 敏捷刺客兜帽蒙面、双持弧刃弯月斩马刀 (双刀流，无盾)
+  // - yellow_knight: 重装牛角肩铠、双手横持处决者巨剑 (双手重剑姿态，无盾)
+  // - blue_knight: 钴蓝流线型盔、细长破甲刺剑、晶蓝冰霜圆盾
+  // - dark_knight: 黑曜尖角恶魔盔、锯齿黑炎巨剑、深渊骨刺盾
+  // - white_knight: 圣白鎏金板甲、圣银大阔剑、晨曦十字大风筝盾、圣洁白披风
+  // - knight_captain: 灿金统帅重铠、将领威严赤红大翎、鲜红天鹅绒将领斗篷、统帅金阔剑、太阳纹章盾
+  // - knight: 经典亮银抛光板甲、皇家蔚蓝羽翎、封闭式十字大头盔、精钢十字阔剑、圣殿十字大盾
   // -------------------------------------------------------------------------
   private static createKnightMesh(monsterId: string, data: any, _color: THREE.Color): THREE.Group {
     const group = new THREE.Group();
     group.name = `monster_${monsterId}`;
 
-    let armorColor = 0x64748b;
-    let trimColor = 0x94a3b8;
-    let plumeColor = 0xef4444;
+    let armorColor = 0xd1d5db; // 经典亮银
+    let trimColor = 0xf59e0b;  // 饰边黄金
+    let plumeColor = 0x2563eb; // 翎羽
+    let eyeSlitColor = 0x050508;
 
-    if (monsterId === 'iron_guard') {
-      armorColor = 0x1e293b;
-      trimColor = 0x475569;
-      plumeColor = 0x475569;
+    if (monsterId === 'knight') {
+      armorColor = 0xd1d5db;
+      trimColor = 0xf59e0b;
+      plumeColor = 0x2563eb;
+    } else if (monsterId === 'knight_captain') {
+      armorColor = 0xf59e0b;
+      trimColor = 0xfef08a;
+      plumeColor = 0xdc2626;
+    } else if (monsterId === 'dark_knight') {
+      armorColor = 0x18181b;
+      trimColor = 0x7c3aed;
+      plumeColor = 0x991b1b;
+      eyeSlitColor = 0xef4444;
     } else if (monsterId === 'white_knight') {
       armorColor = 0xf8fafc;
       trimColor = 0xfacc15;
@@ -2062,57 +3052,136 @@ export class ModelFactory {
       armorColor = 0x2563eb;
       trimColor = 0x60a5fa;
       plumeColor = 0x38bdf8;
+    } else if (monsterId === 'warrior') {
+      armorColor = 0x475569;
+      trimColor = 0x94a3b8;
+      plumeColor = 0x38bdf8;
+    } else if (monsterId === 'dual_swordsman') {
+      armorColor = 0x1e293b;
+      trimColor = 0x0284c7;
+      plumeColor = 0x38bdf8;
     }
 
     const armorMat = new THREE.MeshStandardMaterial({
       color: armorColor,
-      metalness: 0.85,
-      roughness: 0.25,
+      metalness: monsterId === 'warrior' || monsterId === 'dual_swordsman' ? 0.6 : 0.88,
+      roughness: monsterId === 'warrior' || monsterId === 'dual_swordsman' ? 0.45 : 0.22,
     });
     const trimMat = new THREE.MeshStandardMaterial({
       color: trimColor,
-      metalness: 0.9,
-      roughness: 0.2,
+      metalness: 0.92,
+      roughness: 0.18,
     });
 
-    // 躯干板甲
+    // 1. 躯干
+    const torsoG = new THREE.Group();
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.44, 0.28), armorMat);
     torso.position.set(0, 0.46, 0);
 
-    // 腰部裙甲片
-    const fauld = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.14, 8), armorMat);
-    fauld.position.set(0, 0.22, 0);
+    if (monsterId === 'warrior') {
+      // 战士：锁子甲底衬与皮质X型武装交叉皮带
+      const strap1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.44, 0.02), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+      strap1.position.set(0, 0.46, 0.142);
+      strap1.rotation.z = 0.45;
+      const strap2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.44, 0.02), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+      strap2.position.set(0, 0.46, 0.142);
+      strap2.rotation.z = -0.45;
+      torsoG.add(torso, strap1, strap2);
+    } else {
+      const breastRidge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.36, 0.03), trimMat);
+      breastRidge.position.set(0, 0.48, 0.135);
+      const fauld = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.14, 8), armorMat);
+      fauld.position.set(0, 0.22, 0);
+      torsoG.add(torso, breastRidge, fauld);
+    }
 
-    // 封闭全罩骑士头盔
+    // 2. 头部与头盔 (各骑士独立特色头盔)
     const helmG = new THREE.Group();
-    const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.28, 14), armorMat);
+    if (monsterId === 'warrior') {
+      // 战士：诺曼/维京护鼻铁盔 (Norman Nasal Helmet with Mail Coif)
+      const coif = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 }));
+      coif.position.set(0, 0.82, 0);
+      const coneHelm = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.26, 12), armorMat);
+      coneHelm.position.set(0, 0.90, 0);
+      const nasal = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.14, 0.025), armorMat);
+      nasal.position.set(0, 0.79, 0.15);
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      eyeL.position.set(-0.05, 0.81, 0.13);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      eyeR.position.set(0.05, 0.81, 0.13);
+      helmG.add(coif, coneHelm, nasal, eyeL, eyeR);
+    } else if (monsterId === 'dual_swordsman') {
+      // 双手剑士：疾风刺客兜帽蒙面面罩 (Assassin Cowl with Fierce Blue Eyes)
+      const cowl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), armorMat);
+      cowl.position.set(0, 0.82, 0);
+      const mask = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.10, 0.08), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+      mask.position.set(0, 0.78, 0.12);
+      const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.02), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      eyeL.position.set(-0.05, 0.84, 0.14);
+      const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.02), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      eyeR.position.set(0.05, 0.84, 0.14);
+      helmG.add(cowl, mask, eyeL, eyeR);
+    } else if (monsterId === 'dark_knight') {
+      // 黑暗骑士：恶魔黑角全盔 (Horned Demon Great Helm)
+      const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.28, 14), armorMat);
+      const slitMat = new THREE.MeshBasicMaterial({ color: eyeSlitColor });
+      const slit = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.05), slitMat);
+      slit.position.set(0, 0.03, 0.155);
+      const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 6), trimMat);
+      hornL.position.set(-0.16, 0.14, -0.02);
+      hornL.rotation.z = 0.55;
+      hornL.rotation.x = -0.2;
+      const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 6), trimMat);
+      hornR.position.set(0.16, 0.14, -0.02);
+      hornR.rotation.z = -0.55;
+      hornR.rotation.x = -0.2;
+      helmG.add(helm, slit, hornL, hornR);
+      helmG.position.set(0, 0.82, 0);
+    } else {
+      // 标准与队长闭面大头盔
+      const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.28, 14), armorMat);
+      const slitMat = new THREE.MeshBasicMaterial({ color: eyeSlitColor });
+      const slit = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.05), slitMat);
+      slit.position.set(0, 0.03, 0.155);
+      const helmCrossV = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, 0.04), trimMat);
+      helmCrossV.position.set(0, 0.02, 0.158);
 
-    const slitMat = new THREE.MeshBasicMaterial({ color: 0x050508 });
-    const slit = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.05), slitMat);
-    slit.position.set(0, 0.03, 0.155);
+      const plumeMat = new THREE.MeshStandardMaterial({ color: plumeColor, roughness: 0.75 });
+      const plume = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.26, 6), plumeMat);
+      plume.rotation.x = -0.5;
+      plume.position.set(0, 0.22, -0.05);
 
-    const plumeMat = new THREE.MeshStandardMaterial({ color: plumeColor, roughness: 0.8 });
-    const plume = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 6), plumeMat);
-    plume.rotation.x = -0.5;
-    plume.position.set(0, 0.22, -0.05);
-
-    helmG.add(helm, slit, plume);
-    helmG.position.set(0, 0.82, 0);
+      helmG.add(helm, slit, helmCrossV, plume);
+      helmG.position.set(0, 0.82, 0);
+    }
 
     const createPauldron = (x: number) => {
+      const pG = new THREE.Group();
       const p = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), trimMat);
       p.scale.set(1.1, 0.8, 1.1);
-      p.position.set(x, 0.62, 0);
-      return p;
+      const flange = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.18), trimMat);
+      flange.position.set(x > 0 ? 0.06 : -0.06, 0.04, 0);
+      pG.add(p, flange);
+
+      if (monsterId === 'yellow_knight') {
+        // 黄衣武士：重装牛角肩甲尖刺
+        const hornSpike = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 6), trimMat);
+        hornSpike.position.set(x > 0 ? 0.06 : -0.06, 0.12, 0);
+        hornSpike.rotation.z = x > 0 ? -0.4 : 0.4;
+        pG.add(hornSpike);
+      }
+
+      pG.position.set(x, 0.62, 0);
+      return pG;
     };
 
-    // 双腿板甲
+    // 3. 双腿板甲
     const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.26, 8), armorMat);
     legL.position.set(-0.1, 0.12, 0);
     const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.26, 8), armorMat);
     legR.position.set(0.1, 0.12, 0);
 
-    // 关键补全：连贯双臂与长剑（握在铁手套中！）
+    // 4. 右手武器与右臂
     const armR = new THREE.Group();
     const shoulderR = createPauldron(0.24);
     const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.20, 8), armorMat);
@@ -2130,26 +3199,100 @@ export class ModelFactory {
     const gauntletR = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), trimMat);
     gauntletR.position.set(0.28, 0.26, 0.20);
 
-    const sword = new THREE.Group();
-    const blade = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.65, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.1 })
-    );
-    blade.position.y = 0.28;
-    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.03), trimMat);
-    cross.position.y = -0.05;
-    const hilt = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.02, 0.14),
-      new THREE.MeshStandardMaterial({ color: 0x78350f })
-    );
-    hilt.position.y = -0.13;
-    sword.add(blade, cross, hilt);
-    sword.position.set(0.28, 0.26, 0.20);
-    sword.rotation.x = Math.PI / 4;
+    const weaponR = new THREE.Group();
 
-    armR.add(shoulderR, upperArmR, elbowR, forearmR, gauntletR, sword);
+    if (monsterId === 'warrior') {
+      // 战士：宽刃破阵战斧 (Broad-Bladed Viking Battleaxe)
+      const haft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.65, 8),
+        new THREE.MeshStandardMaterial({ color: 0x451a03 })
+      );
+      haft.position.y = 0.20;
+      const axeHead = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.20, 0.025),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 })
+      );
+      axeHead.position.set(0.08, 0.42, 0);
+      weaponR.add(haft, axeHead);
+    } else if (monsterId === 'dual_swordsman') {
+      // 双手剑士：右持弧刃弯月斩马刀 (Curved Scimitar / Saber)
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16), trimMat);
+      hilt.position.y = -0.08;
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.045, 0.62, 0.015),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.15 })
+      );
+      blade.position.set(0.04, 0.26, 0);
+      blade.rotation.z = -0.12;
+      weaponR.add(hilt, blade);
+    } else if (monsterId === 'yellow_knight') {
+      // 黄衣武士：双手巨型处决者大剑 (Two-Handed Executioner Greatsword)
+      const hilt = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.022, 0.022, 0.26),
+        new THREE.MeshStandardMaterial({ color: 0x451a03 })
+      );
+      hilt.position.y = -0.15;
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.04), trimMat);
+      cross.position.y = 0.0;
+      const heavyBlade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.10, 0.85, 0.025),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.12 })
+      );
+      heavyBlade.position.y = 0.44;
+      weaponR.add(hilt, cross, heavyBlade);
+    } else if (monsterId === 'blue_knight') {
+      // 蓝衣武士：细长刺剑 / 破甲剑 (Runic Estoc / Thrusting Rapier)
+      const rapierBlade = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.016, 0.72, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.98, roughness: 0.1 })
+      );
+      rapierBlade.position.y = 0.36;
+      const cupGuard = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), trimMat);
+      cupGuard.rotation.x = Math.PI;
+      const rapierHilt = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.12), new THREE.MeshStandardMaterial({ color: 0x1e3a8a }));
+      rapierHilt.position.y = -0.06;
+      weaponR.add(rapierBlade, cupGuard, rapierHilt);
+    } else if (monsterId === 'dark_knight') {
+      // 黑暗骑士：锯齿黑炎巨剑 (Jagged Dark Flame Greatsword)
+      const darkHilt = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.18), trimMat);
+      darkHilt.position.y = -0.12;
+      const darkCross = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.04), trimMat);
+      darkCross.position.y = -0.02;
+      const darkBlade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.72, 0.025),
+        new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.9, roughness: 0.3 })
+      );
+      darkBlade.position.y = 0.34;
+      const flameCore = new THREE.Mesh(
+        new THREE.BoxGeometry(0.025, 0.65, 0.028),
+        new THREE.MeshStandardMaterial({ color: 0x9333ea, emissive: 0x7c3aed, emissiveIntensity: 2.2 })
+      );
+      flameCore.position.y = 0.34;
+      weaponR.add(darkHilt, darkCross, darkBlade, flameCore);
+    } else {
+      // 标准阔剑 (Broadsword)
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.65, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.10 })
+      );
+      blade.position.y = 0.28;
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.03), trimMat);
+      cross.position.y = -0.05;
+      const hilt = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.14),
+        new THREE.MeshStandardMaterial({ color: 0x78350f })
+      );
+      hilt.position.y = -0.13;
+      const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), trimMat);
+      pommel.position.y = -0.21;
+      weaponR.add(blade, cross, hilt, pommel);
+    }
 
-    // 关键补全：连贯左臂与纹章大盾（固定在左前臂上！）
+    weaponR.position.set(0.28, 0.26, 0.20);
+    weaponR.rotation.x = Math.PI / 4;
+    armR.add(shoulderR, upperArmR, elbowR, forearmR, gauntletR, weaponR);
+
+    // 5. 左臂与专属盾牌 / 左手武器
     const armL = new THREE.Group();
     const shoulderL = createPauldron(-0.24);
     const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.20, 8), armorMat);
@@ -2167,20 +3310,116 @@ export class ModelFactory {
     const gauntletL = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), trimMat);
     gauntletL.position.set(-0.28, 0.26, 0.20);
 
-    const shieldG = new THREE.Group();
-    const shield = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.52, 0.06), trimMat);
-    const emblem = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.1, 0),
-      new THREE.MeshStandardMaterial({ color: plumeColor, metalness: 0.8 })
-    );
-    emblem.position.set(0, 0.05, 0.035);
-    shieldG.add(shield, emblem);
-    shieldG.position.set(-0.30, 0.38, 0.18);
-    shieldG.rotation.y = 0.35;
+    if (monsterId === 'dual_swordsman') {
+      // 双手剑士：左手双持另一柄弧刃弯刀
+      const swordL = weaponR.clone();
+      swordL.position.set(-0.28, 0.26, 0.20);
+      swordL.rotation.x = Math.PI / 4;
+      swordL.rotation.y = -Math.PI / 6;
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, swordL);
+    } else if (monsterId === 'yellow_knight') {
+      // 黄衣武士：双手紧握大剑，左手共同向前握持大剑柄 (两手合抱姿态，无盾牌)
+      forearmL.position.set(-0.16, 0.34, 0.22);
+      forearmL.rotation.z = -0.55;
+      forearmL.rotation.y = 0.45;
+      gauntletL.position.set(-0.10, 0.32, 0.28);
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL);
+    } else if (monsterId === 'warrior') {
+      // 战士：北欧彩绘圆木盾 (Painted Viking Round Shield)
+      const shieldG = new THREE.Group();
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.25, 0.03, 16),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.7 })
+      );
+      disc.rotation.x = Math.PI / 2;
+      const ironRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.25, 0.015, 6, 16),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.85 })
+      );
+      const boss = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
+      );
+      boss.position.z = 0.02;
+      shieldG.add(disc, ironRim, boss);
+      shieldG.position.set(-0.30, 0.38, 0.18);
+      shieldG.rotation.y = 0.35;
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+    } else if (monsterId === 'blue_knight') {
+      // 蓝衣武士：晶蓝冰霜圆盾 (Frost Buckler with 6-pointed star)
+      const shieldG = new THREE.Group();
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.20, 0.20, 0.03, 16),
+        new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.3, metalness: 0.7 })
+      );
+      disc.rotation.x = Math.PI / 2;
+      const iceStar = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.08, 0),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.5 })
+      );
+      iceStar.position.z = 0.025;
+      shieldG.add(disc, iceStar);
+      shieldG.position.set(-0.30, 0.38, 0.18);
+      shieldG.rotation.y = 0.35;
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+    } else if (monsterId === 'dark_knight') {
+      // 黑暗骑士：深渊骨刺黑曜盾 (Demonic Spiked Obsidian Shield)
+      const shieldG = new THREE.Group();
+      const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.52, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.4 })
+      );
+      const spikeCenter = new THREE.Mesh(
+        new THREE.ConeGeometry(0.05, 0.14, 4),
+        new THREE.MeshStandardMaterial({ color: 0x7c3aed, emissive: 0x6d28d9, emissiveIntensity: 1.8 })
+      );
+      spikeCenter.position.set(0, 0.06, 0.08);
+      spikeCenter.rotation.x = Math.PI / 2;
+      shieldG.add(plate, spikeCenter);
+      shieldG.position.set(-0.30, 0.38, 0.18);
+      shieldG.rotation.y = 0.35;
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+    } else {
+      // 圣殿骑士 / 骑士队长十字盾
+      const shieldG = new THREE.Group();
+      const shield = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.52, 0.05), armorMat);
+      const shieldRim = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.54, 0.04), trimMat);
+      shieldRim.position.z = -0.006;
 
-    armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.38, 0.025), trimMat);
+      crossV.position.set(0, 0.02, 0.032);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.025), trimMat);
+      crossH.position.set(0, 0.06, 0.032);
+      const crossCenter = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.055, 0),
+        new THREE.MeshStandardMaterial({ color: plumeColor, metalness: 0.85 })
+      );
+      crossCenter.position.set(0, 0.06, 0.048);
 
-    group.add(torso, fauld, helmG, legL, legR, armR, armL);
+      shieldG.add(shieldRim, shield, crossV, crossH, crossCenter);
+      shieldG.position.set(-0.30, 0.38, 0.18);
+      shieldG.rotation.y = 0.35;
+
+      armL.add(shoulderL, upperArmL, elbowL, forearmL, gauntletL, shieldG);
+    }
+
+    torsoG.add(torso);
+    group.add(torsoG, helmG, legL, legR, armR, armL);
+
+    // 披风配饰
+    if (monsterId === 'knight_captain') {
+      const capeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.80 });
+      const cape = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.025), capeMat);
+      cape.position.set(0, 0.34, -0.16);
+      cape.rotation.x = -0.12;
+      group.add(cape);
+    } else if (monsterId === 'white_knight') {
+      const capeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.80 });
+      const cape = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.025), capeMat);
+      cape.position.set(0, 0.34, -0.16);
+      cape.rotation.x = -0.12;
+      group.add(cape);
+    }
 
     if (data.modelType === 'knight') {
       group.scale.set(1.15, 1.15, 1.15);
@@ -2608,61 +3847,1581 @@ export class ModelFactory {
 
       group.add(vBody, cravat, headG, collar, armR, armL);
       group.scale.set(1.2, 1.2, 1.2);
+    } else if (monsterId === 'giant_squid') {
+      return this.createGiantSquidMesh(monsterId, _data, _color);
     } else {
-      // 终极魔王杰诺 (Demon King Zeno)
-      const demonMat = new THREE.MeshStandardMaterial({
-        color: 0x0f172a,
-        metalness: 0.9,
-        roughness: 0.2,
-      });
-      const dBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.35), demonMat);
-      dBody.position.set(0, 0.55, 0);
-
-      const dHead = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.35, 0.32), demonMat);
-      dHead.position.set(0, 0.98, 0);
-
-      const hornMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2 });
-      const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.55, 8), hornMat);
-      hornL.position.set(-0.28, 1.3, 0);
-      hornL.rotation.z = 0.6;
-      const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.55, 8), hornMat);
-      hornR.position.set(0.28, 1.3, 0);
-      hornR.rotation.z = -0.6;
-
-      const wingMat = new THREE.MeshStandardMaterial({
-        color: 0x7f1d1d,
-        side: THREE.DoubleSide,
-      });
-      const wL = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.65), wingMat);
-      wL.position.set(-0.45, 0.8, -0.15);
-      wL.rotation.y = 0.4;
-      const wR = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.65), wingMat);
-      wR.position.set(0.45, 0.8, -0.15);
-      wR.rotation.y = -0.4;
-
-      const armR = new THREE.Group();
-      const bicepR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.28, 0.14), demonMat);
-      bicepR.position.set(0.36, 0.60, 0.08);
-      bicepR.rotation.x = 0.4;
-      const gauntletR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), demonMat);
-      gauntletR.position.set(0.40, 0.50, 0.20);
-
-      const sword = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 1.1, 0.03),
-        new THREE.MeshStandardMaterial({
-          color: 0xef4444,
-          emissive: 0xdc2626,
-          emissiveIntensity: 1.5,
-        })
-      );
-      sword.position.set(0.40, 0.50, 0.20);
-      sword.rotation.x = Math.PI / 4;
-      armR.add(bicepR, gauntletR, sword);
-
-      group.add(dBody, dHead, hornL, hornR, wL, wR, armR);
-      group.scale.set(1.4, 1.4, 1.4);
+      return this.createDemonLordMesh(monsterId, _data, _color);
     }
 
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.6.1 终极真魔王杰诺 (Demon Lord Zeno - 50F Final Boss)
+  // 标志性特征：
+  // 1. 黑曜深渊重铠与鎏金九峰魔皇王冠 (Hellcrown)
+  // 2. 胸口跳动的深渊魔核晶石 (Abyssal Heart Core)
+  // 3. 盘旋巨型恶魔弯角与燃火炽眸
+  // 4. 右手末日狱火巨剑 (Doom Greatsword)，剑身嵌有熔岩狱火凹槽
+  // 5. 背后壮阔 3D 骨架真皮质恶魔龙翼 (wing_l, wing_r)
+  // -------------------------------------------------------------------------
+  private static createDemonLordMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const armorMat = new THREE.MeshStandardMaterial({
+      color: 0x111827,
+      metalness: 0.92,
+      roughness: 0.22,
+    });
+    const goldTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.35,
+      metalness: 0.95,
+      roughness: 0.22,
+    });
+    const demonSkinMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.55,
+    });
+    const demonEyeMat = new THREE.MeshStandardMaterial({
+      color: 0xff2222,
+      emissive: 0xff0000,
+      emissiveIntensity: 2.5,
+    });
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xff1111,
+      emissive: 0xdc2626,
+      emissiveIntensity: 2.2,
+    });
+    const hornBaseMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.40,
+    });
+    const hornTipMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0xb91c1c,
+      emissiveIntensity: 1.3,
+      roughness: 0.30,
+    });
+    const wingBoneMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      metalness: 0.85,
+      roughness: 0.35,
+    });
+    const wingMembraneMat = new THREE.MeshStandardMaterial({
+      color: 0x3f0a0a,
+      emissive: 0x180303,
+      roughness: 0.65,
+      side: THREE.DoubleSide,
+    });
+    const tabardMat = new THREE.MeshStandardMaterial({
+      color: 0x7f1d1d,
+      roughness: 0.70,
+    });
+    const swordSteelMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.95,
+      roughness: 0.20,
+    });
+    const hellfireMat = new THREE.MeshStandardMaterial({
+      color: 0xff4422,
+      emissive: 0xea580c,
+      emissiveIntensity: 2.6,
+    });
+    const fangMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      roughness: 0.30,
+    });
+
+    // 1. 下肢与利爪战靴
+    const lowerBody = new THREE.Group();
+    const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.26), armorMat);
+    pelvis.position.set(0, 0.50, 0);
+    const beltBuckle = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), goldTrimMat);
+    beltBuckle.position.set(0, 0.52, 0.14);
+    const tabard = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.03), tabardMat);
+    tabard.position.set(0, 0.36, 0.13);
+    tabard.rotation.x = -0.08;
+    lowerBody.add(pelvis, beltBuckle, tabard);
+
+    const createLeg = (isRight: boolean) => {
+      const leg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.26, 8), armorMat);
+      thigh.position.set(sign * 0.15, 0.36, 0);
+      thigh.rotation.z = -sign * 0.12;
+
+      const knee = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 6), goldTrimMat);
+      knee.position.set(sign * 0.18, 0.26, 0.08);
+      knee.rotation.x = Math.PI / 2;
+
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.26, 8), armorMat);
+      shin.position.set(sign * 0.18, 0.13, 0);
+
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.24), armorMat);
+      foot.position.set(sign * 0.18, 0.04, 0.04);
+
+      for (let c = -1; c <= 1; c++) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 5), fangMat);
+        claw.position.set(sign * 0.18 + c * 0.045, 0.025, 0.17);
+        claw.rotation.x = Math.PI / 2;
+        leg.add(claw);
+      }
+      leg.add(thigh, knee, shin, foot);
+      return leg;
+    };
+    lowerBody.add(createLeg(false), createLeg(true));
+
+    // 2. 魁梧躯干与深渊魔核
+    const torso = new THREE.Group();
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 0.42, 10), armorMat);
+    chest.position.set(0, 0.76, 0);
+    chest.scale.set(1.0, 1.0, 0.82);
+
+    const pecL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.06), armorMat);
+    pecL.position.set(-0.10, 0.82, 0.13);
+    pecL.rotation.z = -0.06;
+    const pecR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.06), armorMat);
+    pecR.position.set(0.10, 0.82, 0.13);
+    pecR.rotation.z = 0.06;
+
+    const heartCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), coreMat);
+    heartCore.position.set(0, 0.78, 0.15);
+    const coreFrame = new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.018, 8, 12), goldTrimMat);
+    coreFrame.position.set(0, 0.78, 0.14);
+
+    torso.add(chest, pecL, pecR, heartCore, coreFrame);
+
+    const createPauldron = (isRight: boolean) => {
+      const sign = isRight ? 1 : -1;
+      const p = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.65), armorMat);
+      base.position.set(sign * 0.38, 0.92, 0);
+      base.rotation.z = -sign * 0.4;
+
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 6), hornTipMat);
+      horn.position.set(sign * 0.44, 1.06, 0);
+      horn.rotation.z = -sign * 0.65;
+      horn.rotation.x = -0.15;
+      p.add(base, horn);
+      return p;
+    };
+    torso.add(createPauldron(false), createPauldron(true));
+
+    // 3. 强壮双臂与狱火巨剑
+    const armL = new THREE.Group();
+    const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.28, 8), armorMat);
+    upperArmL.position.set(-0.38, 0.74, 0.06);
+    upperArmL.rotation.z = 0.35;
+    upperArmL.rotation.x = 0.25;
+
+    const forearmL = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.10, 0.26, 8), armorMat);
+    forearmL.position.set(-0.48, 0.54, 0.18);
+    forearmL.rotation.z = 0.60;
+    forearmL.rotation.x = 0.70;
+
+    const handClawL = new THREE.Group();
+    const palmL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.06), demonSkinMat);
+    palmL.position.set(-0.55, 0.44, 0.26);
+    handClawL.add(palmL);
+    for (let c = 0; c < 4; c++) {
+      const talon = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 5), fangMat);
+      talon.position.set(-0.58 + (c - 1.5) * 0.03, 0.40, 0.29);
+      talon.rotation.x = Math.PI / 2.5;
+      handClawL.add(talon);
+    }
+    armL.add(upperArmL, forearmL, handClawL);
+
+    const armR = new THREE.Group();
+    const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.28, 8), armorMat);
+    upperArmR.position.set(0.38, 0.74, 0.04);
+    upperArmR.rotation.z = -0.25;
+    upperArmR.rotation.x = 0.35;
+
+    const forearmR = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.10, 0.26, 8), armorMat);
+    forearmR.position.set(0.44, 0.56, 0.20);
+    forearmR.rotation.z = -0.20;
+    forearmR.rotation.x = 0.85;
+
+    const handR = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.08), armorMat);
+    handR.position.set(0.46, 0.46, 0.32);
+
+    const sword = new THREE.Group();
+    const pommel = new THREE.Mesh(new THREE.OctahedronGeometry(0.05, 0), goldTrimMat);
+    pommel.position.set(0, -0.40, 0);
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.32, 8), new THREE.MeshStandardMaterial({ color: 0x221111 }));
+    grip.position.set(0, -0.22, 0);
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.07, 0.10), goldTrimMat);
+    guard.position.set(0, -0.04, 0);
+    const guardGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), coreMat);
+    guardGem.position.set(0, -0.04, 0.06);
+
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.95, 0.035), swordSteelMat);
+    blade.position.set(0, 0.46, 0);
+    const bladeTip = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 4), swordSteelMat);
+    bladeTip.position.set(0, 1.02, 0);
+    bladeTip.rotation.y = Math.PI / 4;
+
+    const hellfireCore = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.85, 0.042), hellfireMat);
+    hellfireCore.position.set(0, 0.44, 0);
+
+    sword.add(pommel, grip, guard, guardGem, blade, bladeTip, hellfireCore);
+    sword.position.set(0.46, 0.46, 0.32);
+    sword.rotation.x = Math.PI / 3.5;
+    sword.rotation.y = -0.25;
+
+    armR.add(upperArmR, forearmR, handR, sword);
+
+    // 4. 恶魔之首、犄角与九峰王冠
+    const headG = new THREE.Group();
+    const headBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.26, 0.24), demonSkinMat);
+    headBase.position.set(0, 1.08, 0.04);
+
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.12, 0.16), armorMat);
+    jaw.position.set(0, 0.99, 0.11);
+
+    for (let f = -1; f <= 1; f += 2) {
+      const fang = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 4), fangMat);
+      fang.position.set(f * 0.07, 1.04, 0.18);
+      fang.rotation.x = Math.PI;
+      headG.add(fang);
+    }
+
+    const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.02, 0.02), demonEyeMat);
+    eyeL.position.set(-0.065, 1.10, 0.16);
+    eyeL.rotation.z = -0.25;
+    const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.02, 0.02), demonEyeMat);
+    eyeR.position.set(0.065, 1.10, 0.16);
+    eyeR.rotation.z = 0.25;
+
+    const crown = new THREE.Group();
+    const crownBand = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.05, 0.27), goldTrimMat);
+    crownBand.position.set(0, 1.20, 0.04);
+    crown.add(crownBand);
+    const spirePositions = [-0.11, -0.055, 0, 0.055, 0.11];
+    spirePositions.forEach((spX, idx) => {
+      const h = idx === 2 ? 0.14 : (idx === 1 || idx === 3 ? 0.11 : 0.08);
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(0.022, h, 4), goldTrimMat);
+      spire.position.set(spX, 1.22 + h / 2, 0.17);
+      spire.rotation.y = Math.PI / 4;
+      crown.add(spire);
+    });
+
+    const createCurvedHorn = (isRight: boolean) => {
+      const sign = isRight ? 1 : -1;
+      const hornG = new THREE.Group();
+      const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.085, 0.20, 8), hornBaseMat);
+      seg1.position.set(sign * 0.16, 1.18, -0.02);
+      seg1.rotation.z = -sign * 0.75;
+      seg1.rotation.x = -0.35;
+
+      const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.24, 8), hornBaseMat);
+      seg2.position.set(sign * 0.28, 1.30, -0.06);
+      seg2.rotation.z = -sign * 0.35;
+      seg2.rotation.x = -0.15;
+
+      const seg3 = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.30, 8), hornTipMat);
+      seg3.position.set(sign * 0.33, 1.50, -0.04);
+      seg3.rotation.z = sign * 0.15;
+      seg3.rotation.x = 0.20;
+
+      hornG.add(seg1, seg2, seg3);
+      return hornG;
+    };
+
+    headG.add(headBase, jaw, eyeL, eyeR, crown, createCurvedHorn(false), createCurvedHorn(true));
+
+    // 5. 3D 骨架龙翼/恶魔之翼 (wing_l, wing_r)
+    const createDemonWing = (isRight: boolean) => {
+      const sign = isRight ? 1 : -1;
+      const wing = new THREE.Group();
+      wing.name = isRight ? 'wing_r' : 'wing_l';
+
+      const mainStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.50, 6), wingBoneMat);
+      mainStrut.position.set(sign * 0.26, 0.95, -0.22);
+      mainStrut.rotation.z = -sign * 0.85;
+      mainStrut.rotation.y = sign * 0.35;
+
+      const talon = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 5), fangMat);
+      talon.position.set(sign * 0.48, 1.15, -0.32);
+      talon.rotation.z = sign * 0.25;
+
+      const spar1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.035, 0.65, 5), wingBoneMat);
+      spar1.position.set(sign * 0.72, 0.92, -0.38);
+      spar1.rotation.z = -sign * 0.55;
+
+      const spar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.03, 0.60, 5), wingBoneMat);
+      spar2.position.set(sign * 0.66, 0.70, -0.32);
+      spar2.rotation.z = -sign * 0.25;
+
+      const spar3 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.025, 0.52, 5), wingBoneMat);
+      spar3.position.set(sign * 0.52, 0.55, -0.26);
+      spar3.rotation.z = sign * 0.15;
+
+      const membraneGeo = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        0, 0, 0,
+        sign * 0.48, 0.35, -0.15,
+        sign * 0.85, 0.15, -0.22,
+
+        0, 0, 0,
+        sign * 0.85, 0.15, -0.22,
+        sign * 0.78, -0.25, -0.16,
+
+        0, 0, 0,
+        sign * 0.78, -0.25, -0.16,
+        sign * 0.55, -0.45, -0.10,
+      ]);
+      membraneGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      membraneGeo.computeVertexNormals();
+      const membraneMesh = new THREE.Mesh(membraneGeo, wingMembraneMat);
+      membraneMesh.position.set(sign * 0.12, 0.80, -0.18);
+
+      wing.add(mainStrut, talon, spar1, spar2, spar3, membraneMesh);
+      return wing;
+    };
+
+    group.add(lowerBody, torso, armL, armR, headG, createDemonWing(false), createDemonWing(true));
+    group.scale.set(2.45, 2.45, 2.45);
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.6.2 远古魔龙 (Ancient Dragon - 35F Boss)
+  // -------------------------------------------------------------------------
+  private static createDragonMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const scalesMat = new THREE.MeshStandardMaterial({
+      color: 0xb91c1c,
+      emissive: 0x450a0a,
+      emissiveIntensity: 0.35,
+      roughness: 0.45,
+      metalness: 0.20,
+    });
+    const bellyMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      roughness: 0.50,
+      metalness: 0.15,
+    });
+    const hornMat = new THREE.MeshStandardMaterial({
+      color: 0x1c1917,
+      roughness: 0.35,
+    });
+    const boneMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      roughness: 0.35,
+    });
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0xea580c,
+      emissiveIntensity: 2.2,
+    });
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+    const spineMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
+    const wingBoneMat = new THREE.MeshStandardMaterial({
+      color: 0x450a0a,
+      roughness: 0.40,
+    });
+    const wingMembraneMat = new THREE.MeshStandardMaterial({
+      color: 0x7f1d1d,
+      roughness: 0.65,
+      side: THREE.DoubleSide,
+    });
+
+    // 1. 龙躯干与腹部
+    const torsoG = new THREE.Group();
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.28, 0.65, 10), scalesMat);
+    chest.position.set(0, 0.70, 0);
+    chest.rotation.x = 0.40;
+
+    for (let i = 0; i < 5; i++) {
+      const bPlate = new THREE.Mesh(new THREE.BoxGeometry(0.28 - i * 0.02, 0.09, 0.04), bellyMat);
+      bPlate.position.set(0, 0.54 + i * 0.09, 0.20 - i * 0.04);
+      bPlate.rotation.x = 0.40;
+      torsoG.add(bPlate);
+    }
+
+    const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), scalesMat);
+    pelvis.position.set(0, 0.56, -0.28);
+    torsoG.add(chest, pelvis);
+
+    // 2. 颈部
+    const neckG = new THREE.Group();
+    const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.24, 0.22, 8), scalesMat);
+    seg1.position.set(0, 0.88, 0.16);
+    seg1.rotation.x = -0.30;
+
+    const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.20, 0.22, 8), scalesMat);
+    seg2.position.set(0, 1.05, 0.26);
+    seg2.rotation.x = -0.15;
+
+    const seg3 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.22, 8), scalesMat);
+    seg3.position.set(0, 1.22, 0.32);
+    seg3.rotation.x = 0.10;
+
+    const seg4 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.18, 8), scalesMat);
+    seg4.position.set(0, 1.34, 0.36);
+    seg4.rotation.x = 0.32;
+
+    for (let i = 0; i < 4; i++) {
+      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 4), spineMat);
+      spine.position.set(0, 0.90 + i * 0.14, 0.12 + i * 0.06);
+      spine.rotation.x = -0.6;
+      neckG.add(spine);
+    }
+    neckG.add(seg1, seg2, seg3, seg4);
+
+    // 3. 龙首与獠牙
+    const headG = new THREE.Group();
+    headG.position.set(0, 1.45, 0.44);
+
+    const cranium = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.22), scalesMat);
+    cranium.position.set(0, 0, 0);
+
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.28), scalesMat);
+    snout.position.set(0, -0.02, 0.20);
+
+    const nostrilL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), hornMat);
+    nostrilL.position.set(-0.06, 0.04, 0.31);
+    const nostrilR = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), hornMat);
+    nostrilR.position.set(0.06, 0.04, 0.31);
+
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.26), scalesMat);
+    jaw.position.set(0, -0.14, 0.16);
+    jaw.rotation.x = 0.35;
+
+    for (let t = -2; t <= 2; t++) {
+      const upperTooth = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.06, 4), boneMat);
+      upperTooth.position.set(t * 0.035, -0.08, 0.12 + Math.abs(t) * 0.02);
+      upperTooth.rotation.x = Math.PI;
+
+      const lowerTooth = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.06, 4), boneMat);
+      lowerTooth.position.set(t * 0.03, -0.10, 0.16 + Math.abs(t) * 0.02);
+      headG.add(upperTooth, lowerTooth);
+    }
+
+    const createEye = (isRight: boolean) => {
+      const eg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      const eyeBall = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), eyeMat);
+      const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.045, 0.038), pupilMat);
+      pupil.position.z = 0.018;
+      eg.add(eyeBall, pupil);
+      eg.position.set(sign * 0.11, 0.05, 0.06);
+      eg.rotation.y = sign * 0.4;
+      return eg;
+    };
+
+    const createHorn = (isRight: boolean) => {
+      const hg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      const hornBase = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.22, 8), hornMat);
+      hornBase.position.set(sign * 0.10, 0.12, -0.06);
+      hornBase.rotation.x = -0.75;
+      hornBase.rotation.z = -sign * 0.35;
+
+      const hornTip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.32, 8), hornMat);
+      hornTip.position.set(sign * 0.15, 0.26, -0.22);
+      hornTip.rotation.x = -1.10;
+      hornTip.rotation.z = -sign * 0.20;
+
+      hg.add(hornBase, hornTip);
+      return hg;
+    };
+
+    headG.add(cranium, snout, nostrilL, nostrilR, jaw, createEye(false), createEye(true), createHorn(false), createHorn(true));
+
+    // 4. 后肢与利爪
+    const hindLegsG = new THREE.Group();
+    const createHindLeg = (isRight: boolean) => {
+      const lg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.34, 8), scalesMat);
+      thigh.position.set(sign * 0.28, 0.46, -0.22);
+      thigh.rotation.z = -sign * 0.25;
+      thigh.rotation.x = 0.20;
+
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 8), scalesMat);
+      knee.position.set(sign * 0.32, 0.30, -0.15);
+
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.08, 0.28, 8), scalesMat);
+      shin.position.set(sign * 0.32, 0.16, -0.18);
+
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.07, 0.22), scalesMat);
+      foot.position.set(sign * 0.32, 0.04, -0.10);
+
+      for (let c = -1; c <= 1; c++) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.11, 5), boneMat);
+        claw.position.set(sign * 0.32 + c * 0.05, 0.03, 0.02);
+        claw.rotation.x = Math.PI / 2.2;
+        lg.add(claw);
+      }
+      const dewclaw = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 5), boneMat);
+      dewclaw.position.set(sign * 0.32, 0.04, -0.22);
+      dewclaw.rotation.x = -Math.PI / 2.2;
+      lg.add(thigh, knee, shin, foot, dewclaw);
+      return lg;
+    };
+    hindLegsG.add(createHindLeg(false), createHindLeg(true));
+
+    // 5. 前肢龙臂
+    const forearmsG = new THREE.Group();
+    const createForearm = (isRight: boolean) => {
+      const fg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      const bicep = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.24, 8), scalesMat);
+      bicep.position.set(sign * 0.28, 0.66, 0.10);
+      bicep.rotation.z = -sign * 0.35;
+      bicep.rotation.x = 0.45;
+
+      const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.22, 8), scalesMat);
+      forearm.position.set(sign * 0.32, 0.48, 0.24);
+      forearm.rotation.x = 0.85;
+
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.10), scalesMat);
+      hand.position.set(sign * 0.32, 0.38, 0.32);
+
+      for (let c = -1; c <= 1; c++) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.09, 5), boneMat);
+        claw.position.set(sign * 0.32 + c * 0.035, 0.36, 0.38);
+        claw.rotation.x = Math.PI / 2;
+        fg.add(claw);
+      }
+      fg.add(bicep, forearm, hand);
+      return fg;
+    };
+    forearmsG.add(createForearm(false), createForearm(true));
+
+    // 6. 3D 魔龙之翼 (wing_l, wing_r)
+    const createWing = (isRight: boolean) => {
+      const wg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      wg.name = isRight ? 'wing_r' : 'wing_l';
+
+      const bone1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.55, 8), wingBoneMat);
+      bone1.position.set(sign * 0.24, 0.95, -0.12);
+      bone1.rotation.z = -sign * 0.95;
+      bone1.rotation.y = sign * 0.30;
+
+      const wristClaw = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 5), boneMat);
+      wristClaw.position.set(sign * 0.52, 1.18, -0.22);
+      wristClaw.rotation.z = sign * 0.25;
+
+      const spar1 = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.035, 0.70, 6), wingBoneMat);
+      spar1.position.set(sign * 0.78, 0.96, -0.30);
+      spar1.rotation.z = -sign * 0.60;
+
+      const spar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.030, 0.65, 6), wingBoneMat);
+      spar2.position.set(sign * 0.72, 0.72, -0.25);
+      spar2.rotation.z = -sign * 0.30;
+
+      const spar3 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.026, 0.58, 6), wingBoneMat);
+      spar3.position.set(sign * 0.56, 0.56, -0.20);
+      spar3.rotation.z = sign * 0.10;
+
+      const membraneGeo = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        0, 0, 0,
+        sign * 0.52, 0.35, -0.12,
+        sign * 0.92, 0.12, -0.20,
+
+        0, 0, 0,
+        sign * 0.92, 0.12, -0.20,
+        sign * 0.82, -0.26, -0.14,
+
+        0, 0, 0,
+        sign * 0.82, -0.26, -0.14,
+        sign * 0.58, -0.48, -0.08,
+      ]);
+      membraneGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      membraneGeo.computeVertexNormals();
+      const membrane = new THREE.Mesh(membraneGeo, wingMembraneMat);
+      membrane.position.set(sign * 0.10, 0.82, -0.10);
+
+      wg.add(bone1, wristClaw, spar1, spar2, spar3, membrane);
+      return wg;
+    };
+
+    // 7. 蜿蜒破阵龙尾
+    const tailG = new THREE.Group();
+    const tailPts = [
+      { y: 0.52, z: -0.45, r: 0.14 },
+      { y: 0.44, z: -0.65, r: 0.11 },
+      { y: 0.38, z: -0.84, r: 0.08 },
+      { y: 0.40, z: -1.02, r: 0.05 },
+    ];
+    tailPts.forEach((pt) => {
+      const seg = new THREE.Mesh(new THREE.SphereGeometry(pt.r, 8, 8), scalesMat);
+      seg.position.set(0, pt.y, pt.z);
+      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 4), spineMat);
+      spine.position.set(0, pt.y + pt.r + 0.04, pt.z);
+      spine.rotation.x = -0.5;
+      tailG.add(seg, spine);
+    });
+    const tailBlade = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.24, 4), spineMat);
+    tailBlade.position.set(0, 0.44, -1.14);
+    tailBlade.rotation.x = -Math.PI / 2;
+    tailG.add(tailBlade);
+
+    group.add(torsoG, neckG, headG, hindLegsG, forearmsG, createWing(false), createWing(true), tailG);
+    group.scale.set(2.2, 2.2, 2.2);
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.6.3 帝国大法师 (Archmage - 25F Boss)
+  // -------------------------------------------------------------------------
+  private static createArchmageMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const robeMat = new THREE.MeshStandardMaterial({
+      color: 0x831843,
+      roughness: 0.60,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0xca8a04,
+      emissiveIntensity: 0.35,
+      metalness: 0.92,
+      roughness: 0.18,
+    });
+    const sashMat = new THREE.MeshStandardMaterial({
+      color: 0x581c87,
+      roughness: 0.50,
+    });
+    const beardMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.40,
+    });
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xfde047,
+      roughness: 0.55,
+    });
+    const haloMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      emissiveIntensity: 1.8,
+      metalness: 0.9,
+    });
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 2.2,
+      roughness: 0.1,
+    });
+    const staffWoodMat = new THREE.MeshStandardMaterial({
+      color: 0x451a03,
+      roughness: 0.70,
+    });
+
+    // 1. 法袍躯干
+    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.42, 0.95, 16), robeMat);
+    robe.position.set(0, 0.48, 0);
+
+    const stoleL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.03), sashMat);
+    stoleL.position.set(-0.11, 0.52, 0.22);
+    const stoleR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.03), sashMat);
+    stoleR.position.set(0.11, 0.52, 0.22);
+
+    const goldBelt = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.27, 0.07, 16), goldMat);
+    goldBelt.position.set(0, 0.52, 0);
+
+    // 2. 头部、长髯仙须与高耸礼冠
+    const headG = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 14), skinMat);
+    head.position.set(0, 1.05, 0);
+
+    const beardTop = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.36, 10), beardMat);
+    beardTop.position.set(0, 0.84, 0.12);
+    beardTop.rotation.x = -0.22;
+    const beardTip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.32, 8), beardMat);
+    beardTip.position.set(0, 0.65, 0.17);
+    beardTip.rotation.x = -0.15;
+
+    const eyebrowL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.03), beardMat);
+    eyebrowL.position.set(-0.06, 1.10, 0.14);
+    const eyebrowR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.03), beardMat);
+    eyebrowR.position.set(0.06, 1.10, 0.14);
+
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    eyeL.position.set(-0.05, 1.06, 0.14);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    eyeR.position.set(0.05, 1.06, 0.14);
+
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.28, 12), robeMat);
+    crown.position.set(0, 1.24, 0);
+    const crownTop = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.24, 4), goldMat);
+    crownTop.position.set(0, 1.48, 0);
+
+    headG.add(head, beardTop, beardTip, eyebrowL, eyebrowR, eyeL, eyeR, crown, crownTop);
+
+    // 3. 金色日曜光轮 (8 Sunbeams)
+    const haloG = new THREE.Group();
+    const haloRing = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.022, 12, 32), haloMat);
+    haloG.add(haloRing);
+    for (let i = 0; i < 8; i++) {
+      const ang = (i * Math.PI) / 4;
+      const ray = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.16, 4), goldMat);
+      ray.position.set(Math.cos(ang) * 0.44, Math.sin(ang) * 0.44, 0);
+      ray.rotation.z = ang - Math.PI / 2;
+      haloG.add(ray);
+    }
+    haloG.position.set(0, 1.05, -0.16);
+
+    // 4. 右臂与双蛇浑天仪权杖
+    const armR = new THREE.Group();
+    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 0.38, 10), robeMat);
+    sleeveR.position.set(0.28, 0.72, 0.10);
+    sleeveR.rotation.z = -0.35;
+    sleeveR.rotation.x = 0.35;
+
+    const handR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), skinMat);
+    handR.position.set(0.34, 0.54, 0.24);
+
+    const staffG = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.55, 8), staffWoodMat);
+    shaft.position.y = 0.40;
+
+    const goldTip = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.12, 6), goldMat);
+    goldTip.position.y = -0.38;
+    goldTip.rotation.x = Math.PI;
+
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.015, 8, 24), goldMat);
+    ring1.position.y = 1.18;
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.014, 8, 24), goldMat);
+    ring2.position.y = 1.18;
+    ring2.rotation.x = Math.PI / 2;
+
+    const starGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), crystalMat);
+    starGem.position.y = 1.18;
+
+    staffG.add(shaft, goldTip, ring1, ring2, starGem);
+    staffG.position.set(0.34, 0.54, 0.24);
+    staffG.rotation.x = 0.15;
+    armR.add(sleeveR, handR, staffG);
+
+    // 5. 左臂与悬浮奥术火球
+    const armL = new THREE.Group();
+    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 0.38, 10), robeMat);
+    sleeveL.position.set(-0.28, 0.72, 0.10);
+    sleeveL.rotation.z = 0.35;
+    sleeveL.rotation.x = 0.45;
+
+    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), skinMat);
+    handL.position.set(-0.34, 0.56, 0.26);
+
+    const fireOrb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.065, 12, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xdc2626, emissiveIntensity: 2.2 })
+    );
+    fireOrb.position.set(-0.34, 0.70, 0.28);
+    armL.add(sleeveL, handL, fireOrb);
+
+    // 6. 背后披风
+    const cape = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.88, 0.03), sashMat);
+    cape.position.set(0, 0.52, -0.22);
+    cape.rotation.x = -0.10;
+
+    group.add(robe, stoleL, stoleR, goldBelt, headG, haloG, armR, armL, cape);
+    group.scale.set(1.55, 1.55, 1.55);
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.6.4 冥界统帅：冥队长 (Ghost Commander - 40F Boss)
+  // -------------------------------------------------------------------------
+  private static createGhostCommanderMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const netherSteelMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      metalness: 0.94,
+      roughness: 0.22,
+    });
+    const soulGlowMat = new THREE.MeshStandardMaterial({
+      color: 0x22d3ee,
+      emissive: 0x06b6d4,
+      emissiveIntensity: 2.6,
+    });
+    const shroudMat = new THREE.MeshStandardMaterial({
+      color: 0x1e1b4b,
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.70,
+    });
+    const boneMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      roughness: 0.40,
+    });
+    const scytheBladeMat = new THREE.MeshPhysicalMaterial({
+      color: 0x67e8f9,
+      emissive: 0x06b6d4,
+      emissiveIntensity: 2.5,
+      transmission: 0.65,
+      transparent: true,
+      opacity: 0.90,
+      roughness: 0.10,
+    });
+
+    // 1. 冥铁重铠躯干
+    const torsoG = new THREE.Group();
+    const breastplate = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.30), netherSteelMat);
+    breastplate.position.set(0, 0.52, 0);
+
+    const soulRune = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), soulGlowMat);
+    soulRune.position.set(0, 0.56, 0.16);
+
+    const fauld = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.16, 8), netherSteelMat);
+    fauld.position.set(0, 0.26, 0);
+    torsoG.add(breastplate, soulRune, fauld);
+
+    // 2. 冥骨犄角头盔与魂火之眸
+    const headG = new THREE.Group();
+    const skullHelm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.19, 0.28, 12), netherSteelMat);
+    skullHelm.position.set(0, 0.92, 0);
+
+    const skullFace = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.18, 0.16), boneMat);
+    skullFace.position.set(0, 0.88, 0.08);
+
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), soulGlowMat);
+    eyeL.position.set(-0.06, 0.92, 0.16);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), soulGlowMat);
+    eyeR.position.set(0.06, 0.92, 0.16);
+
+    const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.02), boneMat);
+    teeth.position.set(0, 0.82, 0.16);
+
+    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.28, 6), netherSteelMat);
+    hornL.position.set(-0.18, 1.08, -0.02);
+    hornL.rotation.z = 0.65;
+    hornL.rotation.x = -0.25;
+
+    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.28, 6), netherSteelMat);
+    hornR.position.set(0.18, 1.08, -0.02);
+    hornR.rotation.z = -0.65;
+    hornR.rotation.x = -0.25;
+
+    headG.add(skullHelm, skullFace, eyeL, eyeR, teeth, hornL, hornR);
+
+    // 3. 双腿重铠
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.28, 8), netherSteelMat);
+    legL.position.set(-0.12, 0.14, 0);
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.28, 8), netherSteelMat);
+    legR.position.set(0.12, 0.14, 0);
+
+    // 4. 右臂与幽冥摄魂战镰
+    const armR = new THREE.Group();
+    const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), netherSteelMat);
+    shoulderR.position.set(0.28, 0.68, 0);
+    const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.24, 8), netherSteelMat);
+    upperArmR.position.set(0.28, 0.52, 0.03);
+    upperArmR.rotation.z = -0.25;
+    upperArmR.rotation.x = 0.30;
+    const forearmR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.22, 8), netherSteelMat);
+    forearmR.position.set(0.32, 0.36, 0.16);
+    forearmR.rotation.x = 0.65;
+    const handR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), netherSteelMat);
+    handR.position.set(0.32, 0.28, 0.24);
+
+    const scytheG = new THREE.Group();
+    const haft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.65, 8), netherSteelMat);
+    haft.position.y = 0.40;
+
+    const topSpike = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.18, 4), soulGlowMat);
+    topSpike.position.y = 1.25;
+
+    const scytheBlade = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.18, 0.025), scytheBladeMat);
+    scytheBlade.position.set(0.24, 1.15, 0);
+    scytheBlade.rotation.z = -0.35;
+
+    scytheG.add(haft, topSpike, scytheBlade);
+    scytheG.position.set(0.32, 0.28, 0.24);
+    scytheG.rotation.x = 0.25;
+    armR.add(shoulderR, upperArmR, forearmR, handR, scytheG);
+
+    // 5. 左臂与噬魂哀嚎战盾
+    const armL = new THREE.Group();
+    const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), netherSteelMat);
+    shoulderL.position.set(-0.28, 0.68, 0);
+    const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.24, 8), netherSteelMat);
+    upperArmL.position.set(-0.28, 0.52, 0.03);
+    upperArmL.rotation.z = 0.25;
+    upperArmL.rotation.x = 0.30;
+    const forearmL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.22, 8), netherSteelMat);
+    forearmL.position.set(-0.32, 0.36, 0.16);
+    forearmL.rotation.x = 0.65;
+    const handL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), netherSteelMat);
+    handL.position.set(-0.32, 0.28, 0.24);
+
+    const shieldG = new THREE.Group();
+    const shieldPlate = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.62, 0.05), netherSteelMat);
+    const ghostFace = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), boneMat);
+    ghostFace.position.set(0, 0.05, 0.03);
+    const ghostEyeL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.03), soulGlowMat);
+    ghostEyeL.position.set(-0.04, 0.08, 0.12);
+    const ghostEyeR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.03), soulGlowMat);
+    ghostEyeR.position.set(0.04, 0.08, 0.12);
+    const ghostMouth = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.06, 8), soulGlowMat);
+    ghostMouth.position.set(0, -0.01, 0.12);
+
+    shieldG.add(shieldPlate, ghostFace, ghostEyeL, ghostEyeR, ghostMouth);
+    shieldG.position.set(-0.34, 0.42, 0.22);
+    shieldG.rotation.y = 0.35;
+    armL.add(shoulderL, upperArmL, forearmL, handL, shieldG);
+
+    // 6. 巡游幽冥鬼火
+    for (let w = 0; w < 3; w++) {
+      const ang = (w * Math.PI * 2) / 3;
+      const wisp = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), soulGlowMat);
+      wisp.position.set(Math.cos(ang) * 0.45, 0.85 + w * 0.12, Math.sin(ang) * 0.45);
+      group.add(wisp);
+    }
+
+    // 7. 残破幽冥披风
+    const cape = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.75, 0.025), shroudMat);
+    cape.position.set(0, 0.40, -0.18);
+    cape.rotation.x = -0.12;
+
+    group.add(torsoG, headG, legL, legR, armR, armL, cape);
+    group.scale.set(1.85, 1.85, 1.85);
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.6.5 假面魔王：假魔王 (False Sorcerer - 49F Boss)
+  // -------------------------------------------------------------------------
+  private static createFalseSorcererMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    const robeMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.70,
+    });
+    const crimsonTrimMat = new THREE.MeshStandardMaterial({
+      color: 0x991b1b,
+      roughness: 0.50,
+    });
+    const porcelainMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.12,
+      metalness: 0.05,
+    });
+    const maskPaintMat = new THREE.MeshBasicMaterial({
+      color: 0xdc2626,
+    });
+    const voidEyeMat = new THREE.MeshStandardMaterial({
+      color: 0xa855f7,
+      emissive: 0x7c3aed,
+      emissiveIntensity: 2.5,
+    });
+    const accretionMat = new THREE.MeshStandardMaterial({
+      color: 0xc084fc,
+      emissive: 0x9333ea,
+      emissiveIntensity: 2.6,
+      roughness: 0.2,
+    });
+    const voidOrbMat = new THREE.MeshBasicMaterial({
+      color: 0x050505,
+    });
+    const shadowWingMat = new THREE.MeshStandardMaterial({
+      color: 0x4c0519,
+      emissive: 0x2e0854,
+      emissiveIntensity: 1.2,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide,
+      roughness: 0.5,
+    });
+
+    // 1. 虚空法袍身躯
+    const torsoG = new THREE.Group();
+    const robeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.44, 0.96, 14), robeMat);
+    robeBody.position.set(0, 0.48, 0);
+
+    const crimsonStripe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.96, 0.02), crimsonTrimMat);
+    crimsonStripe.position.set(0, 0.48, 0.24);
+    torsoG.add(robeBody, crimsonStripe);
+
+    // 2. 兜帽与标志性假面
+    const headG = new THREE.Group();
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), robeMat);
+    hood.position.set(0, 1.05, -0.02);
+    hood.scale.set(1.05, 1.15, 1.1);
+
+    const maskPlate = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 12, 0, Math.PI, 0, Math.PI), porcelainMat);
+    maskPlate.position.set(0, 1.05, 0.05);
+    maskPlate.rotation.y = -Math.PI / 2;
+
+    const smileL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.015, 0.02), maskPaintMat);
+    smileL.position.set(-0.035, 0.98, 0.16);
+    smileL.rotation.z = -0.35;
+    const smileR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.015, 0.02), maskPaintMat);
+    smileR.position.set(0.035, 0.98, 0.16);
+    smileR.rotation.z = 0.35;
+
+    const tearL = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.06, 0.02), maskPaintMat);
+    tearL.position.set(-0.05, 1.02, 0.16);
+    const tearR = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.06, 0.02), maskPaintMat);
+    tearR.position.set(0.05, 1.02, 0.16);
+
+    const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.018, 0.02), voidEyeMat);
+    eyeL.position.set(-0.05, 1.07, 0.15);
+    const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.018, 0.02), voidEyeMat);
+    eyeR.position.set(0.05, 1.07, 0.15);
+
+    headG.add(hood, maskPlate, smileL, smileR, tearL, tearR, eyeL, eyeR);
+
+    // 3. 背后四翼半透明虚影幻翼 (wing_l, wing_r)
+    const createShadowWings = (isRight: boolean) => {
+      const wg = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+      wg.name = isRight ? 'wing_r' : 'wing_l';
+
+      const wingTop = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.65, 4), shadowWingMat);
+      wingTop.position.set(sign * 0.35, 0.95, -0.15);
+      wingTop.rotation.z = -sign * 0.75;
+      wingTop.rotation.x = -0.25;
+
+      const wingBottom = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.50, 4), shadowWingMat);
+      wingBottom.position.set(sign * 0.32, 0.65, -0.15);
+      wingBottom.rotation.z = -sign * 1.15;
+      wingBottom.rotation.x = 0.15;
+
+      wg.add(wingTop, wingBottom);
+      return wg;
+    };
+
+    // 4. 右臂与虚空日蚀权杖
+    const armR = new THREE.Group();
+    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 0.36, 10), robeMat);
+    sleeveR.position.set(0.28, 0.68, 0.08);
+    sleeveR.rotation.z = -0.35;
+    sleeveR.rotation.x = 0.35;
+
+    const staffG = new THREE.Group();
+    const shaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 1.55, 8),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.5 })
+    );
+    shaft.position.y = 0.40;
+
+    const crescent = new THREE.Mesh(
+      new THREE.TorusGeometry(0.14, 0.02, 8, 24, Math.PI * 1.5),
+      crimsonTrimMat
+    );
+    crescent.position.y = 1.18;
+
+    const voidSphere = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), voidOrbMat);
+    voidSphere.position.y = 1.18;
+
+    const accretionRing1 = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.015, 8, 24), accretionMat);
+    accretionRing1.position.y = 1.18;
+    accretionRing1.rotation.x = Math.PI / 3;
+
+    const accretionRing2 = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.012, 8, 24), accretionMat);
+    accretionRing2.position.y = 1.18;
+    accretionRing2.rotation.y = Math.PI / 3;
+
+    staffG.add(shaft, crescent, voidSphere, accretionRing1, accretionRing2);
+    staffG.position.set(0.34, 0.52, 0.22);
+    staffG.rotation.x = 0.18;
+    armR.add(sleeveR, staffG);
+
+    // 5. 左臂与浮空咒印
+    const armL = new THREE.Group();
+    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 0.36, 10), robeMat);
+    sleeveL.position.set(-0.28, 0.68, 0.08);
+    sleeveL.rotation.z = 0.35;
+    sleeveL.rotation.x = 0.45;
+
+    for (let r = 0; r < 3; r++) {
+      const rune = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.01), accretionMat);
+      rune.position.set(-0.35 + (r - 1) * 0.05, 0.65 + r * 0.06, 0.26);
+      rune.rotation.y = 0.25 * r;
+      armL.add(rune);
+    }
+    armL.add(sleeveL);
+
+    group.add(torsoG, headG, createShadowWings(false), createShadowWings(true), armR, armL);
+    group.scale.set(1.85, 1.85, 1.85);
+    return group;
+  }
+
+  // -------------------------------------------------------------------------
+  // 7.7 深渊巨兽系列：大乌贼 (Red Colossal Giant Squid / Kraken - 鲜红巨型海怪)
+  // -------------------------------------------------------------------------
+  private static createGiantSquidMesh(monsterId: string, _data: any, _color: THREE.Color): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `monster_${monsterId}`;
+
+    // 1. 经典鲜红深海软体巨兽材质库 (Vibrant Crimson Red Cephalopod Shading)
+    // 胴体外皮：鲜亮深红/赤红晶莹水润皮肤
+    const squidSkinMat = new THREE.MeshPhysicalMaterial({
+      color: 0xef4444, // 鲜亮赤红 (Vivid Scarlet/Crimson)
+      emissive: 0x991b1b, // 深血红内蕴柔光
+      emissiveIntensity: 0.28,
+      roughness: 0.18,
+      metalness: 0.05,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08,
+      reflectivity: 0.85,
+    });
+
+    // 腹部/内侧柔嫩肉质：浅珊瑚粉红
+    const underbellyMat = new THREE.MeshStandardMaterial({
+      color: 0xfca5a5,
+      roughness: 0.32,
+      metalness: 0.02,
+    });
+
+    // 游动侧鳍：柔韧赤红肉翼
+    const finMat = new THREE.MeshPhysicalMaterial({
+      color: 0xdc2626,
+      emissive: 0x7f1d1d,
+      emissiveIntensity: 0.25,
+      roughness: 0.22,
+      clearcoat: 0.8,
+      side: THREE.DoubleSide,
+    });
+
+    // 经典乌贼/章鱼吸盘：珠光暖白/象牙吸盘环与深红吸孔
+    const suckerMat = new THREE.MeshStandardMaterial({
+      color: 0xffedd5, // 暖白象牙吸盘肉圈
+      roughness: 0.35,
+    });
+    const suckerPitMat = new THREE.MeshBasicMaterial({
+      color: 0x881337, // 暗红吸盘深孔
+    });
+
+    // 鲜明灵动双眼：大眼白 + 漆黑眼瞳 + 灵光高光点
+    const eyeScleraMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.1,
+    });
+    const pupilMat = new THREE.MeshBasicMaterial({
+      color: 0x09090b,
+    });
+    const glintMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+    });
+    const corneaMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.9,
+      roughness: 0.04,
+      ior: 1.33,
+    });
+
+    // 标志性喷水漏斗嘴管 (Siphon Funnel & Mouth)
+    const mouthRimMat = new THREE.MeshStandardMaterial({
+      color: 0xf87171,
+      roughness: 0.25,
+    });
+    const mouthHoleMat = new THREE.MeshBasicMaterial({
+      color: 0x450a0a,
+    });
+
+    // 体表黄金微光魔斑 (Golden Bioluminescent Photophore Dots)
+    const bioSpotMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xfde047,
+      emissiveIntensity: 1.8,
+      roughness: 0.2,
+    });
+
+    // 地面深海潮汐暗圈 (Floor Abyssal Puddle across 3 tiles)
+    const abyssalPoolMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      emissive: 0x450a0a,
+      emissiveIntensity: 0.35,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.65,
+    });
+
+    // 2. 连续平滑骨骼管道触手生成器 (Continuous Smooth Tapered Tentacle Builder)
+    // 利用 CatmullRomCurve3 样条曲线与重叠球关节、圆锥台，实现完全连续、无破损缝隙、自然渐细的纯天然软体腕足
+    const createSmoothTentacle = (
+      points: THREE.Vector3[],
+      rStart: number,
+      rEnd: number,
+      segments: number = 8,
+      hasSuckers: boolean = true
+    ): THREE.Group => {
+      const armGroup = new THREE.Group();
+      const curve = new THREE.CatmullRomCurve3(points);
+      const sampledPoints: THREE.Vector3[] = [];
+      for (let i = 0; i <= segments; i++) {
+        sampledPoints.push(curve.getPointAt(i / segments));
+      }
+
+      for (let i = 0; i < segments; i++) {
+        const p1 = sampledPoints[i];
+        const p2 = sampledPoints[i + 1];
+        const t1 = i / segments;
+        const t2 = (i + 1) / segments;
+        const r1 = rStart * (1 - t1) + rEnd * t1;
+        const r2 = rStart * (1 - t2) + rEnd * t2;
+
+        const segVec = new THREE.Vector3().subVectors(p2, p1);
+        const segLen = segVec.length();
+        if (segLen < 0.001) continue;
+
+        // 骨节圆台
+        const cylGeo = new THREE.CylinderGeometry(r2, r1, segLen, 10);
+        const cylMesh = new THREE.Mesh(cylGeo, squidSkinMat);
+        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+        cylMesh.position.copy(mid);
+
+        const up = new THREE.Vector3(0, 1, 0);
+        const dir = segVec.clone().normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
+        cylMesh.quaternion.copy(quat);
+        armGroup.add(cylMesh);
+
+        // 骨节连接球 (完全消除段落错缝与悬空，使关节天衣无缝)
+        const ballGeo = new THREE.SphereGeometry(r1 * 1.02, 10, 8);
+        const ballMesh = new THREE.Mesh(ballGeo, squidSkinMat);
+        ballMesh.position.copy(p1);
+        armGroup.add(ballMesh);
+
+        // 末端尖梢圆球封顶
+        if (i === segments - 1) {
+          const tipGeo = new THREE.SphereGeometry(r2 * 1.02, 8, 6);
+          const tipMesh = new THREE.Mesh(tipGeo, squidSkinMat);
+          tipMesh.position.copy(p2);
+          armGroup.add(tipMesh);
+        }
+
+        // 吸盘紧密吸附在内侧/腹侧
+        if (hasSuckers && i > 0 && i < segments) {
+          let sDir = new THREE.Vector3(0, -1, 0).cross(dir).cross(dir).normalize();
+          if (sDir.lengthSq() < 0.1) sDir.set(0, -1, 0);
+
+          const rMid = (r1 + r2) * 0.5;
+          const sG = new THREE.Group();
+          const suckerRadius = rMid * 0.44;
+          const cup = new THREE.Mesh(
+            new THREE.SphereGeometry(suckerRadius, 6, 6, 0, Math.PI * 2, 0, Math.PI * 0.55),
+            suckerMat
+          );
+          const pit = new THREE.Mesh(
+            new THREE.CircleGeometry(suckerRadius * 0.55, 6),
+            suckerPitMat
+          );
+          pit.position.y = suckerRadius * 0.58;
+          pit.rotation.x = -Math.PI / 2;
+          sG.add(cup, pit);
+          sG.position.copy(mid).add(sDir.clone().multiplyScalar(rMid * 0.92));
+          sG.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sDir);
+          armGroup.add(sG);
+        }
+      }
+      return armGroup;
+    };
+
+    // 3. 地面横跨 3 格的暗涌水潭 (Floor Abyssal Puddle across 3 tiles)
+    const poolG = new THREE.Group();
+    poolG.name = 'squid_ink_pool';
+    const poolMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.45, 1.48, 0.01, 32),
+      abyssalPoolMat
+    );
+    poolMesh.scale.set(1.0, 1.0, 0.35);
+    poolMesh.position.set(0, 0.005, 0.02);
+    poolG.add(poolMesh);
+    group.add(poolG);
+
+    // 4. 饱满圆润的红色大乌贼/巨型章鱼头部与胴体 (Plump Crimson Mantle Dome)
+    const mantleG = new THREE.Group();
+    mantleG.name = 'squid_mantle';
+
+    // 标志性饱满圆浑的巨型头部圆顶 (高度 1.38, 丰盈饱满)
+    const mantlePts: THREE.Vector2[] = [
+      new THREE.Vector2(0, 1.38),
+      new THREE.Vector2(0.08, 1.35),
+      new THREE.Vector2(0.20, 1.25),
+      new THREE.Vector2(0.32, 1.10),
+      new THREE.Vector2(0.42, 0.90),
+      new THREE.Vector2(0.46, 0.68),
+      new THREE.Vector2(0.44, 0.48),
+      new THREE.Vector2(0.38, 0.32),
+      new THREE.Vector2(0.25, 0.22),
+      new THREE.Vector2(0.0, 0.22),
+    ];
+    const mantleGeo = new THREE.LatheGeometry(mantlePts, 24);
+    const mantleMesh = new THREE.Mesh(mantleGeo, squidSkinMat);
+    mantleG.add(mantleMesh);
+
+    // 腹侧柔和珊瑚粉亮色垫
+    const bellyPts: THREE.Vector2[] = [
+      new THREE.Vector2(0, 1.18),
+      new THREE.Vector2(0.12, 1.00),
+      new THREE.Vector2(0.24, 0.80),
+      new THREE.Vector2(0.28, 0.60),
+      new THREE.Vector2(0.24, 0.42),
+      new THREE.Vector2(0, 0.28),
+    ];
+    const bellyGeo = new THREE.LatheGeometry(bellyPts, 18, 0, Math.PI * 0.75);
+    const bellyMesh = new THREE.Mesh(bellyGeo, underbellyMat);
+    bellyMesh.position.set(0, 0, 0.16);
+    bellyMesh.rotation.y = -Math.PI * 0.375;
+    mantleG.add(bellyMesh);
+
+    // 头部两侧优雅圆润的游动肉鳍 (Curved Natural Swimming Fins)
+    const createFin = (isRight: boolean) => {
+      const sign = isRight ? 1 : -1;
+      const finGroup = new THREE.Group();
+      finGroup.name = isRight ? 'squid_fin_r' : 'squid_fin_l';
+
+      const finShape = new THREE.Shape();
+      finShape.moveTo(0, 0);
+      finShape.quadraticCurveTo(0.36, 0.04, 0.44, -0.16);
+      finShape.quadraticCurveTo(0.36, -0.36, 0.18, -0.42);
+      finShape.quadraticCurveTo(0.04, -0.36, 0, -0.28);
+      finShape.closePath();
+
+      const finGeo = new THREE.ExtrudeGeometry(finShape, {
+        depth: 0.022,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        bevelSize: 0.015,
+        bevelThickness: 0.015,
+      });
+      const finMesh = new THREE.Mesh(finGeo, finMat);
+      finMesh.position.set(sign * 0.20, 1.25, 0.0);
+      finMesh.scale.x = sign;
+      finMesh.rotation.y = sign * 0.10;
+      finGroup.add(finMesh);
+      return finGroup;
+    };
+    mantleG.add(createFin(false), createFin(true));
+
+    // 背侧黄金星光斑纹
+    const spotCoords = [
+      [0, 1.26, -0.22],
+      [-0.14, 1.10, -0.30],
+      [0.14, 1.10, -0.30],
+      [-0.20, 0.90, -0.35],
+      [0.20, 0.90, -0.35],
+      [0, 0.94, -0.40],
+      [-0.18, 0.72, -0.38],
+      [0.18, 0.72, -0.38],
+      [0, 0.74, -0.42],
+    ];
+    spotCoords.forEach(([sx, sy, sz]) => {
+      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), bioSpotMat);
+      spot.position.set(sx, sy, sz);
+      spot.scale.set(1.2, 0.6, 0.6);
+      mantleG.add(spot);
+    });
+
+    // 5. 乌贼面部与生动双眼 (Expressive Head, Eyes & Siphon Mouth)
+    const headG = new THREE.Group();
+    headG.name = 'squid_head';
+
+    // 标志性两只大眼睛 (特大高反差双目，神气活现极具辨识度)
+    const createEye = (isRight: boolean) => {
+      const sign = isRight ? 1 : -1;
+      const eyeG = new THREE.Group();
+
+      // 眼眶鼓包
+      const socket = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 14, 12),
+        squidSkinMat
+      );
+      socket.position.set(sign * 0.24, 0.50, 0.30);
+      socket.scale.set(1.1, 1.0, 1.2);
+
+      // 大眼白
+      const eyeball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 16, 16),
+        eyeScleraMat
+      );
+      eyeball.position.set(sign * 0.25, 0.50, 0.35);
+
+      // 炯炯有神的漆黑大瞳孔
+      const pupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.065, 12, 12),
+        pupilMat
+      );
+      pupil.position.set(sign * 0.26, 0.50, 0.43);
+      pupil.scale.set(1.0, 1.0, 0.4);
+
+      // 生动高光灵动白点 (Catchlight)
+      const glint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.022, 8, 8),
+        glintMat
+      );
+      glint.position.set(sign * 0.24 + 0.02, 0.53, 0.45);
+
+      // 紧锁的上眼睑威严眼罩 (Hooded Eyelid Fold)
+      const lid = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5),
+        squidSkinMat
+      );
+      lid.position.set(sign * 0.25, 0.51, 0.35);
+      lid.rotation.x = -0.45;
+      lid.rotation.z = -sign * 0.20;
+
+      // 水润透明晶状角膜
+      const cornea = new THREE.Mesh(
+        new THREE.SphereGeometry(0.115, 12, 12),
+        corneaMat
+      );
+      cornea.position.set(sign * 0.25, 0.50, 0.35);
+
+      eyeG.add(socket, eyeball, pupil, glint, lid, cornea);
+      return eyeG;
+    };
+    headG.add(createEye(false), createEye(true));
+
+    // 章鱼/乌贼圆润嘟嘟喷水嘴 (Chubby Cute Funnel Siphon)
+    const mouthG = new THREE.Group();
+    const siphonTube = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.10, 0.16, 14),
+      squidSkinMat
+    );
+    siphonTube.position.set(0, 0.30, 0.40);
+    siphonTube.rotation.x = 0.55;
+
+    const siphonLip = new THREE.Mesh(
+      new THREE.TorusGeometry(0.07, 0.025, 8, 16),
+      mouthRimMat
+    );
+    siphonLip.position.set(0, 0.26, 0.46);
+    siphonLip.rotation.x = 0.55;
+
+    const siphonHole = new THREE.Mesh(
+      new THREE.CircleGeometry(0.06, 12),
+      mouthHoleMat
+    );
+    siphonHole.position.set(0, 0.26, 0.46);
+    siphonHole.rotation.x = 0.55;
+
+    mouthG.add(siphonTube, siphonLip, siphonHole);
+    headG.add(mouthG);
+
+    // 6. 左翼连贯平滑触手群 (Left Flank Tentacles - 完整覆盖左侧格 x=4, 延伸至 X = -1.45)
+    const leftFlankG = new THREE.Group();
+    leftFlankG.name = 'squid_left_flank';
+
+    // 腕足 L1: 顺着西墙攀卷而上的巨型连贯主腕
+    const armL1 = createSmoothTentacle([
+      new THREE.Vector3(-0.28, 0.30, 0.05),
+      new THREE.Vector3(-0.60, 0.22, 0.08),
+      new THREE.Vector3(-0.95, 0.25, 0.04),
+      new THREE.Vector3(-1.25, 0.45, 0.00),
+      new THREE.Vector3(-1.42, 0.75, -0.02),
+      new THREE.Vector3(-1.38, 1.00, -0.04),
+    ], 0.11, 0.035, 8);
+
+    // 腕足 L2: 贴地游走覆盖左侧走廊地面的游蛇腕
+    const armL2 = createSmoothTentacle([
+      new THREE.Vector3(-0.24, 0.24, 0.20),
+      new THREE.Vector3(-0.55, 0.12, 0.32),
+      new THREE.Vector3(-0.90, 0.07, 0.36),
+      new THREE.Vector3(-1.25, 0.06, 0.32),
+      new THREE.Vector3(-1.38, 0.22, 0.20),
+    ], 0.10, 0.032, 8);
+
+    // 腕足 L3: 凌空高高弓起的威吓重鞭
+    const armL3 = createSmoothTentacle([
+      new THREE.Vector3(-0.22, 0.38, 0.12),
+      new THREE.Vector3(-0.50, 0.70, 0.22),
+      new THREE.Vector3(-0.80, 0.98, 0.28),
+      new THREE.Vector3(-1.08, 0.95, 0.32),
+      new THREE.Vector3(-1.22, 0.70, 0.35),
+    ], 0.09, 0.030, 8);
+
+    // 腕足 L4: 牢牢抓地的后锚支撑腕
+    const armL4 = createSmoothTentacle([
+      new THREE.Vector3(-0.26, 0.26, -0.15),
+      new THREE.Vector3(-0.65, 0.14, -0.28),
+      new THREE.Vector3(-1.05, 0.10, -0.32),
+      new THREE.Vector3(-1.28, 0.18, -0.24),
+    ], 0.095, 0.032, 6);
+
+    leftFlankG.add(armL1, armL2, armL3, armL4);
+
+    // 7. 右翼连贯平滑触手群 (Right Flank Tentacles - 完整覆盖右侧格 x=6, 延伸至 X = +1.45)
+    const rightFlankG = new THREE.Group();
+    rightFlankG.name = 'squid_right_flank';
+
+    // 腕足 R1: 顺着东墙攀卷而上的巨型连贯主腕
+    const armR1 = createSmoothTentacle([
+      new THREE.Vector3(0.28, 0.30, 0.05),
+      new THREE.Vector3(0.60, 0.22, 0.08),
+      new THREE.Vector3(0.95, 0.25, 0.04),
+      new THREE.Vector3(1.25, 0.45, 0.00),
+      new THREE.Vector3(1.42, 0.75, -0.02),
+      new THREE.Vector3(1.38, 1.00, -0.04),
+    ], 0.11, 0.035, 8);
+
+    // 腕足 R2: 贴地游走覆盖右侧走廊地面的游蛇腕
+    const armR2 = createSmoothTentacle([
+      new THREE.Vector3(0.24, 0.24, 0.20),
+      new THREE.Vector3(0.55, 0.12, 0.32),
+      new THREE.Vector3(0.90, 0.07, 0.36),
+      new THREE.Vector3(1.25, 0.06, 0.32),
+      new THREE.Vector3(1.38, 0.22, 0.20),
+    ], 0.10, 0.032, 8);
+
+    // 腕足 R3: 凌空高高弓起的威吓重鞭
+    const armR3 = createSmoothTentacle([
+      new THREE.Vector3(0.22, 0.38, 0.12),
+      new THREE.Vector3(0.50, 0.70, 0.22),
+      new THREE.Vector3(0.80, 0.98, 0.28),
+      new THREE.Vector3(1.08, 0.95, 0.32),
+      new THREE.Vector3(1.22, 0.70, 0.35),
+    ], 0.09, 0.030, 8);
+
+    // 腕足 R4: 牢牢抓地的后锚支撑腕
+    const armR4 = createSmoothTentacle([
+      new THREE.Vector3(0.26, 0.26, -0.15),
+      new THREE.Vector3(0.65, 0.14, -0.28),
+      new THREE.Vector3(1.05, 0.10, -0.32),
+      new THREE.Vector3(1.28, 0.18, -0.24),
+    ], 0.095, 0.032, 6);
+
+    rightFlankG.add(armR1, armR2, armR3, armR4);
+
+    // 8. 正前方两条生动捕食触手 (2 Front Striking Prehensile Tentacles)
+    const strikingL = new THREE.Group();
+    strikingL.name = 'squid_striking_l';
+    const armC1 = createSmoothTentacle([
+      new THREE.Vector3(-0.12, 0.26, 0.25),
+      new THREE.Vector3(-0.18, 0.15, 0.42),
+      new THREE.Vector3(-0.28, 0.12, 0.58),
+      new THREE.Vector3(-0.32, 0.36, 0.65),
+      new THREE.Vector3(-0.24, 0.58, 0.60),
+    ], 0.09, 0.028, 8);
+    strikingL.add(armC1);
+
+    const strikingR = new THREE.Group();
+    strikingR.name = 'squid_striking_r';
+    const armC2 = createSmoothTentacle([
+      new THREE.Vector3(0.12, 0.26, 0.25),
+      new THREE.Vector3(0.18, 0.15, 0.42),
+      new THREE.Vector3(0.28, 0.12, 0.58),
+      new THREE.Vector3(0.32, 0.36, 0.65),
+      new THREE.Vector3(0.24, 0.58, 0.60),
+    ], 0.09, 0.028, 8);
+    strikingR.add(armC2);
+
+    group.add(mantleG, headG, leftFlankG, rightFlankG, strikingL, strikingR);
     return group;
   }
 
@@ -2815,6 +5574,16 @@ export class ModelFactory {
       );
       star.position.set(0, 0.42, 0.04);
       group.add(coin, star);
+    } else if (itemType === 'notepad') {
+      return this.createNotepadMesh();
+    } else if (itemType === 'cross') {
+      return this.createCrossMesh();
+    } else if (itemType === 'monster_manual') {
+      return this.createMonsterManualMesh();
+    } else if (itemType === 'compass') {
+      return this.createCompassMesh();
+    } else if (itemType === 'snow_crystal') {
+      return this.createSnowCrystalMesh();
     } else {
       // 默认道具箱
       const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
@@ -2831,6 +5600,335 @@ export class ModelFactory {
       }
     });
 
+    return group;
+  }
+
+  // 记事本 / 冒险手记 (Notepad / Explorer's Chronicle) - 彻底重构写实高精 3D 建模
+  static createNotepadMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_notepad';
+
+    const leatherMat = new THREE.MeshStandardMaterial({
+      color: 0x451a03, // 复古深褐皮革封皮
+      roughness: 0.65,
+      metalness: 0.15,
+    });
+    const spineMat = new THREE.MeshStandardMaterial({
+      color: 0x271105, // 书脊深邃老皮革
+      roughness: 0.7,
+      metalness: 0.1,
+    });
+    const pagesMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a, // 泛黄微黄羊皮纸书页芯
+      roughness: 0.9,
+      metalness: 0.05,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24, // 纯金/黄铜护角、皮扣与笔尖
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8, // 封面天蓝星光魔晶徽章
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.8,
+      roughness: 0.1,
+      metalness: 0.3,
+    });
+    const ribbonMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626, // 垂落的书签深红丝带
+      roughness: 0.5,
+      metalness: 0.1,
+    });
+    const quillMat = new THREE.MeshStandardMaterial({
+      color: 0xe0f2fe, // 探险家羽毛笔天蓝白羽毛
+      roughness: 0.6,
+      metalness: 0.05,
+    });
+
+    const book = new THREE.Group();
+
+    // 1. 底封 (Back Cover)
+    const backCover = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.016, 0.46), leatherMat);
+    backCover.position.y = 0.01;
+    book.add(backCover);
+
+    // 2. 书芯内页厚纸块 (Parchment Paper Block)
+    const paperBlock = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.09, 0.43), pagesMat);
+    paperBlock.position.set(0.012, 0.065, 0);
+    book.add(paperBlock);
+
+    // 3. 面封 (Front Cover)
+    const frontCover = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.018, 0.46), leatherMat);
+    frontCover.position.y = 0.12;
+    book.add(frontCover);
+
+    // 4. 书脊半圆柱 (Book Spine)
+    const spineGeo = new THREE.CylinderGeometry(0.058, 0.058, 0.46, 12, 1, false, Math.PI / 2, Math.PI);
+    const spine = new THREE.Mesh(spineGeo, spineMat);
+    spine.rotation.x = Math.PI / 2;
+    spine.position.set(-0.175, 0.065, 0);
+    book.add(spine);
+
+    // 5. 纯金/黄铜金属护角 (Brass Corner Protectors - 4 corners)
+    const cornerOffsets = [
+      { x: 0.165, z: 0.215 },
+      { x: 0.165, z: -0.215 },
+    ];
+    for (const off of cornerOffsets) {
+      const corner = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.024, 0.045), goldMat);
+      corner.position.set(off.x, 0.122, off.z);
+      book.add(corner);
+    }
+
+    // 6. 封面天蓝星光魔晶徽章 (Notebook Gem Emblem)
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), gemMat);
+    gem.position.set(0.02, 0.138, 0);
+    gem.rotation.y = Math.PI / 4;
+    book.add(gem);
+
+    // 7. 封皮束带与锁扣 (Leather Strap & Buckle)
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.12, 0.012), leatherMat);
+    strap.position.set(0.18, 0.065, 0);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 0.02), goldMat);
+    buckle.position.set(0.175, 0.065, 0);
+    book.add(strap, buckle);
+
+    // 8. 垂落红色书签缎带 (Silk Bookmark Ribbon)
+    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.12), ribbonMat);
+    ribbon.position.set(0.05, 0.06, 0.26);
+    ribbon.rotation.x = 0.2;
+    book.add(ribbon);
+
+    // 9. 精致古典羽毛笔 (Classic Explorer Quill Pen 斜置在书面上)
+    const quillG = new THREE.Group();
+    // 笔身羽管
+    const quillStem = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.012, 0.36, 8), quillMat);
+    quillStem.position.y = 0.18;
+    // 羽毛宽边
+    const featherVane = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.22, 0.006), quillMat);
+    featherVane.position.set(0.02, 0.24, 0);
+    featherVane.rotation.z = -0.15;
+    // 黄铜金属笔嘴
+    const nib = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.05, 6), goldMat);
+    nib.position.y = -0.01;
+    nib.rotation.z = Math.PI;
+
+    quillG.add(quillStem, featherVane, nib);
+    quillG.position.set(-0.02, 0.15, 0.05);
+    quillG.rotation.set(0.1, 0.4, -Math.PI / 3);
+    book.add(quillG);
+
+    // 整体悬浮微倾展示
+    book.rotation.set(0.2, 0.35, -0.12);
+    book.position.set(0, 0.22, 0);
+    group.add(book);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 神圣十字架 (Holy Cross)
+  static createCrossMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_cross';
+
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0xeab308,
+      emissiveIntensity: 0.35,
+      metalness: 0.92,
+      roughness: 0.15,
+    });
+    const rubyMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xdc2626,
+      emissiveIntensity: 0.7,
+      metalness: 0.2,
+      roughness: 0.1,
+    });
+
+    const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.52, 0.06), goldMat);
+    vBar.position.y = 0.34;
+    const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.06), goldMat);
+    hBar.position.y = 0.42;
+
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.018, 8, 24), goldMat);
+    halo.position.set(0, 0.42, -0.01);
+
+    const ruby = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), rubyMat);
+    ruby.position.set(0, 0.42, 0.035);
+
+    group.add(vBar, hBar, halo, ruby);
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+    return group;
+  }
+
+  // 怪物手册 (Monster Manual)
+  static createMonsterManualMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_monster_manual';
+
+    const coverMat = new THREE.MeshStandardMaterial({
+      color: 0x065f46, // 翠绿古典精装魔法典籍
+      roughness: 0.7,
+      metalness: 0.15,
+    });
+    const pagesMat = new THREE.MeshStandardMaterial({
+      color: 0xfef3c7,
+      roughness: 0.9,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      emissive: 0x059669,
+      emissiveIntensity: 0.9,
+      metalness: 0.3,
+      roughness: 0.1,
+    });
+
+    const book = new THREE.Group();
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.44), coverMat);
+    cover.position.y = 0.06;
+    const pages = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.08, 0.41), pagesMat);
+    pages.position.set(0.01, 0.06, 0);
+    const eye = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), eyeMat);
+    eye.position.set(0, 0.125, 0);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 20), goldMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.122, 0);
+
+    book.add(cover, pages, eye, ring);
+    book.rotation.set(0.2, 0.3, -0.1);
+    book.position.set(0, 0.22, 0);
+    group.add(book);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+    return group;
+  }
+
+  // 楼层罗盘 (Floor Teleport Compass)
+  static createCompassMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_compass';
+
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.85,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.8,
+    });
+    const needleRedMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xb91c1c,
+      emissiveIntensity: 0.5,
+    });
+    const needleBlueMat = new THREE.MeshStandardMaterial({
+      color: 0x3b82f6,
+      emissive: 0x1d4ed8,
+      emissiveIntensity: 0.5,
+    });
+
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 24), brassMat);
+    body.position.y = 0.25;
+
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 8, 16), brassMat);
+    ring.position.set(0, 0.25, 0.24);
+
+    const needleN = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.15, 4), needleRedMat);
+    needleN.rotation.x = Math.PI / 2;
+    needleN.position.set(0, 0.285, 0.075);
+
+    const needleS = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.15, 4), needleBlueMat);
+    needleS.rotation.x = -Math.PI / 2;
+    needleS.position.set(0, 0.285, -0.075);
+
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.015, 24), glassMat);
+    glass.position.y = 0.29;
+
+    group.add(body, ring, needleN, needleS, glass);
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+    return group;
+  }
+
+  // 冰冻雪花 (Snow Crystal)
+  static createSnowCrystalMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_snow_crystal';
+
+    const iceMat = new THREE.MeshPhysicalMaterial({
+      color: 0xa5f3fc,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 0.65,
+      transmission: 0.75,
+      roughness: 0.15,
+      transparent: true,
+      opacity: 0.9,
+    });
+
+    const crystalG = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const arm = new THREE.Group();
+      arm.rotation.y = (i * Math.PI) / 3;
+
+      const mainSpike = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.32), iceMat);
+      mainSpike.position.z = 0.16;
+
+      const sub1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.10), iceMat);
+      sub1.rotation.y = Math.PI / 4;
+      sub1.position.set(0.04, 0, 0.18);
+
+      const sub2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.10), iceMat);
+      sub2.rotation.y = -Math.PI / 4;
+      sub2.position.set(-0.04, 0, 0.18);
+
+      arm.add(mainSpike, sub1, sub2);
+      crystalG.add(arm);
+    }
+
+    const center = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), iceMat);
+    crystalG.add(center);
+
+    crystalG.position.y = 0.35;
+    group.add(crystalG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
     return group;
   }
 
@@ -3338,13 +6436,13 @@ export class ModelFactory {
   private static sharedFloorGeo: THREE.BoxGeometry | null = null;
 
   // =========================================================================
-  // 11. 墙体 (Wall) - 厚度与门体严格一致 (0.16)，智能平滑衔接相邻墙体与门
+  // 11. 墙体 (Wall) - 坚固城堡石砖整块填充 (完整占据单格 1.0 x 1.0，高 0.90，杜绝孤立立柱与薄壁)
   // =========================================================================
   static createWallMesh(
     theme: string,
-    layout?: (Tile | null)[][],
-    x?: number,
-    y?: number
+    _layout?: (Tile | null)[][],
+    _x?: number,
+    _y?: number
   ): THREE.Object3D {
     const matKey = `wall_mat_${theme}`;
     let wallMat = this.matCache.get(matKey) as THREE.MeshStandardMaterial;
@@ -3359,164 +6457,16 @@ export class ModelFactory {
     }
 
     const WALL_H = 0.90; // 与主角同高 (0.90)，避免遮挡视野
-    const T = 0.16; // 严格与门体厚度对齐 (0.16)
-    const armLen = 0.42; // (1.0 - T) / 2
-    const armCenter = 0.29; // (0.5 + T / 2) / 2
-
-    // 默认或无上下文时（如单元测试）：回退为标准单格横向薄墙
-    if (!layout || x === undefined || y === undefined) {
-      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
-      geo.translate(0, WALL_H / 2, 0);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
+    if (!this.sharedWallGeo) {
+      this.sharedWallGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
+      this.sharedWallGeo.translate(0, WALL_H / 2, 0);
     }
 
-    const isWallLike = (tx: number, ty: number): boolean => {
-      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
-      const t = layout[ty]?.[tx];
-      if (!t) return false;
-      return t.type === 'wall' || t.type === 'fake_wall' || t.type.startsWith('door_') || t.type === 'shop';
-    };
-
-    let hasNorth = isWallLike(x, y - 1);
-    let hasSouth = isWallLike(x, y + 1);
-    let hasWest = isWallLike(x - 1, y);
-    let hasEast = isWallLike(x + 1, y);
-
-    // 边界延展：若位于地图外沿且有邻接墙体走向，则顺向延展贴满边界，防止边缘断层
-    if (x === 0 && (hasNorth || hasSouth || hasEast)) hasWest = true;
-    if (x === 10 && (hasNorth || hasSouth || hasWest)) hasEast = true;
-    if (y === 0 && (hasWest || hasEast || hasSouth)) hasNorth = true;
-    if (y === 10 && (hasWest || hasEast || hasNorth)) hasSouth = true;
-
-    const wallNeighborCount = (hasNorth ? 1 : 0) + (hasSouth ? 1 : 0) + (hasWest ? 1 : 0) + (hasEast ? 1 : 0);
-
-    // 1. 若周围有 3 个或 4 个实体墙邻居（处于实体厚墙/岩体内部或边缘）：直接使用整块实心石方块填充
-    // 避免在厚墙边缘生成空心十字架/笼子结构
-    if (wallNeighborCount >= 3) {
-      const solidGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
-      solidGeo.translate(0, WALL_H / 2, 0);
-      const solidMesh = new THREE.Mesh(solidGeo, wallMat);
-      solidMesh.castShadow = true;
-      solidMesh.receiveShadow = true;
-      return solidMesh;
-    }
-
-    // 1.5 若为实体厚墙的拐角处（两个邻接方向有墙，且两墙夹角后方的对角也是墙）：实心方块填充
-    if (
-      (hasWest && hasSouth && isWallLike(x - 1, y + 1)) ||
-      (hasEast && hasSouth && isWallLike(x + 1, y + 1)) ||
-      (hasWest && hasNorth && isWallLike(x - 1, y - 1)) ||
-      (hasEast && hasNorth && isWallLike(x + 1, y - 1))
-    ) {
-      const solidGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
-      solidGeo.translate(0, WALL_H / 2, 0);
-      const solidMesh = new THREE.Mesh(solidGeo, wallMat);
-      solidMesh.castShadow = true;
-      solidMesh.receiveShadow = true;
-      return solidMesh;
-    }
-
-    // 2. 纯横向走向墙段 (水平贯穿)
-    if (hasWest && hasEast && !hasNorth && !hasSouth) {
-      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
-      geo.translate(0, WALL_H / 2, 0);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
-    }
-
-    // 3. 纯纵向走向墙段 (纵向贯穿)
-    if (hasNorth && hasSouth && !hasWest && !hasEast) {
-      const geo = new THREE.BoxGeometry(T, WALL_H, 1.0);
-      geo.translate(0, WALL_H / 2, 0);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
-    }
-
-    // 4. 单向横向尽头
-    if ((hasWest || hasEast) && !hasNorth && !hasSouth) {
-      const posX = hasWest ? -0.21 : 0.21;
-      const geo = new THREE.BoxGeometry(0.58, WALL_H, T);
-      geo.translate(posX, WALL_H / 2, 0);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
-    }
-
-    // 5. 单向纵向尽头
-    if ((hasNorth || hasSouth) && !hasWest && !hasEast) {
-      const posZ = hasNorth ? -0.21 : 0.21;
-      const geo = new THREE.BoxGeometry(T, WALL_H, 0.58);
-      geo.translate(0, WALL_H / 2, posZ);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
-    }
-
-    // 6. 独立立柱 (无任何正交邻接)
-    if (!hasNorth && !hasSouth && !hasWest && !hasEast) {
-      const geo = new THREE.BoxGeometry(0.20, WALL_H, 0.20);
-      geo.translate(0, WALL_H / 2, 0);
-      const mesh = new THREE.Mesh(geo, wallMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      return mesh;
-    }
-
-    // 7. 转角、T 字路口与十字交叉结构 (复合轻量组件)
-    const group = new THREE.Group();
-    group.name = 'wall';
-
-    // 核心立柱 (对齐厚度 T x T)
-    const centerGeo = new THREE.BoxGeometry(T, WALL_H, T);
-    centerGeo.translate(0, WALL_H / 2, 0);
-    const centerMesh = new THREE.Mesh(centerGeo, wallMat);
-    centerMesh.castShadow = true;
-    centerMesh.receiveShadow = true;
-    group.add(centerMesh);
-
-    if (hasWest) {
-      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
-      armGeo.translate(-armCenter, WALL_H / 2, 0);
-      const arm = new THREE.Mesh(armGeo, wallMat);
-      arm.castShadow = true;
-      arm.receiveShadow = true;
-      group.add(arm);
-    }
-    if (hasEast) {
-      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
-      armGeo.translate(armCenter, WALL_H / 2, 0);
-      const arm = new THREE.Mesh(armGeo, wallMat);
-      arm.castShadow = true;
-      arm.receiveShadow = true;
-      group.add(arm);
-    }
-    if (hasNorth) {
-      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
-      armGeo.translate(0, WALL_H / 2, -armCenter);
-      const arm = new THREE.Mesh(armGeo, wallMat);
-      arm.castShadow = true;
-      arm.receiveShadow = true;
-      group.add(arm);
-    }
-    if (hasSouth) {
-      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
-      armGeo.translate(0, WALL_H / 2, armCenter);
-      const arm = new THREE.Mesh(armGeo, wallMat);
-      arm.castShadow = true;
-      arm.receiveShadow = true;
-      group.add(arm);
-    }
-
-    return group;
+    const mesh = new THREE.Mesh(this.sharedWallGeo, wallMat);
+    mesh.name = 'wall';
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
   }
 
   // =========================================================================

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
 import { Wrench, X, Shield, Key, Coins, Zap, FastForward, Trash2 } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { isDebugAllowed } from '../utils/env';
 
 interface DebugPanelProps {
   game: GameState;
@@ -17,6 +18,10 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
   onJumpFloor,
   onClearMonsters,
 }) => {
+  if (!isDebugAllowed()) {
+    return null;
+  }
+
   const { t } = useI18n();
   const [targetFloor, setTargetFloor] = useState<number>(game.currentFloor);
 

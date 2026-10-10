@@ -1,5 +1,6 @@
-// src/i18n/index.ts
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { MONSTERS } from '../data/monsters';
+import { ItemType } from '../types/game';
 
 export type Language = 'zh' | 'en';
 
@@ -123,7 +124,7 @@ export interface Translations {
   breakpointBenefit: string;
   magicAttack: string;
 
-  // Shop Modal
+  // Shop Modal (Gold)
   shopTitle: string;
   shopSubtitle: string;
   shopCurrentGold: string;
@@ -135,6 +136,19 @@ export interface Translations {
   shopSuccessFloating: string;
   shopNotEnoughGold: string;
   shopTotalPrayers: string;
+
+  // Experience Elder Shop Modal
+  expShopTitle: string;
+  expShopSubtitle: string;
+  expCurrent: string;
+  expUpgradeCost: string;
+  expUpgradeHp: string;
+  expUpgradeAtk: string;
+  expUpgradeDef: string;
+  expUpgradeLevel: string;
+  expShopLeave: string;
+  expSuccessFloating: string;
+  expNotEnough: string;
 
   // Dialogue Modal
   dialogueNext: string;
@@ -283,7 +297,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     breakpointTitle: '最佳升级临界点',
     raiseAtkPrefix: '提升至 {atk} 攻',
     saveHpPrefix: '可少损 {hp} 血',
-    alreadyZeroDamage: '已达到无伤境界',
+    alreadyZeroDamage: '已达到未受伤害状态',
     rewardGold: '金币',
     rewardExp: '经验',
     specialTrait: '特性',
@@ -296,25 +310,38 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     closeManual: '关闭手册 (ESC)',
     cannotBreakDefDetail: '无法破防 (攻击 ≤ 防御)',
     insufficientHp: '战力不足 (损血 {damage} ≥ 当前生命)',
-    flawlessVictory: '完全无伤防杀！(损血 0)',
+    flawlessVictory: '未受到伤害',
     estDamageDetail: '预计损血：{damage} (击杀需 {turns} 回合)',
     breakpointUpgrade: '⚡ 升级临界点：攻击力提升至 ',
     breakpointNeed: '（尚需 +{diff}）',
     breakpointBenefit: '可减少受击 1 回合，少损血 -{saveHp} HP',
     magicAttack: '魔攻',
 
-    // Shop Modal
-    shopTitle: '远古祈祷神坛',
-    shopSubtitle: '神圣的祷告将唤醒远古神力，守护你的征程',
+    // Shop Modal (Gold)
+    shopTitle: '金币能力商店',
+    shopSubtitle: '使用金币购买生命与攻防强化，突破极限战力！',
     shopCurrentGold: '当前拥有金币：',
-    shopPrayerCost: '本次祈祷需：',
-    shopBlessingHp: '祈愿：生命庇护',
-    shopBlessingAtk: '祈愿：神圣锋芒',
-    shopBlessingDef: '祈愿：固若金汤',
-    shopLeave: '离开神坛',
-    shopSuccessFloating: '祈祷成功！属性大幅提升！',
+    shopPrayerCost: '本次强化消耗：',
+    shopBlessingHp: '提升生命值',
+    shopBlessingAtk: '提升攻击力',
+    shopBlessingDef: '提升防御力',
+    shopLeave: '离开商店',
+    shopSuccessFloating: '强化成功！属性已提升！',
     shopNotEnoughGold: '金币不足！',
-    shopTotalPrayers: '已累计加点：{times} 次（全塔所有神坛共享价格涨幅）',
+    shopTotalPrayers: '全塔累计强化：{times} 次（所有金币商店共享加价）',
+
+    // Experience Elder Shop Modal
+    expShopTitle: '经验修行精进',
+    expShopSubtitle: '参透实战心得，将百炼经验化为通天战力！',
+    expCurrent: '当前拥有经验：',
+    expUpgradeCost: '消耗经验：',
+    expUpgradeHp: '强健体魄 (+生命)',
+    expUpgradeAtk: '磨砺剑芒 (+攻击)',
+    expUpgradeDef: '厚土护体 (+防御)',
+    expUpgradeLevel: '境界突破 (+等级与全属性)',
+    expShopLeave: '结束修行',
+    expSuccessFloating: '参悟功成！属性大幅精进！',
+    expNotEnough: '经验值不足！',
 
     // Dialogue Modal
     dialogueNext: '继续',
@@ -461,7 +488,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     breakpointTitle: 'Optimal Upgrade Breakpoint',
     raiseAtkPrefix: 'Raise to {atk} ATK',
     saveHpPrefix: 'Saves {hp} HP',
-    alreadyZeroDamage: 'Damage already reduced to 0',
+    alreadyZeroDamage: 'Already taking no damage',
     rewardGold: 'Gold',
     rewardExp: 'EXP',
     specialTrait: 'Special',
@@ -474,25 +501,38 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     closeManual: 'Close Manual (ESC)',
     cannotBreakDefDetail: 'Cannot pierce DEF (ATK ≤ DEF)',
     insufficientHp: 'HP too low (Damage {damage} ≥ current HP)',
-    flawlessVictory: 'Flawless Victory! (0 Damage)',
+    flawlessVictory: 'No damage taken',
     estDamageDetail: 'Est. Damage: {damage} ({turns} rounds)',
     breakpointUpgrade: '⚡ Breakpoint: Raise ATK to ',
     breakpointNeed: ' (Needs +{diff})',
     breakpointBenefit: 'Saves 1 round, reduces damage by -{saveHp} HP',
     magicAttack: 'Magic ATK',
 
-    // Shop Modal
-    shopTitle: 'Ancient Prayer Altar',
-    shopSubtitle: 'Sacred prayers invoke ancient powers to protect your quest',
+    // Shop Modal (Gold)
+    shopTitle: 'Gold Ability Shop',
+    shopSubtitle: 'Spend gold to enhance attributes and boost battle prowess!',
     shopCurrentGold: 'Current Gold: ',
-    shopPrayerCost: 'Prayer Cost: ',
-    shopBlessingHp: 'Prayer: Life Blessing',
-    shopBlessingAtk: 'Prayer: Holy Edge',
-    shopBlessingDef: 'Prayer: Iron Bastion',
-    shopLeave: 'Leave Altar',
-    shopSuccessFloating: 'Prayer answered! Attributes greatly enhanced!',
+    shopPrayerCost: 'Enhancement Cost: ',
+    shopBlessingHp: 'Enhance HP',
+    shopBlessingAtk: 'Enhance Attack',
+    shopBlessingDef: 'Enhance Defense',
+    shopLeave: 'Leave Shop',
+    shopSuccessFloating: 'Enhancement successful! Attributes upgraded!',
     shopNotEnoughGold: 'Not enough gold!',
-    shopTotalPrayers: 'Total prayers: {times} (All altars share cost increase)',
+    shopTotalPrayers: 'Total enhancements: {times} (Shared across all shops)',
+
+    // Experience Elder Shop Modal
+    expShopTitle: 'Experience Training',
+    expShopSubtitle: 'Harness battle experience to cultivate boundless combat power!',
+    expCurrent: 'Current EXP: ',
+    expUpgradeCost: 'Cost EXP: ',
+    expUpgradeHp: 'Vitality (+HP)',
+    expUpgradeAtk: 'Martial Edge (+ATK)',
+    expUpgradeDef: 'Iron Bastion (+DEF)',
+    expUpgradeLevel: 'Breakthrough (+Level & All Stats)',
+    expShopLeave: 'Leave Training',
+    expSuccessFloating: 'Enlightenment reached! Attributes boosted!',
+    expNotEnough: 'Not enough EXP!',
 
     // Dialogue Modal
     dialogueNext: 'Next',
@@ -541,35 +581,70 @@ export const TRANSLATIONS: Record<Language, Translations> = {
   },
 };
 
-// 怪物名称双语映射表
+// 怪物名称双语映射表（涵盖全塔 40 种怪物及别名）
 export const MONSTER_NAMES: Record<string, { zh: string; en: string }> = {
+  // 史莱姆系列
   green_slime: { zh: '绿史莱姆', en: 'Green Slime' },
   red_slime: { zh: '红史莱姆', en: 'Red Slime' },
+  big_slime: { zh: '大史莱姆', en: 'Big Slime' },
   black_slime: { zh: '黑史莱姆', en: 'Black Slime' },
   slime_king: { zh: '史莱姆王', en: 'Slime King' },
+
+  // 蝙蝠系列
   small_bat: { zh: '小蝙蝠', en: 'Small Bat' },
   big_bat: { zh: '大蝙蝠', en: 'Big Bat' },
   red_bat: { zh: '红蝙蝠', en: 'Red Bat' },
-  vampire: { zh: '吸血鬼', en: 'Vampire' },
+
+  // 骷髅系列
   skeleton: { zh: '骷髅人', en: 'Skeleton' },
   skeleton_soldier: { zh: '骷髅士兵', en: 'Skeleton Soldier' },
   skeleton_captain: { zh: '骷髅队长', en: 'Skeleton Captain' },
-  ghost_soldier: { zh: '幽灵士兵', en: 'Ghost Soldier' },
+
+  // 法师与巫师系列
   junior_mage: { zh: '初级法师', en: 'Junior Mage' },
   senior_mage: { zh: '高级法师', en: 'Senior Mage' },
   red_mage: { zh: '红衣法师', en: 'Red Mage' },
+  archmage: { zh: '大法师', en: 'Archmage' },
   arch_mage: { zh: '大法师', en: 'Archmage' },
+  junior_wizard: { zh: '初级巫师', en: 'Junior Wizard' },
+  senior_wizard: { zh: '高级巫师', en: 'Senior Wizard' },
+
+  // 卫兵与警卫系列
   junior_guard: { zh: '初级卫兵', en: 'Junior Guard' },
-  mid_guard: { zh: '中级卫兵', en: 'Mid Guard' },
+  mid_guard: { zh: '中级卫兵', en: 'Medium Guard' },
   senior_guard: { zh: '高级卫兵', en: 'Senior Guard' },
-  iron_knight: { zh: '铁骑士', en: 'Iron Knight' },
+  iron_guard: { zh: '铁甲卫兵', en: 'Iron Guard' },
+  magic_guard: { zh: '魔法警卫', en: 'Magic Guard' },
+
+  // 兽人与战士系列
+  orc: { zh: '兽人', en: 'Orc' },
+  orc_knight: { zh: '兽人武士', en: 'Orc Knight' },
+  ghost_soldier: { zh: '鬼战士', en: 'Ghost Soldier' },
+  ghost: { zh: '幽灵', en: 'Ghost' },
+  ghost_commander: { zh: '冥队长', en: 'Ghost Commander' },
+  dual_swordsman: { zh: '双手剑士', en: 'Dual Swordsman' },
+  warrior: { zh: '战士', en: 'Warrior' },
+
+  // 骑士系列
+  knight: { zh: '骑士', en: 'Knight' },
   knight_captain: { zh: '骑士队长', en: 'Knight Captain' },
-  shadow_knight: { zh: '暗黑骑士', en: 'Shadow Knight' },
+  dark_knight: { zh: '黑暗骑士', en: 'Dark Knight' },
+  shadow_knight: { zh: '黑暗骑士', en: 'Dark Knight' },
+  white_knight: { zh: '白衣武士', en: 'White Knight' },
+  yellow_knight: { zh: '黄衣武士', en: 'Yellow Knight' },
+  blue_knight: { zh: '蓝衣武士', en: 'Blue Knight' },
+  iron_knight: { zh: '铁骑士', en: 'Iron Knight' },
   gold_knight: { zh: '黄金骑士', en: 'Gold Knight' },
   demon_slayer: { zh: '屠龙武士', en: 'Dragon Slayer' },
+
+  // 首领与远古神魔系列
+  golem: { zh: '石头人', en: 'Golem' },
   giant_squid: { zh: '大乌贼', en: 'Giant Squid' },
-  dragon: { zh: '魔龙', en: 'Magic Dragon' },
-  demon_king: { zh: '大魔王杰诺', en: 'Demon Lord Jeno' },
+  dragon: { zh: '魔龙', en: 'Ancient Dragon' },
+  vampire: { zh: '吸血鬼', en: 'Vampire' },
+  false_sorcerer: { zh: '假魔王', en: 'False Sorcerer' },
+  demon_lord: { zh: '魔王杰诺', en: 'Demon Lord Zeno' },
+  demon_king: { zh: '魔王杰诺', en: 'Demon Lord Zeno' },
 };
 
 // 道具与装备双语映射表
@@ -664,17 +739,21 @@ export const NPC_DIALOGUES: Record<
 > = {
   fairy: {
     name: { zh: '仙人 (仙女)', en: 'Celestial Fairy' },
-    avatar: '🧙‍♀️',
+    avatar: '🧚‍♀️',
     lines: {
       zh: [
-        '勇敢的骑士，你终于苏醒了！整座魔塔已被大魔王杰诺霸占，公主也被囚禁在第50层塔顶。',
-        '我已用仙灵之力为你斩断牢狱枷锁。请拾取前方的钥匙与疗伤红水，踏上登塔征程吧！',
-        '切记：魔塔中的每一把钥匙与每一滴血水都无比珍贵，战斗前务必精打细算！',
+        '年轻的勇士，你终于苏醒了！整座魔塔已被大魔王杰诺霸占，公主也被囚禁在第50层塔顶。我以仙灵之力为你破除束缚，助你踏上登塔征程！',
+        '【基础操作 · 洞悉万物】：\n• 鼠标左键【单击】任意目标（怪物、物品、大门或机关），可在右下角卡片查看详细信息、战前推演损血与属性。\n• 顶部【怪物手册】(快捷键 L) 随时为你洞察全层妖魔战损与加点临界点！',
+        '【行动探索 · 智能寻路】：\n• 使用键盘【方向键】控制勇士前后左右移动。\n• 鼠标【右键双击】任意空地或目标，勇士将自动选择最优路径避开怪物并前往！',
+        '【3D 视角 · 自由掌控】：\n• 按住【Ctrl + 鼠标左键拖拽】可平移视角查看整张地图。\n• 按住【Shift + 鼠标左键拖拽】可 360° 自由旋转三维视角。\n• 按住【Ctrl + 滚轮】缩放视野远近，按【空格键 (Space)】可随时一键将镜头复位！',
+        '【启程指引】：\n我身后的光柱正是通往魔塔 1F 的传送门！大殿四周 4 处神台已为你备好红蓝宝石、血瓶与钥匙。中央圣殿密藏着能使战利金币翻倍的【幸运金币】，由红门紧锁守护。待你在塔中寻得红钥匙后，便可回来解开封印！善用顶部【楼层罗盘】(快捷键 G) 在已探索楼层间瞬间穿梭，去拯救王国吧！',
       ],
       en: [
-        'Brave Knight, you are finally awake! The Magic Tower has been seized by Demon Lord Jeno, and the princess is imprisoned at the top on 50F.',
-        'I have used my fairy magic to break your prison chains. Collect the keys and red potion ahead, and embark on your ascent!',
-        'Remember: every key and drop of blood is precious in this tower. Calculate carefully before each battle!',
+        'Brave warrior, you are finally awake! The Magic Tower has been seized by Demon Lord Zeno, and the princess is held at the 50F summit. With my fairy magic, I have broken your shackles to aid your ascent!',
+        '【Basic Controls · Observation】:\n• [Left-click] any monster, item, or door to inspect detailed stats and exact combat damage predictions in the bottom-right card.\n• Open the [Monster Manual] at the top (Hotkey: L) anytime to consult deterministic damage and critical breakpoints!',
+        '【Movement & Navigation】:\n• Use [Arrow Keys] to move your warrior.\n• [Double-right-click] any reachable tile or object to automatically take the optimal path avoiding monsters!',
+        '【3D Camera Controls】:\n• Hold [Ctrl + Left-click Drag] to pan across the floor map.\n• Hold [Shift + Left-click Drag] to rotate the 3D camera 360° freely.\n• Hold [Ctrl + Scroll Wheel] to zoom in/out, and press [Spacebar] anytime to instantly reset the camera view!',
+        '【Ascension Guide】:\nThe light portal directly behind me leads up to 1F! The 4 shrines around the hall provide you with gems, potions, and keys. The central sanctuary enshrines the [Lucky Coin] (which doubles gold from battles), safely locked behind a Red Door. Once you discover a Red Key higher in the tower, return here to break the seal! Use your [Floor Compass] (G) anytime, and go save the kingdom!',
       ],
     },
   },
@@ -683,14 +762,16 @@ export const NPC_DIALOGUES: Record<
     avatar: '🥷',
     lines: {
       zh: [
-        '嘿！多谢你打开牢房！作为报答，我告诉你两个天大的秘密！',
+        '嘿！多谢你打开牢房救了我！作为报答，我告诉你两个天大的秘密！',
         '在第 5 层的一处重兵把守之地藏有一柄【铁剑】，能提升 10 点攻击！',
         '而在第 9 层的一堵暗墙之后，藏有一面【铁盾】，能抵御极多伤害！快去找寻它们吧！',
+        '咱们后会有期，前面我还会为你开辟暗道！',
       ],
       en: [
-        'Hey! Thanks for unlocking my cell! As a reward, let me tell you two huge secrets!',
+        'Hey! Thanks for unlocking my cell and freeing me! As a reward, let me tell you two huge secrets!',
         'On Floor 5, guarded heavily, lies an [Iron Sword] that grants +10 Attack!',
         'And behind a secret false wall on Floor 9, an [Iron Shield] is hidden that blocks tons of damage! Go find them!',
+        'See you ahead—I will dig secret bypasses for you further up the tower!',
       ],
     },
   },
@@ -721,6 +802,20 @@ export const NPC_DIALOGUES: Record<
       en: [
         'Young traveler, danger lurks on every floor. Mindless fighting will only cost your life.',
         'Manage every single key with care, and keep an eye out for secret walls and treasures! Safe travels!',
+      ],
+    },
+  },
+  elder_exp: {
+    name: { zh: '经验老人', en: 'Experience Elder' },
+    avatar: '🧙‍♂️',
+    lines: {
+      zh: [
+        '年轻人，你斩妖除魔积攒了深厚的战斗心得！',
+        '老夫精通玄门易理，能将你的【经验值】化为脱胎换骨的通天战力！',
+      ],
+      en: [
+        'Young warrior, you have accumulated rich combat wisdom through countless battles!',
+        'I can channel your [Experience] into boundless vitality and mighty combat prowess!',
       ],
     },
   },
@@ -951,7 +1046,20 @@ export function getPickupNotification(
 
 // 辅助获取函数
 export function getMonsterName(id: string, lang: Language): string {
-  return MONSTER_NAMES[id]?.[lang] || id;
+  const item = MONSTER_NAMES[id];
+  if (item && item[lang]) {
+    return item[lang];
+  }
+  const mon = MONSTERS[id];
+  if (mon) {
+    if (lang === 'zh' && mon.name) return mon.name;
+    if (lang === 'en' && mon.nameEn) return mon.nameEn;
+  }
+  // 严格杜绝 code name（严禁包含下划线 _）
+  return id
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 export function getItemName(id: string, lang: Language): string {
@@ -971,7 +1079,776 @@ export function getFloorName(floorNum: number, lang: Language, fallbackName?: st
   return lang === 'zh' ? `${floorNum}F 楼层` : `${floorNum}F Floor`;
 }
 
-export function getDialogueData(npcId: string, lang: Language) {
+export interface TraderFloorOffer {
+  tradeId: string;
+  costGold: number;
+  itemType: ItemType;
+  count: number;
+  title: { zh: string; en: string };
+  linesBefore: { zh: string[]; en: string[] };
+  linesAfter: { zh: string[]; en: string[] };
+  linesAlreadyBought: { zh: string[]; en: string[] };
+}
+
+export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
+  2: {
+    tradeId: 'trader_2f',
+    costGold: 50,
+    itemType: 'key_yellow',
+    count: 4,
+    title: { zh: '购买 4 把黄钥匙', en: 'Buy 4 Yellow Keys' },
+    linesBefore: {
+      zh: [
+        '感谢你打开地牢救了我！作为报恩，我将身上的 4 把【黄色钥匙】以 50 金币超值赠与你！',
+      ],
+      en: [
+        'Thank you for unlocking my dungeon cell! As gratitude, take these 4 [Yellow Keys] for just 50 Gold!',
+      ],
+    },
+    linesAfter: {
+      zh: ['黄钥匙拿好，地牢外守卫森严，多加保重！'],
+      en: ['Take the Yellow Keys. The dungeon is heavily guarded, stay safe!'],
+    },
+    linesAlreadyBought: {
+      zh: ['黄钥匙拿好，地牢外守卫森严，多加保重！'],
+      en: ['Take the Yellow Keys. The dungeon is heavily guarded, stay safe!'],
+    },
+  },
+  7: {
+    tradeId: 'trader_7f',
+    costGold: 50,
+    itemType: 'key_yellow',
+    count: 5,
+    title: { zh: '购买 5 把黄钥匙', en: 'Buy 5 Yellow Keys' },
+    linesBefore: {
+      zh: [
+        '年轻人，我这里有 5 把【黄色钥匙】，只要 50 个金币打包卖给你！',
+        '每一扇黄门都需要精打细算，前期物资紧缺，这 5 把黄钥匙能解你的燃眉之急！要来一份吗？',
+      ],
+      en: [
+        'Young warrior, I have 5 [Yellow Keys] here—bundled for only 50 Gold!',
+        'Every yellow door counts in this tower. These 5 keys will greatly relieve your key drought! Care to purchase?',
+      ],
+    },
+    linesAfter: {
+      zh: ['黄钥匙已经全部卖给你了，祝你在前方的迷宫中探险顺利！'],
+      en: ['All 5 Yellow Keys are now yours. Safe travels in the labyrinth ahead!'],
+    },
+    linesAlreadyBought: {
+      zh: ['黄钥匙已经全部卖给你了，祝你在前方的迷宫中探险顺利！'],
+      en: ['All 5 Yellow Keys are now yours. Safe travels in the labyrinth ahead!'],
+    },
+  },
+  12: {
+    tradeId: 'trader_12f',
+    costGold: 200,
+    itemType: 'key_red',
+    count: 1,
+    title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
+    linesBefore: {
+      zh: [
+        '嘿嘿，看你打破暗墙有缘，这把价值连城的【红色钥匙】特惠价只要 200 金币！你要买下它吗？',
+      ],
+      en: [
+        'Hehehe, since you broke through the secret wall, I offer this priceless [Red Key] for a special bargain: only 200 Gold! Care to buy?',
+      ],
+    },
+    linesAfter: {
+      zh: ['红钥匙已交给你，愿它为你打开通往二区神器的红色大门！'],
+      en: ['The Red Key is yours. May it unlock the sanctum red door to Sector 2 relics!'],
+    },
+    linesAlreadyBought: {
+      zh: ['红钥匙已交给你，愿它为你打开通往二区神器的红色大门！'],
+      en: ['The Red Key is yours. May it unlock the sanctum red door to Sector 2 relics!'],
+    },
+  },
+  15: {
+    tradeId: 'trader_15f',
+    costGold: 100,
+    itemType: 'key_blue',
+    count: 1,
+    title: { zh: '购买 1 把蓝钥匙', en: 'Buy 1 Blue Key' },
+    linesBefore: {
+      zh: [
+        '年轻人，二区的蓝门越来越多了吧？我这里有 1 把【蓝色钥匙】，特惠只要 100 金币！',
+      ],
+      en: [
+        'Young warrior, more blue doors in Sector 2? I have 1 [Blue Key] for only 100 Gold!',
+      ],
+    },
+    linesAfter: {
+      zh: ['蓝钥匙拿好，注意避开强大的大蝙蝠与大乌贼！'],
+      en: ['Keep the Blue Key safe, and watch out for the giant bats and squid!'],
+    },
+    linesAlreadyBought: {
+      zh: ['蓝钥匙拿好，注意避开强大的大蝙蝠与大乌贼！'],
+      en: ['Keep the Blue Key safe, and watch out for the giant bats and squid!'],
+    },
+  },
+  28: {
+    tradeId: 'trader_28f',
+    costGold: 100,
+    itemType: 'key_blue',
+    count: 1,
+    title: { zh: '购买 1 把蓝钥匙', en: 'Buy 1 Blue Key' },
+    linesBefore: {
+      zh: [
+        '熔岩深处危机四伏，我这里有 1 把珍贵的【蓝色钥匙】，只要 100 金币！你需要吗？',
+      ],
+      en: [
+        'Perils lurk in the magma depths! I offer 1 rare [Blue Key] for 100 Gold. Need it?',
+      ],
+    },
+    linesAfter: {
+      zh: ['合作愉快，前方就是骑士之路了，一路顺风！'],
+      en: ['Pleasure doing business! The Knight Path lies ahead, safe journey!'],
+    },
+    linesAlreadyBought: {
+      zh: ['合作愉快，前方就是骑士之路了，一路顺风！'],
+      en: ['Pleasure doing business! The Knight Path lies ahead, safe journey!'],
+    },
+  },
+  31: {
+    tradeId: 'trader_31f',
+    costGold: 200,
+    itemType: 'key_yellow',
+    count: 4,
+    title: { zh: '购买 4 把黄钥匙', en: 'Buy 4 Yellow Keys' },
+    linesBefore: {
+      zh: [
+        '三区到处都是机关大门，4 把【黄色钥匙】特惠价 200 金币，要买吗？',
+      ],
+      en: [
+        'Sector 3 is filled with gates! 4 [Yellow Keys] for only 200 Gold, interested?',
+      ],
+    },
+    linesAfter: {
+      zh: ['合作愉快，三区要多加防备双手剑士与骑士幽灵！'],
+      en: ['Pleasure trading, watch out for the dual swordsmen and knight ghosts!'],
+    },
+    linesAlreadyBought: {
+      zh: ['合作愉快，三区要多加防备双手剑士与骑士幽灵！'],
+      en: ['Pleasure trading, watch out for the dual swordsmen and knight ghosts!'],
+    },
+  },
+  38: {
+    tradeId: 'trader_38f',
+    costGold: 100,
+    itemType: 'key_yellow',
+    count: 3,
+    title: { zh: '购买 3 把黄钥匙', en: 'Buy 3 Yellow Keys' },
+    linesBefore: {
+      zh: [
+        '3 把【黄色钥匙】只要 100 金币，超值甩卖助你探索迷阵！',
+      ],
+      en: [
+        '3 [Yellow Keys] for just 100 Gold, special bargain to help you navigate!',
+      ],
+    },
+    linesAfter: {
+      zh: ['祝你早日通过三区隘口夺得骑士之盾！'],
+      en: ['May you conquer Sector 3 and claim the Knight Shield!'],
+    },
+    linesAlreadyBought: {
+      zh: ['祝你早日通过三区隘口夺得骑士之盾！'],
+      en: ['May you conquer Sector 3 and claim the Knight Shield!'],
+    },
+  },
+  39: {
+    tradeId: 'trader_39f',
+    costGold: 600,
+    itemType: 'key_blue',
+    count: 3,
+    title: { zh: '购买 3 把蓝钥匙', en: 'Buy 3 Blue Keys' },
+    linesBefore: {
+      zh: [
+        '3 把珍贵的【蓝色钥匙】，打包特惠 600 金币，你需要吗？',
+      ],
+      en: [
+        '3 rare [Blue Keys] bundled for only 600 Gold, need them?',
+      ],
+    },
+    linesAfter: {
+      zh: ['收好蓝钥匙，前方就是四区神圣天界了！'],
+      en: ['Take care of the Blue Keys, the Celestial Sector lies ahead!'],
+    },
+    linesAlreadyBought: {
+      zh: ['收好蓝钥匙，前方就是四区神圣天界了！'],
+      en: ['Take care of the Blue Keys, the Celestial Sector lies ahead!'],
+    },
+  },
+  45: {
+    tradeId: 'trader_45f',
+    costGold: 500,
+    itemType: 'key_red',
+    count: 1,
+    title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
+    linesBefore: {
+      zh: [
+        '天界深处封印重重！这把绝版【红色钥匙】开价 500 金币，助你解开神圣殿堂！',
+      ],
+      en: [
+        'Deep celestial barriers await! This rare [Red Key] is 500 Gold, unlocking sacred halls!',
+      ],
+    },
+    linesAfter: {
+      zh: ['红钥匙已交给你，祝你登上塔巅！'],
+      en: ['The Red Key is yours, may you reach the summit!'],
+    },
+    linesAlreadyBought: {
+      zh: ['红钥匙已交给你，祝你登上塔巅！'],
+      en: ['The Red Key is yours, may you reach the summit!'],
+    },
+  },
+  47: {
+    tradeId: 'trader_47f',
+    costGold: 300,
+    itemType: 'key_red',
+    count: 1,
+    title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
+    linesBefore: {
+      zh: [
+        '勇士，决战在即！这把最后的【红色钥匙】特惠 300 金币赠售，为你开启圣光神剑！',
+      ],
+      en: [
+        'Final showdown approaches! This last [Red Key] for 300 Gold will unlock the Sacred Blade!',
+      ],
+    },
+    linesAfter: {
+      zh: ['愿圣光神剑助你诛灭魔王！'],
+      en: ['May the Sacred Blade aid you in destroying the Demon Lord!'],
+    },
+    linesAlreadyBought: {
+      zh: ['愿圣光神剑助你诛灭魔王！'],
+      en: ['May the Sacred Blade aid you in destroying the Demon Lord!'],
+    },
+  },
+};
+
+export interface ElderFloorConfig {
+  name?: { zh: string; en: string };
+  lines: { zh: string[]; en: string[] };
+  linesAfterGift?: { zh: string[]; en: string[] };
+}
+
+export const ELDER_FLOOR_DIALOGUES: Record<number, ElderFloorConfig> = {
+  1: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，欢迎来到魔塔1层！魔塔危机四伏，鲁莽战斗只会白白送命。',
+        '每一把钥匙都要精打细算！仔细搜寻角落和看似完整的石壁，这里隐藏着意想不到的暗墙与通道！',
+        '这把【黄钥匙】赠予你，愿它能在关键时刻助你一臂之力！',
+      ],
+      en: [
+        'Young warrior, welcome to Floor 1! Perils lurk everywhere; reckless battles will only lead to your demise.',
+        'Manage every key with utmost care! Search corners and solid stone walls, for unexpected false walls and passages hide within.',
+        'Take this [Yellow Key] as my humble gift. May it aid you at a critical moment!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['记住我的话，仔细搜寻每一面石壁，祝你早日登上塔顶解救公主！'],
+      en: ['Remember my words: examine every stone wall. May you reach the summit and rescue the princess!'],
+    },
+  },
+  2: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '感谢你打开地牢牢房救了我！魔塔危机四伏，没有充足的金币将寸步难行。',
+        '老夫被囚禁前积攒了【300金币】，现在全部赠予你！去 3 层或更高层的神坛强化自己吧！',
+      ],
+      en: [
+        'Thank you for unlocking my prison cell! The tower is treacherous; without enough gold you cannot survive.',
+        'I hid [300 Gold] before being captured—I bestow it all upon you! Use it at the altars to empower yourself!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['带上这 300 金币去神坛强化自己吧！祝你早日攻克魔塔救出公主！'],
+      en: ['Use the 300 Gold to empower yourself at the altars! Safe travels!'],
+    },
+  },
+  3: {
+    name: { zh: '神秘老人', en: 'Mystic Sage' },
+    lines: {
+      zh: [
+        '年轻人，魔塔里危机四伏，鲁莽战斗只会白白送命。',
+        '我这本【怪物手册】赠予你，它可以洞察所有妖魔的虚实、战斗损血和加点临界点。',
+        '点击顶部或者按快捷键【L】即可查阅怪物手册。祝你好运！',
+      ],
+      en: [
+        'Young warrior, the tower is fraught with perils. Reckless battles will only lead to your demise.',
+        'Take this [Monster Manual]. It reveals all monster stats, exact combat damage, and optimal breakpoints.',
+        'Click the top button or press [L] anytime to consult the manual. Good luck!',
+      ],
+    },
+  },
+  4: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻人，你注意到那些沉重的特殊铁门了吗？',
+        '那些是机关铁门，普通钥匙是无法打开它们的！',
+        '只有击败看守它们的特定怪物首领，机关才会感应解锁！在向深处探索时务必谨记这一点。',
+        '这瓶【初级红药水】(生命+200) 赠予你，助你在探索初期保持充沛体力！',
+      ],
+      en: [
+        'Young traveler, have you noticed those heavy iron gates?',
+        'Those are mechanical trap doors—ordinary keys cannot unlock them!',
+        'Only by defeating the specific monster captains guarding them will the mechanism spring open! Remember this well as you venture deeper.',
+        'Take this [Red Potion] (+200 HP) as my gift to sustain your vigor!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['击败看守的怪物头领即可开启铁门，多加保重！'],
+      en: ['Defeat the guard captains to unlock the iron gates, stay safe!'],
+    },
+  },
+  6: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻人，你看到东北角的那位神秘行脚商人了吗？',
+        '如果你从他手中买下了礼物，随后再次与他交谈，他心情大好时会告诉你关于魔塔分区与守关头目的关键情报！',
+        '另外，前方7层藏有珍贵的红蓝宝石，做好万全准备再去探寻吧！',
+      ],
+      en: [
+        'Young warrior, have you seen the mysterious traveling merchant in the northeast corner?',
+        'If you purchase his item and converse with him again, in his good spirits he will disclose vital secrets regarding tower sectors and area bosses!',
+        'Furthermore, precious Red and Blue Gems await on Floor 7 ahead. Prepare yourself thoroughly!',
+      ],
+    },
+  },
+  7: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '勇士，切记战斗临界点的玄机：',
+        '如果你的攻击力低于怪物的防御力，你的利刃将无法对怪物造成任何伤害（破防失败）！',
+        '建议优先提升攻击力破防，或者提升防御力将怪物伤害降至最低。',
+        '这颗【蓝宝石】赠予你，愿它为你筑起坚不可摧的坚固防御！',
+      ],
+      en: [
+        'Warrior, remember the secrets of combat breakpoints:',
+        'If your Attack is lower than a monster’s Defense, your blade will deal zero damage!',
+        'Prioritize raising Attack to break defense thresholds, or boosting Defense to reduce incoming damage to zero.',
+        'Take this [Blue Gem] as my gift. May it fortify your defense into an unyielding shield!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['记住我的话：善用蓝宝石提升防御力，将损血降至最低！祝你顺利通过7层矿晶宝库！'],
+      en: ['Remember my words: use the Blue Gem to bolster Defense and minimize damage!'],
+    },
+  },
+  9: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '嘘……放轻脚步！仔细听这层坚硬的石壁，是不是隐约传来空洞的回音？',
+        '在走廊右侧寻找虚假的暗墙！勇敢地撞上去，里面封藏着能大幅抵御伤害的古老重宝——【铁盾】！',
+        '这颗【红宝石】赠予你，增强你的攻击锋芒，助你更快劈开顽敌！',
+      ],
+      en: [
+        'Hush... tread lightly! Listen to the stone walls on this floor—can you hear the hollow echoes?',
+        'Search for false walls along the right hallway! Push firmly into them; behind lies the ancient treasure [Iron Shield] that grants heavy defense!',
+        'Take this [Red Gem] as my gift to hone your blade for swift victories!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['暗墙就在走廊右侧，撞击即可开启通往铁盾的道路！'],
+      en: ['The false wall is along the right corridor—push into it to reach the Iron Shield!'],
+    },
+  },
+  12: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你竟然发现了这处隐秘暗室！二区的妖魔比一区凶残数倍，必须做好万全准备。',
+        '老夫游历全塔积攒的【300金币】与【蓝宝石】赠予你！你可以拿这笔金币去左侧暗室向神秘商人购买特惠红钥匙，或者去神坛强化自身！',
+      ],
+      en: [
+        'Young warrior, you actually discovered this hidden sanctuary! Sector 2 monsters are far fiercer, requiring thorough preparation.',
+        'Take these [300 Gold] and [Blue Gem] as my gift! Use this gold to purchase the discounted Red Key from the merchant in the left alcove, or empower yourself at the altar!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['带上这笔金币与蓝宝石，去左侧暗室看看红钥匙商人，或者去神坛强化自己吧！祝你早日攻克二区！'],
+      en: ['Take this gold and Blue Gem. Visit the Red Key merchant in the left alcove or empower yourself at the altar!'],
+    },
+  },
+  15: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻人，你竟然识破了暗墙发现了这里！二区深渊魔窟的大乌贼极为凶残，但击破它能解锁深渊宝库！',
+        '这瓶【高级蓝药水】(生命+500) 赠予你，助你调整气血，迎战深渊巨兽！',
+      ],
+      en: [
+        'Young warrior, you saw through the false wall and found this sanctum! The giant squid in this abyss is ferocious, but slaying it unseals the treasure vault!',
+        'Take this [Blue Potion] (+500 HP) to restore your vitality and conquer the abyss!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['调整好状态，击败中央的大乌贼解开深渊封印！'],
+      en: ['Keep your stats high and defeat the giant squid to break the abyss seals!'],
+    },
+  },
+  16: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '老夫游历全塔多年，可以明确告诉你：整座魔塔中隐藏着极其罕见的【红钥匙】，每一把都通往足以改变战局的重宝密室！',
+        '这颗【红宝石】赠予你，愿它为你灌注神力，破敌斩煞！',
+      ],
+      en: [
+        'I have wandered this tower for decades. Rare [Red Keys] are hidden across the floors, each unlocking sanctums that turn the tide of battle!',
+        'Take this [Red Gem] as my gift. May it empower your strikes to crush any foe!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['珍贵的红钥匙每一把都要用在刀刃上，祝你探险顺利！'],
+      en: ['Use every rare Red Key where it counts most. Best of luck!'],
+    },
+  },
+  18: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '警告你，年轻人！在二区若不多次在商店提升攻击力，你的利刃将根本无法斩开石头人的坚硬护甲！',
+        '这颗【红宝石】赠予你，助你早日突破破防临界点！',
+      ],
+      en: [
+        'A dire warning, warrior! In Sector 2, if you do not boost your Attack substantially at the shop, your blade cannot pierce the stone golem’s hide!',
+        'Take this [Red Gem] to help you reach that critical damage threshold!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['切记优先提升攻击力破开石头人防御！'],
+      en: ['Remember to prioritize Attack to pierce the golem defenses!'],
+    },
+  },
+  21: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你已踏入炽热的熔岩要塞！这里的烈焰妖魔攻击迅猛，必须时刻留意血线！',
+        '驻守在25层的红衣魔王是大法师！他的法力深不可测，若没有拿到更高阶的圣剑神盾，贸然挑战等同于自寻死路！',
+        '这瓶【高级蓝药水】(生命+500) 赠予你，愿你在烈焰中保持坚韧！',
+      ],
+      en: [
+        'Young warrior, you have entered the molten Magma Fortress! Monsters strike with blazing speed; guard your vitality carefully!',
+        'The crimson arch-mage ruling Floor 25 possesses unfathomable sorcery! Without high-tier sacred blades and shields, challenging him is sheer suicide!',
+        'Take this [Blue Potion] (+500 HP) to sustain your endurance across the flames!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['在 25 层决战前做好最充足的准备，切勿轻敌！'],
+      en: ['Prepare thoroughly before challenging Floor 25; do not underestimate the arch-mage!'],
+    },
+  },
+  24: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '勇士！前方 25 层就是魔塔二区的大首领——红衣魔王大法师！',
+        '决战在即，法师的魔法冲击极为致命，你的防御力将决定你能承受多少次法术冲击！',
+        '这颗【蓝宝石】赠予你，为你筑牢护甲，抵御烈焰浩劫！',
+      ],
+      en: [
+        'Warrior! Floor 25 ahead is the throne room of the Sector 2 Lord—the Crimson Arch-Mage!',
+        'The showdown is imminent! His magic strikes are lethal; your defense determines your survival against his spells!',
+        'Take this [Blue Gem] to fortify your armor against the flame cataclysm!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['身后的要塞密室封存着前人留下的决战【圣水】与重宝，若有红钥匙不妨开启！带上坚固的防御去 25 层诛灭红衣魔王吧！'],
+      en: ['The fortress vault behind holds sacred [Holy Water] and battle treasures. Unlock it with a Red Key!'],
+    },
+  },
+  31: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '双手剑士的剑招势大力沉，攻击力极高！在能够对其形成‘一击必杀’之前，千万不要轻易去招惹他！',
+        '这颗【蓝宝石】赠予你，增强你的体魄护甲，减少与三区强敌交战时的战损！',
+      ],
+      en: [
+        'Two-handed swordsmen strike with devastating force! Unless you can kill them in a single strike, do not provoke them lightly!',
+        'Take this [Blue Gem] to fortify your armor and minimize damage against Sector 3 foes!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['善用防御力减少交战损失，避开过于强劲的双手剑士！'],
+      en: ['Maximize defense to cut battle losses, and avoid two-handed swordsmen until you are strong enough!'],
+    },
+  },
+  33: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你已来到幽暗剑冢！在这层迷宫右下角的暗墙深处，封印着三区神兵——【骑士剑】！',
+        '只要穿过虚假的石壁，便能拔出此剑，攻击力大幅提升！',
+        '这颗【红宝石】赠予你，愿你的剑刃更加锋利！',
+      ],
+      en: [
+        'Young warrior, welcome to the Sword Tomb! Hidden deep behind the false walls at the lower-right rests the Sector 3 relic—the [Knight Sword]!',
+        'Push through the false wall to claim this sword and vastly boost your attack power!',
+        'Take this [Red Gem] to sharpen your edge even further!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['去右下角暗墙寻找骑士剑吧，它将彻底扭转你在三区的战局！'],
+      en: ['Find the Knight Sword behind the lower-right false wall; it will completely turn the tide in Sector 3!'],
+    },
+  },
+  36: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻人，36层是一座结构对称的封印迷宫！仔细观察两侧大门的排布，切勿盲目消耗宝贵的钥匙。',
+        '这瓶【高级蓝药水】(生命+500) 赠予你，助你在幽暗走廊中恢复元气！',
+      ],
+      en: [
+        'Warrior, Floor 36 is a symmetrical sealed labyrinth! Study the layout of doors carefully and do not waste precious keys needlessly.',
+        'Take this [Blue Potion] (+500 HP) to rejuvenate yourself in these gloomy corridors!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['精打细算每把钥匙，祝你顺利穿越 36 层迷宫！'],
+      en: ['Conserve every key wisely. May you traverse the Floor 36 labyrinth safely!'],
+    },
+  },
+  37: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '勇士！37层是坚不可摧的宝物库！这里的深处封藏着密集的红蓝宝石与血瓶，甚至还有珍稀的炸弹！',
+        '这颗【蓝宝石】赠予你，为你抵御看守宝库的强大冥界幽灵！',
+      ],
+      en: [
+        'Warrior! Floor 37 is the Indomitable Treasure Vault! Abundant gems, potions, and even rare bombs are sealed within.',
+        'Take this [Blue Gem] to shield yourself against the nether phantoms guarding the vaults!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['妥善规划钥匙，搜集 37 层的大量宝物来大幅提升战力！'],
+      en: ['Plan your keys carefully and claim Floor 37’s bountiful treasures to surge in power!'],
+    },
+  },
+  38: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你是否渴望最强坚盾？在 38 层左下方被机关铁门封锁的密室中，守护着【骑士盾】！',
+        '击败右侧的看守队长即可开启机关门。这瓶【高级蓝药水】(生命+500) 赠予你，祝你夺得神盾！',
+      ],
+      en: [
+        'Young warrior, do you seek an impenetrable shield? In the lower-left chamber behind iron trap doors lies the [Knight Shield]!',
+        'Defeat the guard captains on the right to open the gates. Take this [Blue Potion] (+500 HP) to aid your quest!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['击败看守队长解锁机关门，骑士盾就是你的了！'],
+      en: ['Defeat the guard captains to open the gates, and the Knight Shield is yours!'],
+    },
+  },
+  39: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '古老的密宝谜题：在时钟的3点钟方向，拥有任意传送功能的神秘时空密宝就会显现神迹……',
+        '这把【蓝色钥匙】赠予你，愿它为你打开通往谜底的核心大门！',
+      ],
+      en: [
+        'An ancient relic riddle: At the 3 o’clock position of the clock dial, the sacred relic granting boundless teleportation shall reveal its divine light...',
+        'Take this [Blue Key] to unlock the gateway toward this mystic enigma!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['记住 3 点钟方向的时钟谜题，时空飞行密宝就在那里！'],
+      en: ['Remember the 3 o’clock clock riddle; the mystical flight relic awaits there!'],
+    },
+  },
+  41: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你终于登上了四区——神圣天界！这里的魔法警卫与高级巫师拥有极强的魔力。',
+        '这颗【红宝石】赠予你，为你注入神圣之力，披荆斩棘！',
+      ],
+      en: [
+        'Brave warrior, you have ascended to Sector 4—the Celestial Realm! Magic guards and senior wizards here wield tremendous sorcery.',
+        'Take this [Red Gem] to channel holy power and cleave through the celestial trials!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['四区的敌人实力飞跃，切记稳扎稳打提升属性！'],
+      en: ['Enemies in Sector 4 are formidable; proceed cautiously and keep enhancing your attributes!'],
+    },
+  },
+  45: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '勇士！在 45 层下方的机关密室中藏有能穿梭天界的【向上飞行器】！',
+        '这瓶【高级蓝药水】(生命+500) 赠予你，为你保持全盛战力！',
+      ],
+      en: [
+        'Warrior! In the lower chamber of Floor 45, an [Up Flight Wing] is sealed away to aid your skyward ascent!',
+        'Take this [Blue Potion] (+500 HP) to keep your vigor at its peak!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['解开下方机关取得飞行器，能让你在关键楼层自由穿梭！'],
+      en: ['Solve the lower chamber traps to claim the flight wing for boundless mobility!'],
+    },
+  },
+  46: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你已抵达塔巅前的终极神坛！这里的金币商店提供整座魔塔最强大的属性加成！',
+        '老夫将积攒毕生的【500金币】赠予你，去神坛全力强化你的攻击与防御吧！',
+      ],
+      en: [
+        'Young warrior, you have reached the ultimate altar before the pinnacle! The shop here grants the greatest attribute boosts in the tower!',
+        'I gift you [500 Gold] gathered over a lifetime—use it at the altar to maximize your attack and defense!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['善用这 500 金币在终极神坛强化，以最强姿态迎接最终决战！'],
+      en: ['Empower yourself at the ultimate altar with this gold and prepare for the final showdown!'],
+    },
+  },
+  47: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '勇士，决战迫在眉睫！在 48 层的密室深处封存着诛灭魔王的究极神兵——【圣光之剑】！',
+        '这两颗珍稀的【红宝石】(攻击力+6) 赠予你，愿圣光洗礼你的利刃！',
+      ],
+      en: [
+        'Warrior, the final showdown is at hand! In the deep vaults of Floor 48 rests the ultimate blade to slay the Demon Lord—the [Holy Sword]!',
+        'Take these two rare [Red Gems] (+6 ATK). May holy light bless your blade!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['带上圣光之力，去 48 层夺取神兵吧！'],
+      en: ['With holy might, proceed to Floor 48 and claim the Sacred Blade!'],
+    },
+  },
+  48: {
+    name: { zh: '智慧老人', en: 'Wise Sage' },
+    lines: {
+      zh: [
+        '年轻的勇士，你终于来到了神圣宝库！封印神剑的魔法门需要击败全部神圣守卫才会解除！',
+        '这瓶至高无上的【神圣圣水】(生命+1000) 赠予你，愿神圣之力佑你凯旋！',
+        '此外切记：49 层的假魔王受十字魔法阵庇护，必须先消灭其上、下、左、右四方向的魔法警卫破除结界，方可与其决战！',
+      ],
+      en: [
+        'Brave warrior, you have arrived at the Sacred Vault! The magic gates sealing the holy sword will unseal once all sacred guards are defeated!',
+        'Take this supreme [Holy Water] (+1000 HP). May the divine light guide you to glory!',
+        'Also remember: The False Sorcerer on 49F is protected by a cross barrier. Defeat the four magic guards above, below, left, and right of him first to dispel the seal!',
+      ],
+    },
+    linesAfterGift: {
+      zh: ['消灭 49 层假魔王四周呈十字分布的 4 名魔法警卫解除结界，即可诛灭假魔王前往 50 层！'],
+      en: ['Defeat the 4 magic guards arranged in a cross around the False Sorcerer on 49F to break the seal and reach Floor 50!'],
+    },
+  },
+};
+
+export function getDialogueData(
+  npcId: string,
+  lang: Language,
+  floorNum?: number,
+  isTraderBought?: boolean,
+  hasElderGift?: boolean
+) {
+  // 1. 特殊经验老人
+  if (npcId === 'elder_exp') {
+    const item = NPC_DIALOGUES['elder_exp'];
+    return {
+      name: item.name[lang],
+      avatar: item.avatar,
+      lines: item.lines[lang],
+      currentIndex: 0,
+    };
+  }
+
+  // 2. 特殊小偷 (29F 勘探暗道)
+  if (npcId === 'thief' && floorNum === 29) {
+    return {
+      name: lang === 'zh' ? '小偷' : 'Thief',
+      avatar: '🥷',
+      lines: hasElderGift
+        ? (lang === 'zh'
+            ? ['暗道已经被我挖通了，快去 30 层吧！祝你早日救出公主！']
+            : ['The tunnel is clear, head straight to Floor 30! May you rescue the princess soon!'])
+        : (lang === 'zh'
+            ? [
+                '嘿！朋友！你救了我之后，我一直在为你勘探地道。',
+                '前面 30 层的暗道已经被我挖通了！这两把【黄色钥匙】送给你，快去吧！',
+              ]
+            : [
+                'Hey friend! Ever since you rescued me, I have been tunneling secret routes for you.',
+                'The secret bypass into Floor 30 is now complete! Take these 2 [Yellow Keys] and go forth!',
+              ]),
+      currentIndex: 0,
+    };
+  }
+
+  // 2.5 特殊 26F 假公主（揭露魔王骗局）
+  if (npcId === 'princess' && floorNum === 26) {
+    return {
+      name: lang === 'zh' ? '假公主（魔王幻象）' : 'Fake Princess (Illusion)',
+      avatar: '👸',
+      lines: lang === 'zh'
+        ? [
+            '桀桀桀……愚蠢的勇士，你真以为我是真正的公主吗？！',
+            '真正的公主早就被魔王大人带去了 50 层魔塔之巅！我不过是引诱你踏入陷阱的幻象！有胆量就去 50 层受死吧！',
+          ]
+        : [
+            'Hahaha... Foolish warrior, did you truly believe I was the real princess?!',
+            'The true princess has long been taken by Demon Lord Zeno to the 50F summit! I am merely an illusion to lure you into despair! Face your doom on Floor 50!',
+          ],
+      currentIndex: 0,
+    };
+  }
+
+  // 3. 特殊商人（神秘商人）
+  if ((npcId === 'trader' || npcId === 'merchant') && floorNum && TRADER_FLOOR_OFFERS[floorNum]) {
+    const offer = TRADER_FLOOR_OFFERS[floorNum];
+    const lines = isTraderBought ? offer.linesAlreadyBought[lang] : offer.linesBefore[lang];
+    return {
+      name: lang === 'zh' ? '神秘商人' : 'Mysterious Merchant',
+      avatar: '👳',
+      lines,
+      currentIndex: 0,
+      trade: isTraderBought
+        ? undefined
+        : {
+            tradeId: offer.tradeId,
+            costGold: offer.costGold,
+            title: offer.title[lang],
+            isBought: false,
+          },
+    };
+  }
+
+  // 4. 特殊智慧老人（按层区分线索与赠与）
+  if ((npcId === 'elder' || npcId === 'old_man') && floorNum && ELDER_FLOOR_DIALOGUES[floorNum]) {
+    const elderCfg = ELDER_FLOOR_DIALOGUES[floorNum];
+    const lines = hasElderGift && elderCfg.linesAfterGift ? elderCfg.linesAfterGift[lang] : elderCfg.lines[lang];
+    return {
+      name: elderCfg.name ? elderCfg.name[lang] : (lang === 'zh' ? '智慧老人' : 'Wise Sage'),
+      avatar: '🧙‍♂️',
+      lines,
+      currentIndex: 0,
+    };
+  }
+
+  // 5. 标准 NPC 配置
   const item = NPC_DIALOGUES[npcId];
   if (!item) return null;
   return {
@@ -1023,7 +1900,12 @@ export function getCombatNotification(
     };
   }
   if (type === 'win_flawless') {
-    return { text: lang === 'zh' ? `无伤击破！+${params.gold}G` : `Flawless Victory! +${params.gold}G`, color: '#22c55e' };
+    return {
+      text: lang === 'zh'
+        ? (params.gold ? `未受到伤害！+${params.gold}G` : '未受到伤害！')
+        : (params.gold ? `No damage taken! +${params.gold}G` : 'No damage taken!'),
+      color: '#22c55e',
+    };
   }
   if (type === 'win_damage') {
     return { text: `-${params.damage} HP  +${params.gold}G`, color: '#ef4444' };
@@ -1032,7 +1914,12 @@ export function getCombatNotification(
     return { text: lang === 'zh' ? '骷髅队长陨落！一区通关！' : 'Skeleton Captain fallen! Zone 1 Cleared!', color: '#facc15' };
   }
   if (type === 'boss_vampire') {
-    return { text: lang === 'zh' ? '吸血鬼伯爵消灭！二区通关！' : 'Vampire Lord defeated! Zone 2 Cleared!', color: '#facc15' };
+    return {
+      text: lang === 'zh'
+        ? '吸血鬼伯爵消灭！二区通关，通往 21 层的铁门开启！'
+        : 'Vampire Lord defeated! Zone 2 cleared, the iron gate opens!',
+      color: '#facc15',
+    };
   }
   if (type === 'boss_demon') {
     return { text: lang === 'zh' ? '魔王杰诺消灭！魔塔被拯救！' : 'Demon Lord Jeno defeated! Tower Saved!', color: '#22c55e' };
@@ -1114,3 +2001,5 @@ export const useI18n = (): LanguageContextType => {
   }
   return ctx;
 };
+
+export const translations = TRANSLATIONS;

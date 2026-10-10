@@ -19,6 +19,8 @@ import { MONSTERS } from '../data/monsters';
 import { ITEMS } from '../data/items';
 import { calculateBattle } from '../game/combat';
 import { useI18n, getMonsterName, getItemName, getFloorName } from '../i18n';
+import { MonsterIcon } from './MonsterIcon';
+import { findIronDoorRule } from '../data/ironDoors';
 
 interface InspectCardProps {
   tile: Tile | null;
@@ -92,16 +94,13 @@ export const InspectCard: React.FC<InspectCardProps> = ({
         <div className="flex flex-col gap-2.5">
           {/* 怪物名称与分类 */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner shrink-0"
-              style={{
-                backgroundColor: `${monster.color}25`,
-                border: `2px solid ${monster.color}`,
-                color: monster.color,
-              }}
-            >
-              {mName.charAt(0)}
-            </div>
+            <MonsterIcon
+              key={monster.id}
+              monsterId={monster.id}
+              name={mName}
+              color={monster.color}
+              className="w-14 h-14"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base text-slate-100 truncate">{mName}</span>
@@ -110,7 +109,9 @@ export const InspectCard: React.FC<InspectCardProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
-                {monster.description || ''}
+                {lang === 'en'
+                  ? (monster.descriptionEn || monster.description || '')
+                  : (monster.description || '')}
               </p>
             </div>
           </div>
@@ -245,12 +246,19 @@ export const InspectCard: React.FC<InspectCardProps> = ({
             ? '掌握暗门与密道机关的开锁大师，告知楼层中隐藏的神兵密道。'
             : 'Lockpick master who reveals secret false walls and passages.';
         avatar = '🥷';
-      } else if (npcId === 'old_man_manual' || npcId === 'elder' || npcId === 'old_man') {
-        npcName = lang === 'zh' ? '神秘老人' : 'Mystic Sage';
+      } else if (npcId === 'elder_exp') {
+        npcName = lang === 'zh' ? '经验老人' : 'Experience Elder';
         npcDesc =
           lang === 'zh'
-            ? '洞悉万物弱点的古老学者，传授【怪物手册】并点拨战斗临界点。'
-            : 'Ancient sage who offers the Monster Manual and strategic tips.';
+            ? '参透战阵玄机的避世宗师，能将杀敌积攒的【经验值】转化为通天战力与体魄属性。'
+            : 'Venerable grandmaster who harnesses combat Experience to augment your attributes.';
+        avatar = '🧙‍♂️';
+      } else if (npcId === 'old_man_manual' || npcId === 'elder' || npcId === 'old_man') {
+        npcName = lang === 'zh' ? '智慧老人' : 'Wise Sage';
+        npcDesc =
+          lang === 'zh'
+            ? '洞悉魔塔奥秘的古老学者，点拨钥匙分配、寻找暗墙与探秘技巧。'
+            : 'Ancient sage who offers guidance on keys, secret walls, and tower mysteries.';
         avatar = '🧙‍♂️';
       } else if (npcId === 'trader' || npcId === 'merchant') {
         npcName = lang === 'zh' ? '神秘商人' : 'Merchant';
@@ -346,7 +354,11 @@ export const InspectCard: React.FC<InspectCardProps> = ({
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {isIron
-                  ? t.inspectDoorFree
+                  ? (() => {
+                      const rule = findIronDoorRule(game.currentFloor, gridX, gridY);
+                      if (!rule) return t.inspectDoorFree;
+                      return lang === 'zh' ? rule.reasonZh : rule.reasonEn;
+                    })()
                   : hasKey
                   ? t.inspectDoorOwned.replace('{count}', String(keyCount))
                   : t.inspectDoorMissing.replace('{count}', String(keyCount))}

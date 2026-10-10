@@ -10,18 +10,41 @@ import { Topbar } from './ui/Topbar';
 import { MonsterManual } from './ui/MonsterManual';
 import { FloorTeleport } from './ui/FloorTeleport';
 import { ShopModal } from './ui/ShopModal';
+import { ExpShopModal } from './ui/ExpShopModal';
 import { DialogueModal } from './ui/DialogueModal';
 import { GameOverModal } from './ui/GameOverModal';
 import { DebugPanel } from './ui/DebugPanel';
 import { InspectCard } from './ui/InspectCard';
 import { ZoomIn, ZoomOut, Target } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
+import { isDebugAllowed } from './utils/env';
 
 interface FloatingItem {
   id: string;
   text: string;
   color: string;
+  duration: number;
 }
+
+const getToastIcon = (text: string): string => {
+  if (/乌贼|Squid/i.test(text)) return '🐙';
+  if (/魔王|Demon|魔物/i.test(text)) return '👿';
+  if (/吸血鬼|Vampire/i.test(text)) return '🦇';
+  if (/骷髅|Skeleton/i.test(text)) return '💀';
+  if (/通关|胜|Cleared|Victory|拯救/i.test(text)) return '🏆';
+  if (/铁门|牢房|门|Gate|Door/i.test(text)) return '🚪';
+  if (/钥匙|Key/i.test(text)) return '🗝️';
+  if (/血|HP|生命/i.test(text)) return '❤️';
+  if (/攻|ATK|斩|伤害|剑/i.test(text)) return '⚔️';
+  if (/防|DEF|盾/i.test(text)) return '🛡️';
+  if (/金币|G|Gold|宝|Gem/i.test(text)) return '💰';
+  if (/药水|圣水|Potion|Water/i.test(text)) return '🧪';
+  if (/密道|传送|Secret|Teleport/i.test(text)) return '🌀';
+  if (/强化|功成|参悟|提升|Upgrade/i.test(text)) return '✨';
+  if (/存|读|Save|Load/i.test(text)) return '💾';
+  if (/不能|无法|不足|缺少|No |Cannot|Too low/i.test(text)) return '⚠️';
+  return '✦';
+};
 
 export const App: React.FC = () => {
   const { lang, t } = useI18n();
@@ -51,16 +74,55 @@ export const App: React.FC = () => {
 
   // 浮动伤害与提示文本
   const [floatingTexts, setFloatingTexts] = useState<FloatingItem[]>([]);
+  const lastFloatingTimeRef = useRef<number>(0);
+  const queueOffsetRef = useRef<number>(0);
+
   // 视口平移与缩放状态
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const [isPanned, setIsPanned] = useState<boolean>(false);
 
-  const addFloating = useCallback((text: string, color: string) => {
+  const addFloating = useCallback((text: string, color: string, customDuration?: number) => {
+    // 智能推断展示停留时长：保证玩家有充分时间阅读剧情与首领通报，绝不一闪而过
+    let duration = customDuration;
+    if (!duration) {
+      if (/乌贼|魔王|伯爵|队长|陨落|拯救|Squid|Demon|Vampire|Captain|Cleared/i.test(text)) {
+        duration = 4500;
+      } else if (/铁门|机关|密道|Gate|Door|Secret/i.test(text)) {
+        duration = 4200;
+      } else if (text.length > 10) {
+        duration = 3800;
+      } else if (text.length > 6) {
+        duration = 3200;
+      } else {
+        duration = 2600;
+      }
+    }
+
+    const now = performance.now();
+    // 如果与上一条提示在 120ms 内接踵触发（例如击杀首领同时触发战利、首领消灭与机关铁门）
+    // 则以 180ms 错峰延时排队依次现身，产生行云流水的层次感，杜绝同时挤压
+    if (now - lastFloatingTimeRef.current < 120) {
+      queueOffsetRef.current += 180;
+    } else {
+      queueOffsetRef.current = 0;
+    }
+    lastFloatingTimeRef.current = now;
+
+    const delay = queueOffsetRef.current;
     const id = Math.random().toString(36).substring(2, 9);
-    setFloatingTexts((prev) => [...prev, { id, text, color }]);
+
     setTimeout(() => {
-      setFloatingTexts((prev) => prev.filter((item) => item.id !== id));
-    }, 1200);
+      setFloatingTexts((prev) => {
+        // 限制屏幕上同时显示的卡片不超过 4 张，超出时移出最老的一张
+        const trimmed = prev.length >= 4 ? prev.slice(prev.length - 3) : prev;
+        return [...trimmed, { id, text, color, duration }];
+      });
+
+      // 独立计时移除当前卡片
+      setTimeout(() => {
+        setFloatingTexts((prev) => prev.filter((item) => item.id !== id));
+      }, duration);
+    }, delay);
   }, []);
 
   // 停止自动寻路
@@ -74,10 +136,15 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // 监听 GameState 变化
+  // 监听 GameState 变化与挂载浮动提示回调
   useEffect(() => {
-    return game.subscribe(forceUpdate);
-  }, [game, forceUpdate]);
+    game.onFloatingText = addFloating;
+    const unsubscribe = game.subscribe(forceUpdate);
+    return () => {
+      game.onFloatingText = undefined;
+      unsubscribe();
+    };
+  }, [game, forceUpdate, addFloating]);
 
   // 首次用户交互后自动开始播放背景音乐（浏览器自动播放策略要求）
   useEffect(() => {
@@ -347,6 +414,7 @@ export const App: React.FC = () => {
         game.isMonsterManualOpen ||
         game.isFloorTeleportOpen ||
         game.isShopOpen ||
+        game.isExpShopOpen ||
         game.isDialogueOpen ||
         game.isGameOver ||
         game.isVictory ||
@@ -357,18 +425,19 @@ export const App: React.FC = () => {
         game.isMonsterManualOpen = false;
         game.isFloorTeleportOpen = false;
         game.isShopOpen = false;
+        game.isExpShopOpen = false;
         game.isDebugOpen = false;
         game.notify();
         return;
       }
 
-      if (e.code === 'KeyL' && !game.isDialogueOpen && !game.isShopOpen) {
+      if (e.code === 'KeyL' && !game.isDialogueOpen && !game.isShopOpen && !game.isExpShopOpen) {
         game.isMonsterManualOpen = !game.isMonsterManualOpen;
         game.notify();
         return;
       }
 
-      if (e.code === 'KeyG' && !game.isDialogueOpen && !game.isShopOpen) {
+      if (e.code === 'KeyG' && !game.isDialogueOpen && !game.isShopOpen && !game.isExpShopOpen) {
         game.isFloorTeleportOpen = !game.isFloorTeleportOpen;
         game.notify();
         return;
@@ -494,6 +563,7 @@ export const App: React.FC = () => {
             game.notify();
           }}
           onOpenDebug={() => {
+            if (!isDebugAllowed()) return;
             game.isDebugOpen = true;
             game.notify();
           }}
@@ -508,15 +578,27 @@ export const App: React.FC = () => {
           className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: 'none' }}
         >
-          {/* 屏幕中央浮动战斗战损与提示数字 */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          {/* 屏幕顶部浮动消息通知栈 (垂直自然流排列，错峰登场，杜绝字体重叠与过快消失) */}
+          <div className="absolute top-16 inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
             {floatingTexts.map((item) => (
               <div
                 key={item.id}
-                className="absolute text-lg font-black font-mono tracking-wider floating-text-anim"
-                style={{ color: item.color }}
+                className="floating-toast-card pointer-events-none select-none flex items-center gap-3 px-5 py-2.5 rounded-2xl backdrop-blur-md bg-slate-950/90 border shadow-2xl transition-all max-w-[90vw] md:max-w-xl"
+                style={{
+                  borderColor: `${item.color}55`,
+                  boxShadow: `0 10px 30px rgba(0, 0, 0, 0.7), 0 0 18px ${item.color}33`,
+                  animation: `toast-enter-fade ${item.duration}ms cubic-bezier(0.16, 1, 0.3, 1) forwards`,
+                }}
               >
-                {item.text}
+                <span className="text-xl select-none shrink-0 filter drop-shadow">
+                  {getToastIcon(item.text)}
+                </span>
+                <span
+                  className="text-sm md:text-base font-extrabold font-sans tracking-wide leading-tight drop-shadow text-center"
+                  style={{ color: item.color }}
+                >
+                  {item.text}
+                </span>
               </div>
             ))}
           </div>
@@ -647,13 +729,35 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* 弹窗层：经验老人修行加点 */}
+      {game.isExpShopOpen && (
+        <ExpShopModal
+          game={game}
+          onClose={() => {
+            game.isExpShopOpen = false;
+            game.notify();
+          }}
+          onBuy={(type) => {
+            const ok = game.buyExpUpgrade(type);
+            if (ok) {
+              addFloating(t.expSuccessFloating, '#10b981');
+            } else {
+              addFloating(t.expNotEnough, '#f87171');
+            }
+          }}
+        />
+      )}
+
       {/* 弹窗层：NPC 剧情对话 */}
       {game.isDialogueOpen && (
         <DialogueModal
           game={game}
           onClose={() => {
-            game.isDialogueOpen = false;
-            game.notify();
+            game.closeDialogue((x, y, isDoor) => {
+              if (threeEngineRef.current) {
+                threeEngineRef.current.removeTile(x, y, isDoor);
+              }
+            });
           }}
         />
       )}
@@ -673,8 +777,8 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* 弹窗层：调试作弊控制台 */}
-      {game.isDebugOpen && (
+      {/* 弹窗层：调试作弊控制台 (严格限制在本地环境展示，生产与 GitHub Pages 绝对不挂载) */}
+      {game.isDebugOpen && isDebugAllowed() && (
         <DebugPanel
           game={game}
           onClose={() => {

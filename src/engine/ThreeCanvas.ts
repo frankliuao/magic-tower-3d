@@ -15,7 +15,7 @@ export interface FloatingText {
 }
 
 interface AnimatedItem {
-  type: 'item_rotate' | 'altar' | 'shop' | 'fairy' | 'slime' | 'bat' | 'portal' | 'npc' | 'lava' | 'monster_idle';
+  type: 'item_rotate' | 'altar' | 'shop' | 'fairy' | 'slime' | 'bat' | 'portal' | 'npc' | 'lava' | 'monster_idle' | 'giant_squid';
   mesh: THREE.Object3D;
   initialX: number;
   initialY: number;
@@ -38,6 +38,13 @@ interface AnimatedItem {
   isUp?: boolean;
   bubble?: THREE.Object3D;
   halo?: THREE.Object3D;
+  mantle?: THREE.Object3D;
+  leftFlank?: THREE.Object3D;
+  rightFlank?: THREE.Object3D;
+  strikingL?: THREE.Object3D;
+  strikingR?: THREE.Object3D;
+  finL?: THREE.Object3D;
+  finR?: THREE.Object3D;
 }
 
 export class ThreeCanvas {
@@ -197,6 +204,8 @@ export class ThreeCanvas {
     this.tileMeshes.clear();
     this.animatedItems = [];
     this.openingDoors = [];
+    this.clearPathTarget();
+    this.setSelectedTile(null, null);
 
     // 换层时重置视角平移与缩放至默认
     this.resetCameraView();
@@ -274,7 +283,7 @@ export class ThreeCanvas {
           });
 
           this.tileMeshes.set(`${x}_${y}`, shopObj);
-          this.scene.add(shopObj);
+          this.floorGroup.add(shopObj);
 
           this.animatedItems.push({
             type: 'shop',
@@ -285,6 +294,60 @@ export class ThreeCanvas {
             lanternL: shopObj.getObjectByName('shop_lantern_l') || undefined,
             lanternR: shopObj.getObjectByName('shop_lantern_r') || undefined,
             shopkeeper: shopObj.getObjectByName('shopkeeper') || undefined,
+          });
+          continue;
+        }
+
+        // 特殊处理横跨 3 格的一体化深海大乌贼 Boss (3-Tile Wide Colossal Giant Squid)
+        if (tile.type === 'monster' && tile.monsterId === 'giant_squid') {
+          const hasLeft = x > 0 && floorData.layout[y][x - 1]?.monsterId === 'giant_squid';
+          const hasRight = x < 10 && floorData.layout[y][x + 1]?.monsterId === 'giant_squid';
+
+          if (!hasLeft && hasRight) {
+            // 这是横跨 3 格大乌贼的左翼格 (x=4)，由中心格一体化统筹渲染与交互绑定
+            continue;
+          }
+          if (hasLeft && !hasRight) {
+            // 这是横跨 3 格大乌贼的右翼格 (x=6)，由中心格一体化统筹渲染与交互绑定
+            continue;
+          }
+
+          // 中心格（或独立单格）创建霸气横跨 3 格的一体化深海大乌贼模型！
+          const squidObj = ModelFactory.createMonsterMesh('giant_squid');
+          squidObj.position.set(world.x, 0, world.z);
+          // 大乌贼面向南方通道 (正面朝向下方的挑战者)
+          squidObj.rotation.y = 0;
+
+          // 开启阴影
+          squidObj.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
+          });
+
+          this.tileMeshes.set(`${x}_${y}`, squidObj);
+          if (hasLeft) {
+            this.tileMeshes.set(`${x - 1}_${y}`, squidObj);
+          }
+          if (hasRight) {
+            this.tileMeshes.set(`${x + 1}_${y}`, squidObj);
+          }
+          this.floorGroup.add(squidObj);
+
+          this.animatedItems.push({
+            type: 'giant_squid',
+            mesh: squidObj,
+            initialX: world.x,
+            initialY: 0,
+            mantle: squidObj.getObjectByName('squid_mantle') || undefined,
+            leftFlank: squidObj.getObjectByName('squid_left_flank') || undefined,
+            rightFlank: squidObj.getObjectByName('squid_right_flank') || undefined,
+            strikingL: squidObj.getObjectByName('squid_striking_l') || undefined,
+            strikingR: squidObj.getObjectByName('squid_striking_r') || undefined,
+            finL: squidObj.getObjectByName('squid_fin_l') || undefined,
+            finR: squidObj.getObjectByName('squid_fin_r') || undefined,
           });
           continue;
         }
@@ -316,7 +379,7 @@ export class ThreeCanvas {
 
           // 自动判断门的朝向：若门嵌在纵向墙体（南北走向）中，旋转 90 度以与南北墙壁严格平齐顺向
           if (tile.type.startsWith('door_')) {
-            if (this.isDoorVertical(floorData.layout, x, y)) {
+            if (ThreeCanvas.isDoorVertical(floorData.layout, x, y)) {
               tileObj.rotation.y = Math.PI / 2;
             } else {
               tileObj.rotation.y = 0;
@@ -426,65 +489,64 @@ export class ThreeCanvas {
     }
   }
 
-  // 判断门所处的墙体走向（true 为南北纵向墙体，false 为东西横向墙体）
-  private isDoorVertical(layout: (Tile | null)[][], x: number, y: number): boolean {
-    const isRealWall = (tx: number, ty: number): boolean => {
-      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
+  // 判断门所处的墙体走向（true 为南北纵向旋转 90 度以阻挡东西向走廊，false 为东西横向以阻挡南北向走廊）
+  public static isDoorVertical(layout: (Tile | null)[][], x: number, y: number): boolean {
+    const isBoundary = (tx: number, ty: number): boolean => {
+      // 地图外部边界等同于外圈实体城墙，形成天然屏障
+      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return true;
       const t = layout[ty]?.[tx];
       if (!t) return false;
-      return t.type === 'wall' || t.type === 'fake_wall' || t.type.startsWith('door_');
+      // 实体墙壁、暗墙、岩浆(Lava)均为不可跨越的障碍物/墙体，门必须嵌入这些屏障之间
+      // 注意：相邻的门绝不能当成墙体！多道连续的门（如26F连续三道红门、41F回廊连续黄门）属于同一走廊通道内的安全门，朝向必须严格保持一致！
+      return t.type === 'wall' || t.type === 'fake_wall' || t.type === 'lava';
     };
 
-    const isWalkable = (tx: number, ty: number): boolean => {
+    const isDoor = (tx: number, ty: number): boolean => {
+      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
+      const t = layout[ty]?.[tx];
+      return !!t && t.type.startsWith('door_');
+    };
+
+    const bLeft = isBoundary(x - 1, y);
+    const bRight = isBoundary(x + 1, y);
+    const bUp = isBoundary(x, y - 1);
+    const bDown = isBoundary(x, y + 1);
+
+    // 1. 如果左右两侧均为主屏障（墙体/暗墙/岩浆/外沿），门横跨走廊拦截南北通路 -> 必须横向平齐 (false)
+    if (bLeft && bRight && !(bUp && bDown)) return false;
+
+    // 2. 如果上下两侧均为主屏障，门纵跨走廊拦截东西通路 -> 必须纵向旋转 90 度 (true)
+    if (bUp && bDown && !(bLeft && bRight)) return true;
+
+    // 3. 关联同向门：如果与相邻门处于同一纵向走廊（上下相邻门），必须同为横向平齐 (false)
+    if (isDoor(x, y - 1) || isDoor(x, y + 1)) return false;
+
+    // 4. 关联同向门：如果与相邻门处于同一横向走廊（左右相邻门），必须同为纵向 (true)
+    if (isDoor(x - 1, y) || isDoor(x + 1, y)) return true;
+
+    // 5. 检查上下相邻的墙体是否属于横向墙链（即该墙左右也是墙体，形成东西向隔断）
+    const downIsHWall = bDown && (isBoundary(x - 1, y + 1) || isBoundary(x + 1, y + 1));
+    const upIsHWall = bUp && (isBoundary(x - 1, y - 1) || isBoundary(x + 1, y - 1));
+    if (downIsHWall || upIsHWall) return false;
+
+    // 6. 检查左右相邻的墙体是否属于纵向墙链（即该墙上下也是墙体，形成南北向隔断）
+    const leftIsVWall = bLeft && (isBoundary(x - 1, y - 1) || isBoundary(x - 1, y + 1));
+    const rightIsVWall = bRight && (isBoundary(x + 1, y - 1) || isBoundary(x + 1, y + 1));
+    if (leftIsVWall || rightIsVWall) return true;
+
+    // 7. 通行通道延伸判定：
+    const isPassable = (tx: number, ty: number): boolean => {
       if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
       const t = layout[ty]?.[tx];
       if (!t) return true;
-      return t.type !== 'wall' && t.type !== 'fake_wall' && !t.type.startsWith('door_');
+      return t.type !== 'wall' && t.type !== 'fake_wall' && t.type !== 'lava';
     };
 
-    const wallLeft = isRealWall(x - 1, y);
-    const wallRight = isRealWall(x + 1, y);
-    const wallUp = isRealWall(x, y - 1);
-    const wallDown = isRealWall(x, y + 1);
+    const vPass = (isPassable(x, y - 1) ? 1 : 0) + (isPassable(x, y + 1) ? 1 : 0);
+    const hPass = (isPassable(x - 1, y) ? 1 : 0) + (isPassable(x + 1, y) ? 1 : 0);
 
-    // 1. 如果左右都有真实墙体，门必然处于东西横向墙体中 -> 绝不可垂直，必须水平平齐 (false)
-    if (wallLeft && wallRight) return false;
-
-    // 2. 如果上下都有真实墙体，门必然处于南北纵向墙体中 -> 必须垂直旋转 90 度以平齐 (true)
-    if (wallUp && wallDown) return true;
-
-    // 3. 边界情况：一边是真实墙体，另一边是地图外边缘（OOB）
-    const oobLeft = x - 1 < 0;
-    const oobRight = x + 1 > 10;
-    const oobUp = y - 1 < 0;
-    const oobDown = y + 1 > 10;
-
-    if ((wallLeft && oobRight) || (wallRight && oobLeft)) return false;
-    if ((wallUp && oobDown) || (wallDown && oobUp)) return true;
-
-    // 4. 若仅有一侧有墙，看该墙体的主导延伸方向（它是属于横向墙链还是纵向墙链）：
-    const hExtCount = (wallLeft ? (isRealWall(x - 2, y) ? 1 : 0) : 0) + (wallRight ? (isRealWall(x + 2, y) ? 1 : 0) : 0);
-    const vExtCount = (wallUp ? (isRealWall(x, y - 2) ? 1 : 0) : 0) + (wallDown ? (isRealWall(x, y + 2) ? 1 : 0) : 0);
-
-    if (hExtCount > vExtCount) return false;
-    if (vExtCount > hExtCount) return true;
-
-    if ((wallLeft || wallRight) && !wallUp && !wallDown) return false;
-    if ((wallUp || wallDown) && !wallLeft && !wallRight) return true;
-
-    // 5. 依据通行方向判定：
-    // 若上下可走（南北走向走廊），门横跨走廊拦截 -> 门必须是横向东西走向 (false)
-    // 若左右可走（东西走向走廊），门纵跨走廊拦截 -> 门必须是纵向南北走向 (true)
-    const walkUp = isWalkable(x, y - 1);
-    const walkDown = isWalkable(x, y + 1);
-    const walkLeft = isWalkable(x - 1, y);
-    const walkRight = isWalkable(x + 1, y);
-
-    const vWalkScore = (walkUp ? 1 : 0) + (walkDown ? 1 : 0);
-    const hWalkScore = (walkLeft ? 1 : 0) + (walkRight ? 1 : 0);
-
-    if (vWalkScore > hWalkScore) return false;
-    if (hWalkScore > vWalkScore) return true;
+    if (vPass > hPass) return false; // 南北通透走廊 -> 横向门拦截
+    if (hPass > vPass) return true;  // 东西通透走廊 -> 纵向门拦截
 
     return false;
   }
@@ -621,11 +683,12 @@ export class ThreeCanvas {
         return ModelFactory.createShopMesh(true);
       case 'npc': {
         if (tile.npcId === 'fairy') return ModelFactory.createFairyMesh();
-        if (tile.npcId === 'old_man_manual' || tile.npcId === 'elder' || tile.npcId === 'old_man') return ModelFactory.createOldManMesh();
+        if (tile.npcId === 'elder_exp') return ModelFactory.createOldManMesh('exp');
+        if (tile.npcId === 'old_man_manual' || tile.npcId === 'elder' || tile.npcId === 'old_man') return ModelFactory.createOldManMesh('normal');
         if (tile.npcId === 'trader' || tile.npcId === 'merchant') return ModelFactory.createTraderMesh();
         if (tile.npcId === 'thief') return ModelFactory.createThiefMesh();
         if (tile.npcId === 'princess') return ModelFactory.createPrincessMesh();
-        return ModelFactory.createOldManMesh();
+        return ModelFactory.createOldManMesh('normal');
       }
       case 'lava':
         return ModelFactory.createLavaMesh();
@@ -997,17 +1060,54 @@ export class ThreeCanvas {
         if (name.includes('mage') || name.includes('vampire')) {
           // 法师与吸血鬼：神秘暗夜悬浮漂移与微幅升沉
           mesh.position.y = 0.03 + Math.sin(sec * 2.6 + item.initialX * 2.0) * 0.035;
-        } else if (name.includes('octopus') || name.includes('dragon') || name.includes('boss')) {
+        } else if (name.includes('octopus') || name.includes('dragon') || name.includes('boss') || name.includes('demon_lord')) {
           // 巨型领主与魔王：浑厚威压脉动与呼吸
           const breath = Math.sin(sec * 2.2 + item.initialX) * 0.025;
           mesh.scale.set(sx * (1 + breath * 0.4), sy * (1 + breath), sz * (1 + breath * 0.4));
           mesh.position.y = Math.sin(sec * 2.0 + item.initialX) * 0.015;
+
+          // 终极真魔王双翼轻缓威仪展开挥动
+          if (name.includes('demon_lord')) {
+            const wingL = mesh.getObjectByName('wing_l');
+            const wingR = mesh.getObjectByName('wing_r');
+            const flap = Math.sin(sec * 2.2) * 0.12;
+            if (wingL) wingL.rotation.y = -flap;
+            if (wingR) wingR.rotation.y = flap;
+          }
         } else {
           // 骷髅、守卫与骑士：持械警戒呼吸微动
           const breath = Math.sin(sec * 2.8 + item.initialX * 2.0) * 0.02;
           mesh.scale.set(sx * (1 + breath * 0.3), sy * (1 + breath), sz * (1 + breath * 0.3));
           mesh.position.y = Math.sin(sec * 2.8 + item.initialX * 2.0) * 0.012;
         }
+      } else if (item.type === 'giant_squid') {
+        if (item.mantle) {
+          const breath = 1.0 + Math.sin(sec * 1.8) * 0.03;
+          item.mantle.scale.set(breath, 1.0 + Math.cos(sec * 1.8) * 0.02, breath);
+        }
+        if (item.leftFlank) {
+          item.leftFlank.rotation.z = Math.sin(sec * 2.2) * 0.06;
+          item.leftFlank.rotation.y = Math.cos(sec * 1.6) * 0.04;
+        }
+        if (item.rightFlank) {
+          item.rightFlank.rotation.z = -Math.sin(sec * 2.2 + 0.8) * 0.06;
+          item.rightFlank.rotation.y = -Math.cos(sec * 1.6 + 0.8) * 0.04;
+        }
+        if (item.strikingL) {
+          item.strikingL.rotation.x = Math.sin(sec * 2.5) * 0.12;
+          item.strikingL.rotation.z = Math.cos(sec * 2.0) * 0.08;
+        }
+        if (item.strikingR) {
+          item.strikingR.rotation.x = Math.cos(sec * 2.5) * 0.12;
+          item.strikingR.rotation.z = -Math.sin(sec * 2.0) * 0.08;
+        }
+        if (item.finL) {
+          item.finL.rotation.z = Math.sin(sec * 2.0) * 0.10;
+        }
+        if (item.finR) {
+          item.finR.rotation.z = -Math.sin(sec * 2.0) * 0.10;
+        }
+        mesh.position.y = (item.initialY ?? 0) + Math.sin(sec * 1.6) * 0.025;
       } else if (item.type === 'portal') {
         // 1. 空心柱表面箭头流动 (Flowing Arrows on Light Wall Cylinder)
         if (item.portalCylinder) {
@@ -1274,6 +1374,14 @@ export class ThreeCanvas {
           curr = curr.parent;
         }
         if (curr) {
+          const hitGridX = Math.round(hit.point.x + 5);
+          const hitGridY = Math.round(hit.point.z + 5);
+          if (hitGridX >= 0 && hitGridX <= 10 && hitGridY >= 0 && hitGridY <= 10) {
+            if (this.tileMeshes.get(`${hitGridX}_${hitGridY}`) === curr) {
+              return { gridX: hitGridX, gridY: hitGridY };
+            }
+          }
+
           for (const [key, obj] of this.tileMeshes.entries()) {
             if (obj === curr) {
               const [xStr, yStr] = key.split('_');

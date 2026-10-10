@@ -10,6 +10,9 @@ export class TextureGenerator {
 
   // 1. 石砖墙面贴图 (Stone Brick Wall)
   static getBrickTexture(theme: string = 'castle'): THREE.CanvasTexture {
+    if (typeof document === 'undefined') {
+      return new THREE.Texture() as THREE.CanvasTexture;
+    }
     const key = `brick_${theme}`;
     if (this.cache.has(key)) return this.cache.get(key)!;
 
@@ -79,6 +82,9 @@ export class TextureGenerator {
 
   // 2. 石板地砖贴图 (Natural Dungeon Flagstone - 自然石板地表，杜绝网格化)
   static getFloorTexture(theme: string = 'castle'): THREE.CanvasTexture {
+    if (typeof document === 'undefined') {
+      return new THREE.Texture() as THREE.CanvasTexture;
+    }
     const key = `floor_${theme}`;
     if (this.cache.has(key)) return this.cache.get(key)!;
 

@@ -28,6 +28,7 @@ export interface Monster {
   color: string;
   modelType: 'slime' | 'bat' | 'skeleton' | 'mage' | 'guard' | 'knight' | 'boss';
   description?: string;
+  descriptionEn?: string;
 }
 
 export type ItemType =
@@ -155,4 +156,6 @@ export interface SaveSlot {
   playerPos: { x: number; y: number; dir: Direction };
   floorStates: { [floorNum: number]: (Tile | null)[][] };
   shopTimes: number;
+  tradersBought?: Record<string, boolean>;
+  elderGiftsGiven?: Record<string, boolean>;
 }

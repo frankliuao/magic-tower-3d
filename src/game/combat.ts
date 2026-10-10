@@ -95,7 +95,7 @@ export function calculateBattle(
   }
 
   if (totalDamage === 0) {
-    notes.push('防杀：完全无伤击杀！');
+    notes.push('防守完备：未受到伤害');
   }
 
   return {
