@@ -11,26 +11,45 @@ export interface EnvContext {
   location?: {
     hostname?: string;
     protocol?: string;
+    search?: string;
   };
 }
 
 /**
  * 判断当前环境是否允许启用开发者调试/作弊控制台。
  *
- * 核心机制（.env.local 参数与环境变量驱动）：
- * 1. 优先读取 Vite 环境变量 VITE_ENABLE_DEBUG：
- *    - 本地开发：通过本地配置文件 `.env.local`（已在 .gitignore 忽略，绝不会提交至 GitHub）
- *      传递 `VITE_ENABLE_DEBUG=true`（若想本地体验纯正通关，亦可一键改为 false）。
- *    - 生产部署 / GitHub Pages：由于 Git 仓库中没有 `.env.local`，Vite 默认读取 `.env`，
- *      其设定为 `VITE_ENABLE_DEBUG=false`，构建产物中作弊与调试控制台 100% 物理熔断。
+ * 核心机制（双通道灵活控制）：
  *
- * 2. 多重防线（Defense in Depth）：
- *    - 若环境变量显式设为 'false'，无条件禁用；
- *    - 若设置了 'true'，但在公网生产域名（如 *.github.io）下运行，自动触发生产安全熔断；
- *    - 若未配置环境变量，按本地开发模式 (DEV) 及 localhost / 127.0.0.1 / file: 协议兜底。
+ * 渠道 1：免重构即时开启（URL 秘籍通道）
+ * - 无论是本地还是 GitHub Pages 线上，访问带有 ?cheat=1 或 ?debug=true 等参数的网址时，
+ *   立即开启作弊器！
+ * - 适用场景：线上默认保持无作弊状态（正规玩家访问正常游戏），作者想给特定玩家爽玩时，
+ *   只需直接分享带参数链接：https://frankliuao.github.io/magic-tower-3d/?cheat=1，零等待秒开！
+ *
+ * 渠道 2：构建级环境变量配置（VITE_ENABLE_DEBUG）
+ * - 本地开发：通过本地 .env.local 传递 VITE_ENABLE_DEBUG=true（或一键改 false 测试原版）。
+ * - GitHub Pages 部署：
+ *   * 默认：.env 中为 VITE_ENABLE_DEBUG=false（保障正常玩家体验）；
+ *   * 偶尔全员开启：在 GitHub 仓库 Settings -> Variables 中将 VITE_ENABLE_DEBUG 设为 true，
+ *     或在 Actions 界面点击 "Run workflow" 勾选 enable_debug 开关，重新构建后线上全员开放。
+ *
+ * 渠道 3：本地开发模式与本地主机名自动兜底（DEV / localhost / 127.0.0.1 / file:）
  */
-export function isDebugAllowed(ctx?: EnvContext | { location?: { hostname?: string; protocol?: string } }): boolean {
-  // 提取环境变量来源（上下文注入 -> Vite import.meta.env -> Node process.env）
+export function isDebugAllowed(ctx?: EnvContext | { location?: { hostname?: string; protocol?: string; search?: string } }): boolean {
+  const loc = ctx?.location ?? (typeof window !== 'undefined' ? window.location : undefined);
+  const search = loc?.search ?? '';
+
+  // 1. URL 秘籍通道：检测 ?cheat=1, ?cheat=true, ?debug=1, ?debug=true
+  if (
+    search.includes('cheat=1') ||
+    search.includes('cheat=true') ||
+    search.includes('debug=1') ||
+    search.includes('debug=true')
+  ) {
+    return true;
+  }
+
+  // 2. 提取环境变量来源（上下文注入 -> Vite import.meta.env -> Node process.env）
   const envSource: any =
     (ctx && 'env' in ctx ? ctx.env : undefined) ??
     (typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined) ??
@@ -38,33 +57,27 @@ export function isDebugAllowed(ctx?: EnvContext | { location?: { hostname?: stri
 
   const debugFlag = envSource?.VITE_ENABLE_DEBUG ?? envSource?.VITE_ENABLE_CHEAT;
 
-  const loc = ctx?.location ?? (typeof window !== 'undefined' ? window.location : undefined);
-  const host = loc?.hostname ?? '';
-  const protocol = loc?.protocol ?? '';
-
-  // 1. 如果通过环境变量显式声明（.env / .env.local）
   if (debugFlag !== undefined && debugFlag !== null && debugFlag !== '') {
+    const isExplicitTrue = debugFlag === 'true' || debugFlag === '1' || debugFlag === true;
+    if (isExplicitTrue) {
+      return true;
+    }
+
     const isExplicitFalse = debugFlag === 'false' || debugFlag === '0' || debugFlag === false;
     if (isExplicitFalse) {
       return false;
     }
-
-    const isExplicitTrue = debugFlag === 'true' || debugFlag === '1' || debugFlag === true;
-    if (isExplicitTrue) {
-      // 生产域名双重防线：即使误将带 true 的产物推送到线上，也保护 GitHub Pages 纯正游戏环境
-      if (host.endsWith('.github.io')) {
-        return false;
-      }
-      return true;
-    }
   }
 
-  // 2. Vite 本地开发模式 (DEV)
+  // 3. Vite 本地开发模式 (DEV)
   if (envSource?.DEV === true) {
     return true;
   }
 
-  // 3. 本地主机名检测 (支持本地静态文件运行或本地 preview 服务)
+  // 4. 本地主机名检测 (支持本地静态文件运行或本地 preview 服务)
+  const host = loc?.hostname ?? '';
+  const protocol = loc?.protocol ?? '';
+
   const isLocalHost =
     host === 'localhost' ||
     host === '127.0.0.1' ||

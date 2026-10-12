@@ -563,19 +563,25 @@
         ```
       - **配置模板文件 ([`.env.example`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/.env.example))**：提供范例说明供多人协作或环境指引；
       - **Git 忽略规范 ([`.gitignore`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/.gitignore))**：显式添加 `.env.local` 与 `.env.*.local`，杜绝任何本地环境变量意外推送到远程；
-    - **多层纵深防御与环境嗅探架构 ([`src/utils/env.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/utils/env.ts): `isDebugAllowed`)**：
-      - **优先环境变量**：优先读取 `import.meta.env.VITE_ENABLE_DEBUG`：
-        * 若显式为 `'false'`，任何环境下均无条件熔断；
-        * 若显式为 `'true'`，且运行在本地开发环境，正常启用调试控制台；若检测到部署在 `*.github.io`，触发生产域名防线拦截；
+    - **多层纵深防御与线上灵活开启架构 ([`src/utils/env.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/utils/env.ts): `isDebugAllowed`)**：
+      - **渠道 1：线上免重构免部署即时开启（URL 秘籍参数）**：
+        * 线上环境（GitHub Pages `*.github.io`）默认保持纯正挑战无作弊；
+        * 若作者想临时给特定玩家爽玩，或自己线上测试，直接访问携带 `?cheat=1` 或 `?debug=true` 的链接（如 `https://frankliuao.github.io/magic-tower-3d/?cheat=1`），即刻激活作弊控制台，零等待秒开；
+      - **渠道 2：GitHub Actions 构建时全局开启参数**：
+        * 在 [`.github/workflows/deploy.yml`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/.github/workflows/deploy.yml) 中配置：
+          `VITE_ENABLE_DEBUG: ${{ inputs.enable_debug || vars.VITE_ENABLE_DEBUG || 'false' }}`；
+        * 若想在线上全员开放作弊器，可在 GitHub 仓库 `Settings -> Secrets and variables -> Actions -> Variables` 中将 `VITE_ENABLE_DEBUG` 设为 `true`，或在 Actions 界面点击 `Run workflow` 勾选 `enable_debug: true` 触发部署；
       - **全链路 UI 与控制台熔断**：
-        * **导航栏入口移除 ([`src/ui/Topbar.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/Topbar.tsx))**：仅当 `isDebugAllowed()` 为真时才渲染右侧扳手 🔧 调试按钮，线上生产环境下 DOM 中完全不渲染该入口；
+        * **导航栏入口移除 ([`src/ui/Topbar.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/Topbar.tsx))**：仅当 `isDebugAllowed()` 为真时才渲染右侧扳手 🔧 调试按钮，线上普通访问环境下 DOM 中完全不渲染该入口；
         * **应用层挂载守卫 ([`src/App.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/App.tsx))**：打开调试面板的回调函数和 `<DebugPanel>` 组件渲染均置于 `isDebugAllowed()` 守卫之下；
         * **组件级底层熔断 ([`src/ui/DebugPanel.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/DebugPanel.tsx))**：`DebugPanel` 组件首行直接执行 `if (!isDebugAllowed()) return null;`；
-    - **自动化测试回归 (1033/1033 Tests Pass 100%)**：
+    - **自动化测试回归 (1035/1035 Tests Pass 100%)**：
       - 在 [`src/test_run.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/test_run.ts)（Section 28）中加入完整矩阵断言：
-        * 验证 `.env`（`false`）、`.env.local`（`true`）与 `.gitignore`（包含 `.env.local`）；
-        * 验证生产环境在 `VITE_ENABLE_DEBUG=false` 及 `*.github.io` 下严格判定为 `false`；
-        * 验证本地环境在 `.env.local: VITE_ENABLE_DEBUG=true` 下判定为 `true`；
-        * 验证本地将 `.env.local` 切换为 `false` 后控制台即刻关闭；
-      - 全塔 **1033 / 1033** 项核心自动化测试 100% 成功通过，生产构建 (`npm run build`) 纯净无报错。
+        * 验证 `.env`（`false`）、`.gitignore`（包含 `.env.local`）及 CI 环境下兼容检测；
+        * 验证生产环境在 `VITE_ENABLE_DEBUG=false` 且无参数下严格禁用；
+        * 验证生产环境通过 URL 参数（`?cheat=1` / `?debug=true`）即刻开启作弊；
+        * 验证生产环境通过 GitHub Actions 配置 `VITE_ENABLE_DEBUG=true` 支持全员开启；
+        * 验证本地环境通过 `.env.local: VITE_ENABLE_DEBUG=true` 启用，改为 `false` 后即刻关闭；
+      - 全塔 **1035 / 1035** 项核心自动化测试 100% 成功通过，生产构建 (`npm run build`) 纯净无报错。
+
 

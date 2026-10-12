@@ -4,6 +4,12 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      enable_debug:
+        description: '是否在线上开启作弊/调试控制台 (Enable cheat console on GH Pages)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,6 +40,8 @@ jobs:
         run: npm test
 
       - name: Build
+        env:
+          VITE_ENABLE_DEBUG: ${{ inputs.enable_debug || vars.VITE_ENABLE_DEBUG || 'false' }}
         run: npm run build
 
       - name: Upload artifact

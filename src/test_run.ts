@@ -1484,32 +1484,47 @@ console.log('\n--- 28. 验证基于 .env.local 与环境变量的调试作弊控
 // 1. 验证配置文件与 .gitignore 安全策略
 import fs from 'fs';
 const envContent = fs.readFileSync('.env', 'utf-8');
-const envLocalContent = fs.readFileSync('.env.local', 'utf-8');
 const gitignoreContent = fs.readFileSync('.gitignore', 'utf-8');
-
 assert(envContent.includes('VITE_ENABLE_DEBUG=false'), '.env 文件默认声明 VITE_ENABLE_DEBUG=false，保障生产环境安全');
-assert(envLocalContent.includes('VITE_ENABLE_DEBUG=true'), '.env.local 本地声明 VITE_ENABLE_DEBUG=true，为开发者提供调试能力');
+if (fs.existsSync('.env.local')) {
+  const envLocalContent = fs.readFileSync('.env.local', 'utf-8');
+  assert(envLocalContent.includes('VITE_ENABLE_DEBUG=true'), '.env.local 本地声明 VITE_ENABLE_DEBUG=true，为开发者提供调试能力');
+} else {
+  assert(!fs.existsSync('.env.local'), 'CI/生产环境下 .env.local 绝不应存在，严格遵循 .gitignore 隔离策略');
+}
 assert(gitignoreContent.includes('.env.local'), '.gitignore 必须明确忽略 .env.local，防止本地作弊配置泄露至 GitHub 生产');
 
-// 2. 模拟 GitHub Pages 生产构建与线上环境 (仅加载 .env，无 .env.local)：严格禁用
+// 2. 模拟 GitHub Pages 生产默认环境 (.env: VITE_ENABLE_DEBUG=false)：默认严格禁用
 assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'frankliuao.github.io', protocol: 'https:' } }) === false,
-  '生产环境 (.env: VITE_ENABLE_DEBUG=false 且运行在 github.io) 严格禁用作弊与调试控制台'
+  '生产环境默认 (.env: VITE_ENABLE_DEBUG=false 且运行在 github.io) 严格禁用作弊与调试控制台'
 );
 assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'magictower.github.io', protocol: 'https:' } }) === false,
-  '任何 GitHub Pages (*.github.io) 生产构建均禁止开启作弊'
+  '任何 GitHub Pages (*.github.io) 默认生产构建均禁止开启作弊'
 );
 assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'play-magictower.com', protocol: 'https:' } }) === false,
   '独立公网生产域名下默认严格禁用作弊与调试控制台'
 );
+
+// 3. 模拟作者在 GitHub Pages 偶尔开启作弊器方式 A：在 GitHub 仓库 Variables 或 Actions 输入中显式设置 VITE_ENABLE_DEBUG=true
 assert(
-  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: 'frankliuao.github.io', protocol: 'https:' } }) === false,
-  '即便构建变量意外泄漏，生产域名熔断保护亦能阻止在 *.github.io 上开启作弊'
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: 'frankliuao.github.io', protocol: 'https:' } }) === true,
+  '通过 GitHub Actions 配置 VITE_ENABLE_DEBUG=true 时，GitHub Pages 线上支持全员开启作弊器'
 );
 
-// 3. 模拟本地开发环境 (.env.local: VITE_ENABLE_DEBUG=true)：允许开启调试
+// 4. 模拟作者在 GitHub Pages 偶尔开启作弊器方式 B：免重构免部署，直接使用 URL 秘籍参数 (?cheat=1 / ?debug=true)
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'frankliuao.github.io', search: '?cheat=1' } }) === true,
+  '线上环境通过 URL 携带 ?cheat=1 即刻开启作弊器，可将链接随手分享给特定想爽玩的玩家'
+);
+assert(
+  isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'frankliuao.github.io', search: '?debug=true' } }) === true,
+  '线上环境通过 URL 携带 ?debug=true 亦可免重新打包即刻唤起调试控制台'
+);
+
+// 5. 模拟本地开发环境 (.env.local: VITE_ENABLE_DEBUG=true)：允许开启调试
 assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'true' }, location: { hostname: 'localhost', protocol: 'http:' } }) === true,
   '本地通过 .env.local (VITE_ENABLE_DEBUG=true) 成功启用开发者作弊控制台'
@@ -1527,7 +1542,7 @@ assert(
   '本地 file: 协议环境通过 .env.local 正常启用调试控制台'
 );
 
-// 4. 模拟开发者本地将 .env.local 设为 false 以体验纯正无作弊通关
+// 6. 模拟开发者本地将 .env.local 设为 false 以体验纯正无作弊通关
 assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'localhost', protocol: 'http:' } }) === false,
   '本地若将 .env.local 切换为 VITE_ENABLE_DEBUG=false，控制台即刻关闭，便于本地自测正统通关体验'
