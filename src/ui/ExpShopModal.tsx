@@ -40,7 +40,7 @@ export const ExpShopModal: React.FC<ExpShopModalProps> = ({ game, onClose, onBuy
               </span>
             </div>
             <div className="text-right text-slate-400 text-[11px]">
-              经验老人 · 传授武道
+              {t.expShopSubtitleDetail}
             </div>
           </div>
 
@@ -61,7 +61,7 @@ export const ExpShopModal: React.FC<ExpShopModalProps> = ({ game, onClose, onBuy
                 <div className="text-left">
                   <div className="font-bold text-sm">{t.expUpgradeLevel}</div>
                   <div className="text-[10px] text-amber-300/80">
-                    +{gain.levelGain.hp} HP / +{gain.levelGain.atk} 攻 / +{gain.levelGain.def} 防
+                    +{gain.levelGain.hp} HP / +{gain.levelGain.atk} {t.unitAtk} / +{gain.levelGain.def} {t.unitDef}
                   </div>
                 </div>
               </div>

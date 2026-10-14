@@ -583,5 +583,37 @@
         * 验证生产环境通过 GitHub Actions 配置 `VITE_ENABLE_DEBUG=true` 支持全员开启；
         * 验证本地环境通过 `.env.local: VITE_ENABLE_DEBUG=true` 启用，改为 `false` 后即刻关闭；
       - 全塔 **1035 / 1035** 项核心自动化测试 100% 成功通过，生产构建 (`npm run build`) 纯净无报错。
+29. **全语言绝对纯净双语隔离与细节深度本地化 (100% Strict Bilingual Isolation & Zero Chinese Leakage in English)**：
+    - **背景与用户痛点**：
+      - 用户敏锐指出：“我刚发现，双语支持不好。有很多地方，比如怪物，标题是英语，但一些细节还是汉语。要保证每个语言只能有它这一种语言”；
+      - 深度根因排查：
+        * `src/data/monsters.ts`：40 种怪物均有中文 `description`，但未配置 `descriptionEn`。在右下角检视卡片 `InspectCard.tsx` 中回退到了中文描述，造成“英文标题、中文细节”的混杂；
+        * `src/data/items.ts`：32 种道具法宝缺失 `descriptionEn`，检视卡片直接渲染中文 `description`；
+        * `src/ui/InspectCard.tsx`：推演结果标签硬编码 `'✓ 可战胜' : '⚠ 危险'`；
+        * `src/ui/ExpShopModal.tsx`：副标题硬编码 `'经验老人 · 传授武道'`，属性增量单位硬编码中文 `攻` 与 `防`；
+        * `src/ui/MonsterManual.tsx`：特殊属性徽章仅硬编码了部分枚举，其他特殊技能（如 `TRIPLE_STRIKE`、`VAMPIRE_20`、`POISON` 等）直接渲染原始代码大写字符；
+    - **系统化改造与纯净隔离实现**：
+      - **数据模型扩展与全量补全**：
+        * [`src/types/game.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/types/game.ts)：在 `ItemDef` 接口中补充 `descriptionEn?: string;`；
+        * [`src/data/monsters.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/data/monsters.ts)：为全塔全部 **40 种怪物** 100% 逐一手工精心配置纯正生动的 `descriptionEn` 英文描述；
+        * [`src/data/items.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/data/items.ts)：为全塔全部 **32 种道具法宝与装备** 100% 配置纯正英文 `descriptionEn`；
+      - **双语工具函数与零泄露兜底机制 ([`src/i18n/index.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/i18n/index.ts))**：
+        * `getMonsterDescription(id, lang)`：严格保证当 `lang === 'en'` 时绝不回退至中文，返回纯英文描述；`lang === 'zh'` 时返回中文描述；
+        * `getItemDescription(id, lang)`：严格保证各语言模式下互不泄露；
+        * `getSpecialAbilityLabel(ability, lang, hasCross)`：统一映射先攻、2连击、3连击、魔攻、吸血10%/20%、中毒、破甲及十字架吸血免疫；
+        * 补全 `ITEM_NAMES` 字典并增强 `getItemName` 回退；
+      - **UI 组件彻底国际化消除硬编码**：
+        * [`src/ui/InspectCard.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/InspectCard.tsx)：怪物描述使用 `getMonsterDescription`，道具描述使用 `getItemDescription`，推演标签使用 `t.canDefeat` / `t.dangerDefeat`，特技徽章使用 `getSpecialAbilityLabel`；
+        * [`src/ui/MonsterManual.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/MonsterManual.tsx)：特技徽章全量使用 `getSpecialAbilityLabel`；
+        * [`src/ui/ExpShopModal.tsx`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/ui/ExpShopModal.tsx)：使用 `t.expShopSubtitleDetail`、`t.unitAtk` (`ATK`)、`t.unitDef` (`DEF`)；
+    - **自动化回归验证 (1601/1601 Tests Pass 100%)**：
+      - 在 [`src/test_run.ts`](file:///Users/frankliuao/Documents/GitHub/MagicTower%20魔塔3D/src/test_run.ts)（Section 29）中新增 566 项全矩阵断言：
+        * 遍历校验全部 40 种怪物 `descriptionEn` 存在且包含 0 个汉字；
+        * 遍历校验全部 32 种道具 `descriptionEn` 存在且包含 0 个汉字；
+        * 验证 `getMonsterDescription` 与 `getItemDescription` 在英文模式下 0 汉字泄露；
+        * 验证全部特技枚举徽章中英文模式无泄露；
+        * 验证 UI 核心标签键值无汉字泄露；
+      - 全塔 **1601 / 1601** 项自动化测试用例 100% 通过，生产构建 (`npm run build`) 零警告完美通过。
+
 
 

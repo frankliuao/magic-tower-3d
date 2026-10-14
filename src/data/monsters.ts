@@ -15,6 +15,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#34d399',
     modelType: 'slime',
     description: '魔塔中最弱小的胶质怪物，但若防御不够也会造成麻烦。',
+    descriptionEn: 'The weakest gelatinous creature in the Magic Tower, yet troublesome if defense is lacking.',
   },
   red_slime: {
     id: 'red_slime',
@@ -28,6 +29,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#f87171',
     modelType: 'slime',
     description: '带有微弱火元素的史莱姆，比绿史莱姆略强。',
+    descriptionEn: 'Infused with faint fire essence, noticeably stronger than the green slime.',
   },
   big_slime: {
     id: 'big_slime',
@@ -41,6 +43,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#059669',
     modelType: 'slime',
     description: '多只史莱姆融合而成的庞然大物，生命力顽强。',
+    descriptionEn: 'A massive monstrosity fused from multiple slimes, possessing stubborn vitality.',
   },
   slime_king: {
     id: 'slime_king',
@@ -54,6 +57,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#10b981',
     modelType: 'slime',
     description: '史莱姆一族的王者，攻击力非常凶悍。',
+    descriptionEn: 'Sovereign of the slime clan, wielding ferocious offensive power.',
   },
 
   // 蝙蝠系列
@@ -69,6 +73,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#9333ea',
     modelType: 'bat',
     description: '在塔内阴暗角落盘旋的吸血蝙蝠，攻击迅猛。',
+    descriptionEn: 'A swift vampire bat fluttering in dark corners of the tower, attacking with razor speed.',
   },
   big_bat: {
     id: 'big_bat',
@@ -82,6 +87,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#7e22ce',
     modelType: 'bat',
     description: '体型硕大的变异蝙蝠，牙齿如尖刀。',
+    descriptionEn: 'A mutated giant bat with dagger-sharp fangs and heightened aggression.',
   },
   red_bat: {
     id: 'red_bat',
@@ -95,6 +101,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#e11d48',
     modelType: 'bat',
     description: '浸染魔界血液的血色吸血蝙蝠，攻击极其凶猛。',
+    descriptionEn: 'A bloodthirsty bat drenched in demonic blood, striking with ferocious fury.',
   },
 
   // 骷髅系列
@@ -110,6 +117,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#e2e8f0',
     modelType: 'skeleton',
     description: '复生的枯骨，手持风化短剑。',
+    descriptionEn: 'Reanimated brittle bones wielding a weathered shortsword.',
   },
   skeleton_soldier: {
     id: 'skeleton_soldier',
@@ -123,6 +131,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#cbd5e1',
     modelType: 'skeleton',
     description: '身披破旧盔甲的亡灵战士，防御力较高。',
+    descriptionEn: 'An undead warrior clad in tattered armor, boasting formidable defense.',
   },
   skeleton_captain: {
     id: 'skeleton_captain',
@@ -136,6 +145,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#facc15',
     modelType: 'boss',
     description: '第一区域的守层头目，骨骼坚硬如铁。',
+    descriptionEn: 'Zone 1 gatekeeper and captain of the undead legions, bones as unyielding as iron.',
   },
 
   // 法师系列
@@ -151,6 +161,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#3b82f6',
     modelType: 'mage',
     description: '掌握基础火球术的魔法学徒。',
+    descriptionEn: 'An apprentice sorcerer slinging basic fireballs through the corridors.',
   },
   senior_mage: {
     id: 'senior_mage',
@@ -165,6 +176,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#2563eb',
     modelType: 'mage',
     description: '精通毁灭魔咒的大法师，攻击极高。',
+    descriptionEn: 'A high wizard versed in destructive sorcery, wielding lethal offensive power.',
   },
   red_mage: {
     id: 'red_mage',
@@ -178,6 +190,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#ef4444',
     modelType: 'mage',
     description: '效忠于魔王的禁忌咒术使。',
+    descriptionEn: 'A forbidden spellcaster fanatically loyal to the Demon Lord.',
   },
 
   // 卫兵系列
@@ -193,6 +206,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#64748b',
     modelType: 'guard',
     description: '魔塔守备营的正规士兵。',
+    descriptionEn: 'A regular infantryman of the Magic Tower garrison.',
   },
   mid_guard: {
     id: 'mid_guard',
@@ -206,6 +220,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#475569',
     modelType: 'guard',
     description: '把守地牢关键走廊的魔法警卫。',
+    descriptionEn: 'A disciplined magic sentinel patrolling critical dungeon corridors.',
   },
   senior_guard: {
     id: 'senior_guard',
@@ -219,6 +234,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#475569',
     modelType: 'guard',
     description: '精锐高级卫兵，全身重甲防御极其坚固。',
+    descriptionEn: 'An elite armored guardian, fortified with nigh-impenetrable plate.',
   },
   iron_guard: {
     id: 'iron_guard',
@@ -232,6 +248,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#334155',
     modelType: 'guard',
     description: '全身覆盖重型黑铁甲的勇猛死士。',
+    descriptionEn: 'A fearsome zealot clad from head to toe in heavy black iron armor.',
   },
   magic_guard: {
     id: 'magic_guard',
@@ -245,6 +262,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#4f46e5',
     modelType: 'guard',
     description: '守护魔塔高阶机关的魔法警卫。',
+    descriptionEn: 'A mystical sentinel guarding the high-tier mechanisms of the tower.',
   },
 
   // 巫师与法系
@@ -260,6 +278,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#f97316',
     modelType: 'mage',
     description: '身穿亮红法袍的高阶巫师，通晓元素烈焰。',
+    descriptionEn: 'A high wizard draped in bright crimson robes, commanding elemental flames.',
   },
   senior_wizard: {
     id: 'senior_wizard',
@@ -273,6 +292,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#dc2626',
     modelType: 'mage',
     description: '掌握禁忌魔法的高级巫师，防御与魔力俱佳。',
+    descriptionEn: 'A master of forbidden arts, endowed with exceptional defense and magical might.',
   },
 
   // 兽人与异界生物系列
@@ -288,6 +308,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#15803d',
     modelType: 'boss',
     description: '身躯强壮的蛮族战士。',
+    descriptionEn: 'A brutally strong barbarian warrior from the untamed wildlands.',
   },
   orc_knight: {
     id: 'orc_knight',
@@ -301,6 +322,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#166534',
     modelType: 'boss',
     description: '装备重锤的兽人狂暴统领。',
+    descriptionEn: 'A berserk orc commander armed with a devastating warhammer.',
   },
   ghost_soldier: {
     id: 'ghost_soldier',
@@ -314,6 +336,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#6366f1',
     modelType: 'skeleton',
     description: '战死的游荡幽灵战士，手中残剑挥舞生风。',
+    descriptionEn: 'A wandering spirit of a fallen warrior, brandishing a phantom blade.',
   },
   ghost: {
     id: 'ghost',
@@ -327,6 +350,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#a855f7',
     modelType: 'slime',
     description: '飘忽不定的怨灵幽魂，生命力极其顽强。',
+    descriptionEn: 'An elusive ethereal phantom lingering with immense spiritual vitality.',
   },
   dual_swordsman: {
     id: 'dual_swordsman',
@@ -340,6 +364,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#0284c7',
     modelType: 'knight',
     description: '双持利刃的敏捷剑士，攻击力极其恐怖！',
+    descriptionEn: 'An agile swordsman dual-wielding deadly blades with terrifying attack power!',
   },
   warrior: {
     id: 'warrior',
@@ -353,6 +378,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#38bdf8',
     modelType: 'knight',
     description: '身着坚固锁子甲的魔塔战士。',
+    descriptionEn: 'A seasoned tower warrior clad in sturdy chainmail armor.',
   },
   knight: {
     id: 'knight',
@@ -366,6 +392,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#f59e0b',
     modelType: 'knight',
     description: '皇家铁骑骑士，防护精良。',
+    descriptionEn: 'A royal armored knight equipped with superior protection.',
   },
   knight_captain: {
     id: 'knight_captain',
@@ -379,6 +406,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#eab308',
     modelType: 'knight',
     description: '第40层镇守骑士团的长官。',
+    descriptionEn: 'Commander of the royal knights guarding the 40th floor fortress.',
   },
   archmage: {
     id: 'archmage',
@@ -392,6 +420,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#7c3aed',
     modelType: 'boss',
     description: '第25层守护者，强大的大法师！',
+    descriptionEn: 'Guardian of Floor 25, an archmage of colossal arcane mastery!',
   },
   dragon: {
     id: 'dragon',
@@ -405,6 +434,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#b91c1c',
     modelType: 'boss',
     description: '第35层盘踞的远古恶龙！',
+    descriptionEn: 'An ancient demonic dragon coiled upon Floor 35, breathing searing embers!',
   },
   golem: {
     id: 'golem',
@@ -418,6 +448,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#78716c',
     modelType: 'boss',
     description: '防御极高的岩石傀儡，需极高攻击才能破防。',
+    descriptionEn: 'A boulder-hewn rock golem whose immense defense deflects all but the sharpest strikes.',
   },
   giant_squid: {
     id: 'giant_squid',
@@ -431,6 +462,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#ef4444',
     modelType: 'boss',
     description: '盘踞在深层水域的深红巨型魔兽。',
+    descriptionEn: 'A crimson abyssal beast lurking within the subterranean depths.',
   },
 
   // 骑士系列
@@ -446,6 +478,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#f8fafc',
     modelType: 'knight',
     description: '堕入魔道的圣殿圣骑士，剑术精湛。',
+    descriptionEn: 'A corrupted templar paladin possessing exquisite swordsmanship.',
   },
   yellow_knight: {
     id: 'yellow_knight',
@@ -459,6 +492,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#eab308',
     modelType: 'knight',
     description: '皇家卫队长，攻击附带重击。',
+    descriptionEn: 'Royal captain of the guard, delivering crushing heavy blows.',
   },
   blue_knight: {
     id: 'blue_knight',
@@ -472,6 +506,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#3b82f6',
     modelType: 'knight',
     description: '守护魔塔高层的顶尖骑士，攻守均衡无懈可击。',
+    descriptionEn: 'The pinnacle knight guarding the upper spire, impeccably balanced in offense and defense.',
   },
 
   // Boss系列
@@ -488,6 +523,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#b91c1c',
     modelType: 'boss',
     description: '盘踞在魔塔深处的血族领主。',
+    descriptionEn: 'Zone 2 Vampire Lord dwelling in the shadowy depths of the tower.',
   },
   dark_knight: {
     id: 'dark_knight',
@@ -501,6 +537,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#581c87',
     modelType: 'knight',
     description: '深渊黑暗骑兵，身披坚硬黑曜甲。',
+    descriptionEn: 'An abyssal cavalryman cloaked in unbreakable obsidian plate.',
   },
   ghost_commander: {
     id: 'ghost_commander',
@@ -515,6 +552,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#1e1b4b',
     modelType: 'boss',
     description: '第四区域（40层）冥界统帅，具有先手攻击特权！',
+    descriptionEn: 'Netherworld Commander of Zone 4 (Floor 40), wielding the deadly privilege of First Strike!',
   },
   false_sorcerer: {
     id: 'false_sorcerer',
@@ -528,6 +566,7 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#be123c',
     modelType: 'boss',
     description: '第49层假面魔王，力量已被十字魔法阵削弱，决战一触即发！',
+    descriptionEn: 'The masked false overlord of Floor 49, whose barrier is dispelled once his magic guards fall!',
   },
   demon_lord: {
     id: 'demon_lord',
@@ -541,5 +580,6 @@ export const MONSTERS: Record<string, Monster> = {
     color: '#dc2626',
     modelType: 'boss',
     description: '第50层魔塔之主！掌控整座魔塔的远古恶魔。',
+    descriptionEn: 'Sovereign of Floor 50! The ancient demon emperor who reigns supreme over the entire Magic Tower.',
   },
 };

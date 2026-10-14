@@ -18,7 +18,15 @@ import { GameState } from '../game/gameState';
 import { MONSTERS } from '../data/monsters';
 import { ITEMS } from '../data/items';
 import { calculateBattle } from '../game/combat';
-import { useI18n, getMonsterName, getItemName, getFloorName } from '../i18n';
+import {
+  useI18n,
+  getMonsterName,
+  getItemName,
+  getFloorName,
+  getMonsterDescription,
+  getItemDescription,
+  getSpecialAbilityLabel,
+} from '../i18n';
 import { MonsterIcon } from './MonsterIcon';
 import { findIronDoorRule } from '../data/ironDoors';
 
@@ -54,30 +62,22 @@ export const InspectCard: React.FC<InspectCardProps> = ({
       const mName = getMonsterName(monster.id, lang);
 
       const renderTraitBadge = (sp: SpecialAbility, idx: number) => {
-        let label = '';
+        const label = getSpecialAbilityLabel(sp, lang, Boolean(game.playerStats.inventory.cross));
         let color = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
         if (sp === 'FIRST_STRIKE') {
-          label = t.specialFirstStrike;
           color = 'bg-red-500/20 text-red-300 border-red-500/40';
         } else if (sp === 'DOUBLE_STRIKE') {
-          label = t.specialDouble;
           color = 'bg-orange-500/20 text-orange-300 border-orange-500/40';
         } else if (sp === 'TRIPLE_STRIKE') {
-          label = t.specialTriple;
           color = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
         } else if (sp === 'MAGIC_ATTACK') {
-          label = t.magicAttack;
           color = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
         } else if (sp === 'VAMPIRE_10' || sp === 'VAMPIRE_20') {
-          label = game.playerStats.inventory.cross ? t.specialVampireBlocked : t.specialVampire;
           color = game.playerStats.inventory.cross
             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
             : 'bg-red-500/20 text-red-300 border-red-500/40';
         } else if (sp === 'POISON') {
-          label = t.specialPoison;
           color = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-        } else {
-          return null;
         }
 
         return (
@@ -109,9 +109,7 @@ export const InspectCard: React.FC<InspectCardProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
-                {lang === 'en'
-                  ? (monster.descriptionEn || monster.description || '')
-                  : (monster.description || '')}
+                {getMonsterDescription(monster.id, lang)}
               </p>
             </div>
           </div>
@@ -172,7 +170,7 @@ export const InspectCard: React.FC<InspectCardProps> = ({
             {calc.canFight && (
               <div className="text-[11px] opacity-85 flex justify-between">
                 <span>{t.roundsLabel}: {calc.turns}</span>
-                <span>{game.playerStats.hp > calc.damage ? '✓ 可战胜' : '⚠ 危险'}</span>
+                <span>{game.playerStats.hp > calc.damage ? t.canDefeat : t.dangerDefeat}</span>
               </div>
             )}
           </div>
@@ -215,7 +213,9 @@ export const InspectCard: React.FC<InspectCardProps> = ({
                   {t.inspectItemCategory}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">{item?.description || ''}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {getItemDescription(tile.itemType, lang)}
+              </p>
             </div>
           </div>
         </div>

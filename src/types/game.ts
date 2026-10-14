@@ -70,6 +70,7 @@ export interface ItemDef {
   name: string;
   nameEn: string;
   description: string;
+  descriptionEn?: string;
   category: 'key' | 'potion' | 'gem' | 'equipment' | 'special';
   value?: number;
   color: string;
