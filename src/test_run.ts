@@ -2,10 +2,23 @@
 import { GameState } from './game/gameState';
 import { getFloor } from './data/floors';
 import { MONSTERS } from './data/monsters';
+import { ITEMS } from './data/items';
 import { IRON_DOOR_RULES, findIronDoorRule } from './data/ironDoors';
 import { calculateBattle } from './game/combat';
 import { findPathToAdjacent } from './game/pathfinding';
-import { getMonsterName, NPC_DIALOGUES, translations, getCombatNotification, getDialogueData } from './i18n';
+import {
+  getMonsterName,
+  getItemName,
+  getMonsterDescription,
+  getItemDescription,
+  getSpecialAbilityLabel,
+  NPC_DIALOGUES,
+  translations,
+  TRANSLATIONS,
+  getCombatNotification,
+  getDialogueData,
+} from './i18n';
+import { SpecialAbility, ItemType } from './types/game';
 import { ModelFactory } from './engine/ModelFactory';
 import { ThreeCanvas } from './engine/ThreeCanvas';
 import { isDebugAllowed } from './utils/env';
@@ -1547,6 +1560,127 @@ assert(
   isDebugAllowed({ env: { VITE_ENABLE_DEBUG: 'false' }, location: { hostname: 'localhost', protocol: 'http:' } }) === false,
   '本地若将 .env.local 切换为 VITE_ENABLE_DEBUG=false，控制台即刻关闭，便于本地自测正统通关体验'
 );
+
+// 29. 验证全语言绝对纯净双语隔离 (100% Strict Bilingual Isolation & Zero Leakage)
+console.log('\n--- 29. 验证全语言绝对纯净双语隔离与细节本地化 (Zero Leakage) ---');
+
+const chineseRegex = /[\u4e00-\u9fa5]/;
+
+// 1. 验证全部 40 只怪物的双语描述与名称
+const monsterKeys = Object.keys(MONSTERS);
+assert(monsterKeys.length === 40, '全塔包含 40 种怪物');
+
+for (const id of monsterKeys) {
+  const mon = MONSTERS[id];
+  // 英文模式严格无中文泄露
+  assert(
+    Boolean(mon.descriptionEn) && mon.descriptionEn!.trim().length > 0,
+    `怪物 '${id}' 具备英文描述 (descriptionEn)`
+  );
+  assert(
+    !chineseRegex.test(mon.descriptionEn || ''),
+    `怪物 '${id}' 英文描述中严禁包含任何汉字泄露`
+  );
+  assert(
+    !chineseRegex.test(mon.nameEn),
+    `怪物 '${id}' 英文名称 (nameEn: '${mon.nameEn}') 严禁包含汉字`
+  );
+  assert(
+    getMonsterDescription(id, 'en') === mon.descriptionEn,
+    `getMonsterDescription('${id}', 'en') 纯净返回英文描述`
+  );
+  assert(
+    !chineseRegex.test(getMonsterDescription(id, 'en')),
+    `getMonsterDescription('${id}', 'en') 100% 无汉字`
+  );
+
+  // 中文模式具备中文描述
+  assert(
+    Boolean(mon.description) && mon.description!.trim().length > 0,
+    `怪物 '${id}' 具备中文描述 (description)`
+  );
+  assert(
+    getMonsterDescription(id, 'zh') === mon.description,
+    `getMonsterDescription('${id}', 'zh') 纯净返回中文描述`
+  );
+}
+
+// 2. 验证全部 32 种道具与法宝的双语描述与名称
+const itemKeys = Object.keys(ITEMS);
+assert(itemKeys.length === 32, '全塔包含 32 种道具法宝与装备');
+
+for (const id of itemKeys) {
+  const it = ITEMS[id as ItemType];
+  // 英文模式严格无中文泄露
+  assert(
+    Boolean(it.descriptionEn) && it.descriptionEn!.trim().length > 0,
+    `道具 '${id}' 具备英文描述 (descriptionEn)`
+  );
+  assert(
+    !chineseRegex.test(it.descriptionEn || ''),
+    `道具 '${id}' 英文描述中严禁包含任何汉字泄露`
+  );
+  assert(
+    !chineseRegex.test(it.nameEn),
+    `道具 '${id}' 英文名称 (nameEn: '${it.nameEn}') 严禁包含汉字`
+  );
+  assert(
+    getItemDescription(id, 'en') === it.descriptionEn,
+    `getItemDescription('${id}', 'en') 纯净返回英文描述`
+  );
+  assert(
+    !chineseRegex.test(getItemDescription(id, 'en')),
+    `getItemDescription('${id}', 'en') 100% 无汉字`
+  );
+  assert(
+    !chineseRegex.test(getItemName(id, 'en')),
+    `getItemName('${id}', 'en') 100% 无汉字`
+  );
+
+  // 中文模式具备中文描述
+  assert(
+    Boolean(it.description) && it.description.trim().length > 0,
+    `道具 '${id}' 具备中文描述 (description)`
+  );
+  assert(
+    getItemDescription(id, 'zh') === it.description,
+    `getItemDescription('${id}', 'zh') 纯净返回中文描述`
+  );
+}
+
+// 3. 验证怪物特殊技能双语徽章映射 (getSpecialAbilityLabel)
+const testAbilities: SpecialAbility[] = [
+  'FIRST_STRIKE',
+  'DOUBLE_STRIKE',
+  'TRIPLE_STRIKE',
+  'MAGIC_ATTACK',
+  'VAMPIRE_10',
+  'VAMPIRE_20',
+  'POISON',
+  'DEFENSE_BREAK',
+];
+
+for (const ab of testAbilities) {
+  const labelEn = getSpecialAbilityLabel(ab, 'en');
+  const labelZh = getSpecialAbilityLabel(ab, 'zh');
+  assert(Boolean(labelEn) && !chineseRegex.test(labelEn), `特技 '${ab}' 英文徽章 ('${labelEn}') 无汉字`);
+  assert(Boolean(labelZh) && chineseRegex.test(labelZh), `特技 '${ab}' 中文徽章 ('${labelZh}') 为汉字`);
+}
+// 校验十字架吸血免疫双语
+assert(getSpecialAbilityLabel('VAMPIRE_10', 'en', true) === 'Vampire Blocked', '十字架克制吸血10%英文显示 Vampire Blocked');
+assert(getSpecialAbilityLabel('VAMPIRE_10', 'zh', true) === '吸血免疫', '十字架克制吸血10%中文显示 吸血免疫');
+
+// 4. 验证 UI 核心新增双语键值纯净度
+assert(TRANSLATIONS.en.canDefeat === '✓ Victory' && !chineseRegex.test(TRANSLATIONS.en.canDefeat), '英文战前推演胜利标签无汉字');
+assert(TRANSLATIONS.en.dangerDefeat === '⚠ Danger' && !chineseRegex.test(TRANSLATIONS.en.dangerDefeat), '英文战前推演危险标签无汉字');
+assert(TRANSLATIONS.en.expShopSubtitleDetail === 'Experience Elder · Martial Dao' && !chineseRegex.test(TRANSLATIONS.en.expShopSubtitleDetail), '英文经验加点副标无汉字');
+assert(TRANSLATIONS.en.unitAtk === 'ATK' && !chineseRegex.test(TRANSLATIONS.en.unitAtk), '英文攻击单位为 ATK');
+assert(TRANSLATIONS.en.unitDef === 'DEF' && !chineseRegex.test(TRANSLATIONS.en.unitDef), '英文防御单位为 DEF');
+assert(TRANSLATIONS.zh.canDefeat === '✓ 可战胜', '中文战前推演胜利标签为可战胜');
+assert(TRANSLATIONS.zh.dangerDefeat === '⚠ 危险', '中文战前推演危险标签为危险');
+assert(TRANSLATIONS.zh.expShopSubtitleDetail === '经验老人 · 传授武道', '中文经验加点副标');
+assert(TRANSLATIONS.zh.unitAtk === '攻', '中文攻击单位为 攻');
+assert(TRANSLATIONS.zh.unitDef === '防', '中文防御单位为 防');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

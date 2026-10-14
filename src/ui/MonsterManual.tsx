@@ -4,7 +4,7 @@ import { MONSTERS } from '../data/monsters';
 import { calculateBattle } from '../game/combat';
 import { Monster } from '../types/game';
 import { BookOpen, X, ShieldAlert, Award, Swords, Sparkles } from 'lucide-react';
-import { useI18n, getMonsterName, getFloorName } from '../i18n';
+import { useI18n, getMonsterName, getFloorName, getSpecialAbilityLabel } from '../i18n';
 import { MonsterIcon } from './MonsterIcon';
 
 interface MonsterManualProps {
@@ -108,15 +108,7 @@ export const MonsterManual: React.FC<MonsterManualProps> = ({ game, onClose }) =
                               key={s}
                               className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/40"
                             >
-                              {s === 'FIRST_STRIKE'
-                                ? (lang === 'zh' ? '先攻' : 'First Strike')
-                                : s === 'DOUBLE_STRIKE'
-                                ? (lang === 'zh' ? '2连击' : '2 Strikes')
-                                : s === 'MAGIC_ATTACK'
-                                ? (lang === 'zh' ? '魔攻' : 'Magic ATK')
-                                : s === 'VAMPIRE_10'
-                                ? (lang === 'zh' ? '吸血10%' : 'Vampire 10%')
-                                : s}
+                              {getSpecialAbilityLabel(s, lang, hasCross)}
                             </span>
                           ))}
                         </div>

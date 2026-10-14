@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { MONSTERS } from '../data/monsters';
-import { ItemType } from '../types/game';
+import { ITEMS } from '../data/items';
+import { ItemType, SpecialAbility } from '../types/game';
 
 export type Language = 'zh' | 'en';
 
@@ -90,6 +91,8 @@ export interface Translations {
   inspectFakeWallDesc: string;
   inspectFloorDesc: string;
   inspectRightDblClickHint: string;
+  canDefeat: string;
+  dangerDefeat: string;
 
   // Monster Manual
   manualTitle: string;
@@ -149,6 +152,9 @@ export interface Translations {
   expShopLeave: string;
   expSuccessFloating: string;
   expNotEnough: string;
+  expShopSubtitleDetail: string;
+  unitAtk: string;
+  unitDef: string;
 
   // Dialogue Modal
   dialogueNext: string;
@@ -283,6 +289,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     inspectFakeWallDesc: '伪装暗墙：看似普通墙体，撞击即可粉碎开启隐藏密道！',
     inspectFloorDesc: '地牢中平整的石板地面，安全无危险。',
     inspectRightDblClickHint: '提示：右键双击目标可直接自动寻路至身前并触发交互',
+    canDefeat: '✓ 可战胜',
+    dangerDefeat: '⚠ 危险',
 
     // Monster Manual
     manualTitle: '透视之镜 · 怪物图鉴手册',
@@ -342,6 +350,9 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     expShopLeave: '结束修行',
     expSuccessFloating: '参悟功成！属性大幅精进！',
     expNotEnough: '经验值不足！',
+    expShopSubtitleDetail: '经验老人 · 传授武道',
+    unitAtk: '攻',
+    unitDef: '防',
 
     // Dialogue Modal
     dialogueNext: '继续',
@@ -474,6 +485,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     inspectFakeWallDesc: 'Illusion Wall: Secret passage opens upon bumping into it!',
     inspectFloorDesc: 'Safe dungeon stone pavement.',
     inspectRightDblClickHint: 'Tip: Double-right-click to auto-navigate and engage directly',
+    canDefeat: '✓ Victory',
+    dangerDefeat: '⚠ Danger',
 
     // Monster Manual
     manualTitle: 'Clairvoyance Mirror · Monster Manual',
@@ -533,6 +546,9 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     expShopLeave: 'Leave Training',
     expSuccessFloating: 'Enlightenment reached! Attributes boosted!',
     expNotEnough: 'Not enough EXP!',
+    expShopSubtitleDetail: 'Experience Elder · Martial Dao',
+    unitAtk: 'ATK',
+    unitDef: 'DEF',
 
     // Dialogue Modal
     dialogueNext: 'Next',
@@ -669,8 +685,18 @@ export const ITEM_NAMES: Record<string, { zh: string; en: string }> = {
   shield_sacred: { zh: '神圣神盾', en: 'Sacred Shield' },
   monster_manual: { zh: '怪物手册', en: 'Monster Manual' },
   compass: { zh: '楼层罗盘', en: 'Floor Compass' },
-  cross: { zh: '幸运十字架', en: 'Lucky Cross' },
+  cross: { zh: '神圣十字架', en: 'Holy Cross' },
   lucky_coin: { zh: '幸运金币', en: 'Lucky Coin' },
+  pickaxe: { zh: '破墙十字镐', en: 'Pickaxe' },
+  bomb: { zh: '炼金炸弹', en: 'Bomb' },
+  earthquake: { zh: '地震卷轴', en: 'Earthquake Scroll' },
+  key_gold: { zh: '金钥匙', en: 'Gold Key' },
+  notepad: { zh: '记事本', en: 'Notepad' },
+  snow_crystal: { zh: '冰冻雪花', en: 'Snow Crystal' },
+  down_fly: { zh: '向下飞行器', en: 'Down Flyer' },
+  up_fly: { zh: '向上飞行器', en: 'Up Flyer' },
+  center_fly: { zh: '中心飞行器', en: 'Center Flyer' },
+  sword_dragon: { zh: '屠龙之刃', en: 'Dragon Slayer' },
 };
 
 // 楼层名称双语映射表
@@ -1063,7 +1089,61 @@ export function getMonsterName(id: string, lang: Language): string {
 }
 
 export function getItemName(id: string, lang: Language): string {
-  return ITEM_NAMES[id]?.[lang] || id;
+  const item = ITEM_NAMES[id];
+  if (item && item[lang]) {
+    return item[lang];
+  }
+  const it = ITEMS[id as ItemType];
+  if (it) {
+    if (lang === 'zh' && it.name) return it.name;
+    if (lang === 'en' && it.nameEn) return it.nameEn;
+  }
+  return id
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export function getMonsterDescription(id: string, lang: Language): string {
+  const mon = MONSTERS[id];
+  if (mon) {
+    if (lang === 'en' && mon.descriptionEn) return mon.descriptionEn;
+    if (lang === 'zh' && mon.description) return mon.description;
+  }
+  return lang === 'zh' ? '游荡于魔塔中的凶残妖魔。' : 'A menacing creature roaming the Magic Tower.';
+}
+
+export function getItemDescription(id: string, lang: Language): string {
+  const item = ITEMS[id as ItemType];
+  if (item) {
+    if (lang === 'en' && item.descriptionEn) return item.descriptionEn;
+    if (lang === 'zh' && item.description) return item.description;
+  }
+  return lang === 'zh' ? '散落于地牢中的珍稀法宝。' : 'A rare relic found within the dungeon.';
+}
+
+export function getSpecialAbilityLabel(
+  ability: SpecialAbility,
+  lang: Language,
+  hasCross?: boolean
+): string {
+  if (ability === 'FIRST_STRIKE') return lang === 'zh' ? '先攻' : 'First Strike';
+  if (ability === 'DOUBLE_STRIKE') return lang === 'zh' ? '2连击' : '2 Strikes';
+  if (ability === 'TRIPLE_STRIKE') return lang === 'zh' ? '3连击' : '3 Strikes';
+  if (ability === 'MAGIC_ATTACK') return lang === 'zh' ? '魔攻' : 'Magic ATK';
+  if (ability === 'VAMPIRE_10') {
+    return hasCross
+      ? (lang === 'zh' ? '吸血免疫' : 'Vampire Blocked')
+      : (lang === 'zh' ? '吸血10%' : 'Vampire 10%');
+  }
+  if (ability === 'VAMPIRE_20') {
+    return hasCross
+      ? (lang === 'zh' ? '吸血免疫' : 'Vampire Blocked')
+      : (lang === 'zh' ? '吸血20%' : 'Vampire 20%');
+  }
+  if (ability === 'POISON') return lang === 'zh' ? '中毒' : 'Poison';
+  if (ability === 'DEFENSE_BREAK') return lang === 'zh' ? '破甲' : 'Armor Break';
+  return String(ability);
 }
 
 export function getFloorName(floorNum: number, lang: Language, fallbackName?: string): string {
