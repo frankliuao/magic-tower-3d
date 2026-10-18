@@ -1,7 +1,7 @@
 // src/ui/ExpShopModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
-import { Sparkles, Heart, Sword, Shield, LogOut, Award } from 'lucide-react';
+import { Sparkles, Heart, Sword, Shield, LogOut, Award, Check, X, AlertCircle } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface ExpShopModalProps {
@@ -12,8 +12,69 @@ interface ExpShopModalProps {
 
 export const ExpShopModal: React.FC<ExpShopModalProps> = ({ game, onClose, onBuy }) => {
   const { t } = useI18n();
+  const [pendingConfirm, setPendingConfirm] = useState<'hp' | 'atk' | 'def' | 'level' | null>(null);
+
   const gain = game.getExpUpgradeGain();
   const currentExp = game.playerStats.exp;
+
+  const options: Array<{
+    type: 'level' | 'atk' | 'def' | 'hp';
+    cost: number;
+    label: string;
+    gainSummary: string;
+    detailSub?: string;
+    icon: React.ReactNode;
+    bgActive: string;
+    borderActive: string;
+    textActive: string;
+    gainColor: string;
+  }> = [
+    {
+      type: 'level',
+      cost: gain.costLevel,
+      label: t.expUpgradeLevel,
+      gainSummary: `+Lv & +${gain.levelGain.hp} HP / +${gain.levelGain.atk} ${t.unitAtk} / +${gain.levelGain.def} ${t.unitDef}`,
+      detailSub: `+${gain.levelGain.hp} HP / +${gain.levelGain.atk} ${t.unitAtk} / +${gain.levelGain.def} ${t.unitDef}`,
+      icon: <Award className="w-5 h-5 text-amber-400" />,
+      bgActive: 'bg-amber-950/50 hover:bg-amber-900/60',
+      borderActive: 'border-amber-500/50',
+      textActive: 'text-amber-200',
+      gainColor: 'text-amber-300',
+    },
+    {
+      type: 'atk',
+      cost: gain.costAtk,
+      label: t.expUpgradeAtk,
+      gainSummary: `+${gain.atk} ATK`,
+      icon: <Sword className="w-5 h-5 text-orange-400" />,
+      bgActive: 'bg-orange-950/50 hover:bg-orange-900/60',
+      borderActive: 'border-orange-500/50',
+      textActive: 'text-orange-200',
+      gainColor: 'text-orange-300',
+    },
+    {
+      type: 'def',
+      cost: gain.costDef,
+      label: t.expUpgradeDef,
+      gainSummary: `+${gain.def} DEF`,
+      icon: <Shield className="w-5 h-5 text-sky-400" />,
+      bgActive: 'bg-sky-950/50 hover:bg-sky-900/60',
+      borderActive: 'border-sky-500/50',
+      textActive: 'text-sky-200',
+      gainColor: 'text-sky-300',
+    },
+    {
+      type: 'hp',
+      cost: gain.costHp,
+      label: t.expUpgradeHp,
+      gainSummary: `+${gain.hp} HP`,
+      icon: <Heart className="w-5 h-5 text-rose-400" />,
+      bgActive: 'bg-rose-950/50 hover:bg-rose-900/60',
+      borderActive: 'border-rose-500/50',
+      textActive: 'text-rose-200',
+      gainColor: 'text-rose-300',
+    },
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">
@@ -46,119 +107,112 @@ export const ExpShopModal: React.FC<ExpShopModalProps> = ({ game, onClose, onBuy
 
           {/* 加点选项列表 */}
           <div className="space-y-2.5">
-            {/* 境界突破 / 等级提升 */}
-            <button
-              disabled={currentExp < gain.costLevel}
-              onClick={() => onBuy('level')}
-              className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                currentExp >= gain.costLevel
-                  ? 'bg-amber-950/50 hover:bg-amber-900/60 border-amber-500/50 text-amber-200 hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-slate-800/40 border-slate-700/50 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Award className="w-5 h-5 text-amber-400" />
-                <div className="text-left">
-                  <div className="font-bold text-sm">{t.expUpgradeLevel}</div>
-                  <div className="text-[10px] text-amber-300/80">
-                    +{gain.levelGain.hp} HP / +{gain.levelGain.atk} {t.unitAtk} / +{gain.levelGain.def} {t.unitDef}
-                  </div>
+            {options.map((opt) => {
+              const canAfford = currentExp >= opt.cost;
+              const isConfirming = canAfford && pendingConfirm === opt.type;
+
+              return (
+                <div key={opt.type} className="relative group">
+                  {/* 当经验不足时悬停提示 Tooltip */}
+                  {!canAfford && (
+                    <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-950/95 border border-rose-500/70 text-rose-300 text-xs font-semibold rounded-lg shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-20 whitespace-nowrap flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <span>{t.tipNotEnoughExp} ({opt.cost} EXP)</span>
+                    </div>
+                  )}
+
+                  {isConfirming ? (
+                    /* 确认加点状态卡片 */
+                    <div className="w-full p-3 rounded-xl border-2 border-emerald-400/90 bg-gradient-to-r from-emerald-950/90 to-slate-900 shadow-xl flex items-center justify-between animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
+                          {opt.icon}
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-emerald-200 flex items-center gap-1.5">
+                            <span>{t.expConfirmPrompt}</span>
+                            <span className="text-white font-extrabold">{opt.label}</span>
+                          </div>
+                          <div className="text-[11px] text-emerald-300/80 font-mono mt-0.5">
+                            {opt.gainSummary} · -{opt.cost} EXP
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            onBuy(opt.type);
+                            setPendingConfirm(null);
+                          }}
+                          className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-95 text-white font-bold text-xs rounded-lg shadow-md flex items-center gap-1 transition-all cursor-pointer ring-1 ring-emerald-300/50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {t.confirmBtn}
+                        </button>
+                        <button
+                          onClick={() => setPendingConfirm(null)}
+                          className="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 active:scale-95 text-slate-300 hover:text-white font-medium text-xs rounded-lg transition-all cursor-pointer border border-slate-600 flex items-center gap-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          {t.cancelBtn}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* 常规状态（足额可点击进入确认，不足时 gray out） */
+                    <button
+                      disabled={!canAfford}
+                      title={!canAfford ? `${t.tipNotEnoughExp} (${opt.cost} EXP)` : undefined}
+                      onClick={() => {
+                        if (canAfford) {
+                          setPendingConfirm(opt.type);
+                        }
+                      }}
+                      className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                        canAfford
+                          ? `${opt.bgActive} ${opt.borderActive} ${opt.textActive} hover:scale-[1.02] active:scale-[0.98] cursor-pointer`
+                          : 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-40 grayscale cursor-not-allowed select-none'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {opt.icon}
+                        <div className="text-left">
+                          <div className="font-bold text-sm">{opt.label}</div>
+                          {opt.detailSub && (
+                            <div className="text-[10px] text-amber-300/80">
+                              {opt.detailSub}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-mono font-bold text-sm ${canAfford ? opt.gainColor : 'text-slate-500'}`}>
+                          {opt.type === 'level' ? '' : opt.gainSummary}
+                        </span>
+                        <span
+                          className={`font-mono text-xs font-semibold ${
+                            canAfford ? 'text-emerald-400' : 'text-slate-500'
+                          }`}
+                        >
+                          {opt.cost} EXP
+                        </span>
+                      </div>
+                    </button>
+                  )}
                 </div>
-              </div>
-              <span
-                className={`font-mono font-bold text-sm ${
-                  currentExp >= gain.costLevel ? 'text-amber-300' : 'text-slate-500'
-                }`}
-              >
-                {gain.costLevel} EXP
-              </span>
-            </button>
-
-            {/* 提升攻击 */}
-            <button
-              disabled={currentExp < gain.costAtk}
-              onClick={() => onBuy('atk')}
-              className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                currentExp >= gain.costAtk
-                  ? 'bg-orange-950/50 hover:bg-orange-900/60 border-orange-500/50 text-orange-200 hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-slate-800/40 border-slate-700/50 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Sword className="w-5 h-5 text-orange-400" />
-                <span className="font-bold text-sm">{t.expUpgradeAtk}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-orange-300 text-sm">+{gain.atk} ATK</span>
-                <span
-                  className={`font-mono text-xs font-semibold ${
-                    currentExp >= gain.costAtk ? 'text-emerald-400' : 'text-slate-500'
-                  }`}
-                >
-                  {gain.costAtk} EXP
-                </span>
-              </div>
-            </button>
-
-            {/* 提升防御 */}
-            <button
-              disabled={currentExp < gain.costDef}
-              onClick={() => onBuy('def')}
-              className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                currentExp >= gain.costDef
-                  ? 'bg-sky-950/50 hover:bg-sky-900/60 border-sky-500/50 text-sky-200 hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-slate-800/40 border-slate-700/50 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Shield className="w-5 h-5 text-sky-400" />
-                <span className="font-bold text-sm">{t.expUpgradeDef}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-sky-300 text-sm">+{gain.def} DEF</span>
-                <span
-                  className={`font-mono text-xs font-semibold ${
-                    currentExp >= gain.costDef ? 'text-emerald-400' : 'text-slate-500'
-                  }`}
-                >
-                  {gain.costDef} EXP
-                </span>
-              </div>
-            </button>
-
-            {/* 提升生命 */}
-            <button
-              disabled={currentExp < gain.costHp}
-              onClick={() => onBuy('hp')}
-              className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                currentExp >= gain.costHp
-                  ? 'bg-rose-950/50 hover:bg-rose-900/60 border-rose-500/50 text-rose-200 hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-slate-800/40 border-slate-700/50 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Heart className="w-5 h-5 text-rose-400" />
-                <span className="font-bold text-sm">{t.expUpgradeHp}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-rose-300 text-sm">+{gain.hp} HP</span>
-                <span
-                  className={`font-mono text-xs font-semibold ${
-                    currentExp >= gain.costHp ? 'text-emerald-400' : 'text-slate-500'
-                  }`}
-                >
-                  {gain.costHp} EXP
-                </span>
-              </div>
-            </button>
+              );
+            })}
           </div>
         </div>
 
         {/* 底部退出 */}
         <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex justify-end">
           <button
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-5 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all"
+            onClick={() => {
+              setPendingConfirm(null);
+              onClose();
+            }}
+            className="flex items-center gap-1.5 px-5 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             {t.expShopLeave}

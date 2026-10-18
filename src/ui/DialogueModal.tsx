@@ -1,7 +1,6 @@
-// src/ui/DialogueModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
-import { ChevronRight, Check, Coins } from 'lucide-react';
+import { ChevronRight, Check, Coins, X, AlertCircle } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface DialogueModalProps {
@@ -11,6 +10,7 @@ interface DialogueModalProps {
 
 export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) => {
   const { t } = useI18n();
+  const [isConfirmingTrade, setIsConfirmingTrade] = useState(false);
   const dialogue = game.activeDialogue;
   if (!dialogue) return null;
 
@@ -57,23 +57,55 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
         <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex items-center justify-between gap-3">
           {canTrade ? (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
-              <button
-                onClick={handleTrade}
-                disabled={game.playerStats.gold < trade.costGold}
-                className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow transition-all ${
-                  game.playerStats.gold >= trade.costGold
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-white cursor-pointer ring-1 ring-amber-300/50'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-75'
-                }`}
-              >
-                <Coins className="w-4 h-4 text-amber-300" />
-                {game.playerStats.gold >= trade.costGold
-                  ? `${trade.title} (${trade.costGold} ${game.language === 'zh' ? '金币' : 'Gold'})`
-                  : `${game.language === 'zh' ? '金币不足' : 'Not Enough Gold'} (${trade.costGold} ${game.language === 'zh' ? '金币' : 'Gold'}，${game.language === 'zh' ? '拥有' : 'Have'}: ${game.playerStats.gold})`}
-              </button>
+              {game.playerStats.gold >= trade.costGold ? (
+                isConfirmingTrade ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleTrade}
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-95 text-white rounded-xl text-sm font-bold shadow ring-1 ring-emerald-300/50 transition-all cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      {t.confirmBtn} ({trade.costGold} G)
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmingTrade(false)}
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-300 rounded-xl text-sm font-medium transition-all cursor-pointer border border-slate-600"
+                    >
+                      <X className="w-4 h-4" />
+                      {t.cancelBtn}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsConfirmingTrade(true)}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow transition-all bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 hover:scale-[1.02] active:scale-95 text-white cursor-pointer ring-1 ring-amber-300/50"
+                  >
+                    <Coins className="w-4 h-4 text-amber-300" />
+                    {trade.title} ({trade.costGold} {game.language === 'zh' ? '金币' : 'Gold'})
+                  </button>
+                )
+              ) : (
+                <div className="relative group">
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-950/95 border border-rose-500/70 text-rose-300 text-xs font-semibold rounded-lg shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-20 whitespace-nowrap flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span>{t.tipNotEnoughGold} ({trade.costGold} G)</span>
+                  </div>
+                  <button
+                    disabled
+                    title={`${t.tipNotEnoughGold} (${trade.costGold} G)`}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow transition-all bg-slate-800/40 border border-slate-700/50 text-slate-500 opacity-40 grayscale cursor-not-allowed select-none"
+                  >
+                    <Coins className="w-4 h-4 text-slate-500" />
+                    {trade.title} ({trade.costGold} {game.language === 'zh' ? '金币' : 'Gold'})
+                  </button>
+                </div>
+              )}
 
               <button
-                onClick={onClose}
+                onClick={() => {
+                  setIsConfirmingTrade(false);
+                  onClose();
+                }}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all cursor-pointer"
               >
                 {game.language === 'zh' ? '暂不购买' : 'Decline'}

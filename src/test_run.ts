@@ -1727,6 +1727,46 @@ assert(TRANSLATIONS.zh.expShopSubtitleDetail === '经验老人 · 传授武道',
 assert(TRANSLATIONS.zh.unitAtk === '攻', '中文攻击单位为 攻');
 assert(TRANSLATIONS.zh.unitDef === '防', '中文防御单位为 防');
 
+// 5. 验证商店确认机制与悬停提示双语纯净度
+assert(Boolean(TRANSLATIONS.en.shopConfirmPrompt) && !chineseRegex.test(TRANSLATIONS.en.shopConfirmPrompt), '英文金币商店确认提示无汉字');
+assert(Boolean(TRANSLATIONS.en.expConfirmPrompt) && !chineseRegex.test(TRANSLATIONS.en.expConfirmPrompt), '英文经验商店确认提示无汉字');
+assert(Boolean(TRANSLATIONS.en.tipNotEnoughGold) && !chineseRegex.test(TRANSLATIONS.en.tipNotEnoughGold), '英文金币不足提示无汉字');
+assert(Boolean(TRANSLATIONS.en.tipNotEnoughExp) && !chineseRegex.test(TRANSLATIONS.en.tipNotEnoughExp), '英文经验不足提示无汉字');
+assert(Boolean(TRANSLATIONS.en.confirmBtn) && !chineseRegex.test(TRANSLATIONS.en.confirmBtn), '英文确认按钮无汉字');
+
+assert(TRANSLATIONS.zh.shopConfirmPrompt === '确认强化？', '中文金币商店确认提示正确');
+assert(TRANSLATIONS.zh.expConfirmPrompt === '确认提升？', '中文经验商店确认提示正确');
+assert(TRANSLATIONS.zh.tipNotEnoughGold === '金币不足', '中文金币不足提示正确');
+assert(TRANSLATIONS.zh.tipNotEnoughExp === '经验不足', '中文经验不足提示正确');
+assert(TRANSLATIONS.zh.confirmBtn === '确认', '中文确认按钮正确');
+
+// 6. 验证金币/经验不足时无法购买以及足额时的购买逻辑
+const shopTestGame = new GameState();
+shopTestGame.playerStats.gold = 10;
+const shopCost1 = shopTestGame.getShopCost(); // 20
+assert(shopTestGame.playerStats.gold < shopCost1, '测试金币不足状态');
+assert(shopTestGame.buyShopUpgrade('atk') === false, '金币不足时 buyShopUpgrade 必须返回 false');
+assert(shopTestGame.playerStats.atk === 10, '金币不足时攻击力不得发生变化');
+assert(shopTestGame.playerStats.gold === 10, '金币不足时金币不得被扣除');
+
+shopTestGame.playerStats.gold = 50;
+const atkBefore = shopTestGame.playerStats.atk;
+assert(shopTestGame.buyShopUpgrade('atk') === true, '金币充足时 buyShopUpgrade 返回 true');
+assert(shopTestGame.playerStats.atk > atkBefore, '金币充足时攻击力提升成功');
+assert(shopTestGame.playerStats.gold === 50 - shopCost1, '金币充足时金币正确扣除');
+
+shopTestGame.playerStats.exp = 5;
+const expGain = shopTestGame.getExpUpgradeGain();
+assert(shopTestGame.playerStats.exp < expGain.costAtk, '测试经验不足状态');
+assert(shopTestGame.buyExpUpgrade('atk') === false, '经验不足时 buyExpUpgrade 必须返回 false');
+assert(shopTestGame.playerStats.exp === 5, '经验不足时经验值不得被扣除');
+
+shopTestGame.playerStats.exp = 500;
+const defBefore = shopTestGame.playerStats.def;
+assert(shopTestGame.buyExpUpgrade('def') === true, '经验充足时 buyExpUpgrade 返回 true');
+assert(shopTestGame.playerStats.def > defBefore, '经验充足时防御力提升成功');
+assert(shopTestGame.playerStats.exp === 500 - expGain.costDef, '经验充足时经验正确扣除');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
