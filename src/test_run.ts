@@ -1305,6 +1305,52 @@ assert(knightCaptainMesh.name === 'monster_knight_captain', '骑士队长专属�
 assert(darkKnightMesh.name === 'monster_dark_knight', '黑暗骑士专属建模生成成功');
 assert(dualSwordsmanMesh.name === 'monster_dual_swordsman', '双手剑士专属建模生成成功');
 
+// 21.5 验证【勇士 (Hero / 主角)】全新重构 3D 英雄史诗级建模
+console.log('\n--- 21.5 验证主角勇士重构 3D 建模 (Hero Knight Mesh) ---');
+const heroMesh = ModelFactory.createHeroMesh();
+assert(heroMesh !== null && heroMesh.isGroup, '主角勇士 3D 模型生成成功且为 Group');
+assert(heroMesh.name === 'hero', '主角勇士模型根节点命名为 hero');
+
+// 验证子骨骼与组件组
+const heroLegsG = heroMesh.getObjectByName('hero_legs');
+const heroPelvisG = heroMesh.getObjectByName('hero_pelvis');
+const heroTorsoG = heroMesh.getObjectByName('hero_torso');
+const heroHelmG = heroMesh.getObjectByName('hero_helm');
+const heroLeftArmG = heroMesh.getObjectByName('hero_left_arm');
+const heroShieldG = heroMesh.getObjectByName('hero_shield');
+const heroRightArmG = heroMesh.getObjectByName('hero_right_arm');
+const heroSwordG = heroMesh.getObjectByName('hero_sword');
+const heroCapeG = heroMesh.getObjectByName('hero_cape');
+
+assert(Boolean(heroLegsG), '勇士具备独立双腿与全装甲铁靴模块 (hero_legs)');
+assert(Boolean(heroPelvisG), '勇士具备独立武装皮带与层叠式板甲裙甲模块 (hero_pelvis)');
+assert(Boolean(heroTorsoG), '勇士具备雄壮英武板甲胸甲、皇家蓝珐琅与护喉模块 (hero_torso)');
+assert(Boolean(heroHelmG), '勇士具备圣殿冠军全覆面头盔与三段飘逸战翎模块 (hero_helm)');
+assert(Boolean(heroLeftArmG), '勇士具备左臂全装甲与持盾手臂模块 (hero_left_arm)');
+assert(Boolean(heroShieldG), '勇士具备专属神圣守护者纹章大盾 (hero_shield)');
+assert(Boolean(heroRightArmG), '勇士具备右臂全装甲与执剑手臂模块 (hero_right_arm)');
+assert(Boolean(heroSwordG), '勇士具备专属传奇勇者圣剑 (hero_sword)');
+assert(Boolean(heroCapeG), '勇士具备双肩狮首扣立体层叠飘逸猩红斗篷 (hero_cape)');
+
+let heroMeshCount = 0;
+let heroHasShadows = true;
+heroMesh.traverse((c) => {
+  if ((c as any).isMesh) {
+    heroMeshCount++;
+    if (!(c as any).castShadow || !(c as any).receiveShadow) {
+      heroHasShadows = false;
+    }
+  }
+});
+
+assert(heroMeshCount >= 45, `勇士拥有高精细度的英武英雄 3D 实体部件 (实际部件数: ${heroMeshCount})`);
+assert(heroHasShadows, '勇士全套所有网格部件均正确启用阴影投射与接收');
+
+// 验证勇士整体高度与贴地比例
+const heroBox = new THREE.Box3().setFromObject(heroMesh);
+const heroHeight = heroBox.max.y - heroBox.min.y;
+assert(Math.abs(heroBox.min.y) < 0.02, `勇士战靴底部精准踩实地面 y=0 (实际 min.y: ${heroBox.min.y.toFixed(3)})`);
+assert(heroHeight >= 0.85 && heroHeight <= 1.25, `勇士身高体态雄伟且与地格比例完美协调 (实际高度: ${heroHeight.toFixed(3)})`);
 
 // 22. 验证魔塔全套 40 种怪物均具备 100% 独立专属 3D 建模，绝无任何共用与雷同
 console.log('\n--- 22. 验证魔塔全套 40 种怪物均具备 100% 独立专属 3D 建模 ---');
@@ -1495,7 +1541,6 @@ assert(f26PrincessDlg?.lines[0].includes('愚蠢的勇士') || f26PrincessDlg?.l
 
 console.log('\n--- 28. 验证基于 .env.local 与环境变量的调试作弊控制台隔离机制 ---');
 // 1. 验证配置文件与 .gitignore 安全策略
-import fs from 'fs';
 const envContent = fs.readFileSync('.env', 'utf-8');
 const gitignoreContent = fs.readFileSync('.gitignore', 'utf-8');
 assert(envContent.includes('VITE_ENABLE_DEBUG=false'), '.env 文件默认声明 VITE_ENABLE_DEBUG=false，保障生产环境安全');

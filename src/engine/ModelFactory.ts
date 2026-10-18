@@ -19,116 +19,575 @@ export class ModelFactory {
     const group = new THREE.Group();
     group.name = 'hero';
 
-    // 身体 / 护甲 (蓝银高光板甲)
-    const armorMat = new THREE.MeshStandardMaterial({
-      color: 0x1e3a8a,
-      metalness: 0.8,
-      roughness: 0.25,
+    // 材质体系：高精度秘银板甲、皇家蓝珐琅、耀目赤金、深渊锁甲与圣光红宝石
+    const mithrilMat = new THREE.MeshStandardMaterial({
+      color: 0xecf2f8,
+      metalness: 0.92,
+      roughness: 0.18,
     });
-    const silverMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      metalness: 0.9,
-      roughness: 0.2,
+    const royalBlueMat = new THREE.MeshStandardMaterial({
+      color: 0x1d4ed8,
+      metalness: 0.70,
+      roughness: 0.28,
     });
     const goldMat = new THREE.MeshStandardMaterial({
-      color: 0xfbbf24,
-      metalness: 0.85,
-      roughness: 0.25,
+      color: 0xf59e0b,
+      metalness: 0.92,
+      roughness: 0.20,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.16,
     });
-
-    // 躯干板甲
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.44, 0.28), armorMat);
-    torso.position.y = 0.48;
-    torso.castShadow = true;
-
-    // 胸甲金色十字徽章
-    const crestH = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.02), goldMat);
-    crestH.position.set(0, 0.52, 0.15);
-    const crestV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.02), goldMat);
-    crestV.position.set(0, 0.52, 0.15);
-    group.add(torso, crestH, crestV);
-
-    // 左右肩甲 (Pauldrons)
-    const pauldronGeom = new THREE.SphereGeometry(0.12, 12, 12);
-    const pauldronL = new THREE.Mesh(pauldronGeom, silverMat);
-    pauldronL.scale.set(1.2, 0.8, 1.2);
-    pauldronL.position.set(-0.25, 0.65, 0);
-    const pauldronR = new THREE.Mesh(pauldronGeom, silverMat);
-    pauldronR.scale.set(1.2, 0.8, 1.2);
-    pauldronR.position.set(0.25, 0.65, 0);
-    group.add(pauldronL, pauldronR);
-
-    // 头盔 (Knight Great Helm)
-    const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.3, 16), silverMat);
-    helm.position.y = 0.88;
-    helm.castShadow = true;
-
-    // 面罩护目狭缝 (Visor Slit with glowing heroic eyes inside)
-    const slitMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
-    const slit = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.04, 0.06), slitMat);
-    slit.position.set(0, 0.9, 0.15);
-
-    const eyeGlowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.02), eyeGlowMat);
-    eyeL.position.set(-0.06, 0.9, 0.17);
-    const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.02), eyeGlowMat);
-    eyeR.position.set(0.06, 0.9, 0.17);
-
-    // 头顶红色羽缨 (Red Feather Crest / Plume)
-    const plumeMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.6 });
-    const plume = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 8), plumeMat);
-    plume.position.set(0, 1.1, -0.06);
-    plume.rotation.x = -Math.PI / 4;
-    group.add(helm, slit, eyeL, eyeR, plume);
-
-    // 飘逸红色披风 (Flowing Red Cape)
+    const steelDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.80,
+      roughness: 0.50,
+    });
+    const leatherMat = new THREE.MeshStandardMaterial({
+      color: 0x78350f,
+      roughness: 0.80,
+    });
     const capeMat = new THREE.MeshStandardMaterial({
-      color: 0x991b1b,
-      roughness: 0.7,
+      color: 0xdc2626,
+      roughness: 0.65,
       side: THREE.DoubleSide,
     });
-    const cape = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.58), capeMat);
-    cape.position.set(0, 0.46, -0.16);
-    cape.rotation.x = 0.2;
-    group.add(cape);
+    const capeDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x991b1b,
+      roughness: 0.75,
+      side: THREE.DoubleSide,
+    });
+    const plumeMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      roughness: 0.55,
+    });
+    const rubyMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0xef4444,
+      emissiveIntensity: 0.65,
+      metalness: 0.25,
+      roughness: 0.15,
+    });
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      metalness: 0.96,
+      roughness: 0.12,
+    });
+    const runicFullerMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.45,
+      roughness: 0.2,
+    });
+    const slitMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
+    const eyeGlowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
 
-    // 双腿与战靴
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.14), silverMat);
-    legL.position.set(-0.1, 0.14, 0);
-    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.14), silverMat);
-    legR.position.set(0.1, 0.14, 0);
-    group.add(legL, legR);
+    // -------------------------------------------------------------------------
+    // 1. 双腿与全覆盖哥特式骑士铁靴 (Legs, Greaves, Poleyns & Sabatons)
+    // -------------------------------------------------------------------------
+    const legG = new THREE.Group();
+    legG.name = 'hero_legs';
 
-    // 右手铁剑
-    const swordGroup = new THREE.Group();
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.6, 0.015), silverMat);
-    blade.position.y = 0.3;
-    const swordGuard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.04, 0.06), goldMat);
-    const swordGrip = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.025, 0.14),
-      new THREE.MeshStandardMaterial({ color: 0x78350f })
+    const createHeroLeg = (xSide: number) => {
+      const leg = new THREE.Group();
+
+      // (1) 尖头哥特式板甲铁靴 (Sabatons) - 底部精准平齐贴地 y = 0
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.045, 0.16), mithrilMat);
+      sole.position.set(0, 0.0225, 0.02);
+
+      // 前端哥特式微收窄鞋头与金边 (Gothic Sabaton Tapered Toe & Trim)
+      const toeMid = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.040, 0.05), mithrilMat);
+      toeMid.position.set(0, 0.020, 0.115);
+
+      const toeTip = new THREE.Mesh(new THREE.BoxGeometry(0.060, 0.032, 0.035), mithrilMat);
+      toeTip.position.set(0, 0.016, 0.15);
+
+      const toeGoldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.012, 0.04), goldMat);
+      toeGoldTrim.position.set(0, 0.032, 0.135);
+
+      const heelRim = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.02, 0.06), goldMat);
+      heelRim.position.set(0, 0.015, -0.04);
+
+      // (2) 脚踝转轴护甲 (Ankle Cuffs)
+      const ankle = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.04, 10), steelDarkMat);
+      ankle.position.set(0, 0.065, 0.01);
+
+      // (3) 小腿胫甲与侧翼加强脊 (Greaves with Fluted Ridges)
+      const greave = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.048, 0.16, 10), mithrilMat);
+      greave.position.set(0, 0.15, 0.01);
+
+      const greaveRidge = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.15, 0.025), goldMat);
+      greaveRidge.position.set(0, 0.15, 0.06);
+
+      // (4) 铰接式圆盘膝甲 (Articulated Knee Poleyns with Gold Rivet & Wing)
+      const kneeCup = new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 10), mithrilMat);
+      kneeCup.position.set(0, 0.24, 0.035);
+
+      const kneeRivet = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), goldMat);
+      kneeRivet.position.set(0, 0.24, 0.078);
+
+      const kneeWing = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.06, 0.05), goldMat);
+      kneeWing.position.set(xSide * 0.055, 0.24, 0.02);
+
+      // (5) 大腿装甲与防穿刺锁甲底衬 (Cuisses & Mail Hose)
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.054, 0.15, 10), mithrilMat);
+      thigh.position.set(0, 0.32, 0.0);
+
+      const hipMail = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.062, 0.06, 10), steelDarkMat);
+      hipMail.position.set(0, 0.39, 0.0);
+
+      leg.add(
+        sole, toeMid, toeTip, toeGoldTrim, heelRim,
+        ankle, greave, greaveRidge,
+        kneeCup, kneeRivet, kneeWing,
+        thigh, hipMail
+      );
+      leg.position.set(xSide * 0.11, 0, 0);
+      return leg;
+    };
+
+    legG.add(createHeroLeg(-1), createHeroLeg(1));
+    group.add(legG);
+
+    // -------------------------------------------------------------------------
+    // 2. 战术武装皮带与层叠式板甲裙甲 (Belt, Lion Buckle, Faulds & Tassets)
+    // -------------------------------------------------------------------------
+    const pelvisG = new THREE.Group();
+    pelvisG.name = 'hero_pelvis';
+
+    // 纯牛皮武装战带
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.21, 0.055, 16), leatherMat);
+    belt.position.set(0, 0.41, 0);
+
+    // 耀目黄金狮王宝石扣 (Lion Head Arming Buckle with Ruby)
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.075, 0.035), goldMat);
+    buckle.position.set(0, 0.41, 0.17);
+    const buckleGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.028, 0), rubyMat);
+    buckleGem.position.set(0, 0.41, 0.19);
+
+    // 前甲裙板 (Front Fauld) 与金边
+    const frontFauld = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.025), mithrilMat);
+    frontFauld.position.set(0, 0.36, 0.15);
+    frontFauld.rotation.x = 0.12;
+
+    const frontFauldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.016, 0.03), goldMat);
+    frontFauldTrim.position.set(0, 0.32, 0.16);
+    frontFauldTrim.rotation.x = 0.12;
+
+    // 左右护胯甲片 (Side Tassets)
+    const tassetL = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.14, 0.18), mithrilMat);
+    tassetL.position.set(-0.19, 0.32, 0.0);
+    tassetL.rotation.z = -0.15;
+    const tassetTrimL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.018, 0.18), goldMat);
+    tassetTrimL.position.set(-0.20, 0.25, 0.0);
+    tassetTrimL.rotation.z = -0.15;
+
+    const tassetR = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.14, 0.18), mithrilMat);
+    tassetR.position.set(0.19, 0.32, 0.0);
+    tassetR.rotation.z = 0.15;
+    const tassetTrimR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.018, 0.18), goldMat);
+    tassetTrimR.position.set(0.20, 0.25, 0.0);
+    tassetTrimR.rotation.z = 0.15;
+
+    // 后臀裙甲 (Rear Culet)
+    const rearCulet = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.025), mithrilMat);
+    rearCulet.position.set(0, 0.36, -0.15);
+    rearCulet.rotation.x = -0.12;
+
+    pelvisG.add(
+      belt, buckle, buckleGem,
+      frontFauld, frontFauldTrim,
+      tassetL, tassetTrimL,
+      tassetR, tassetTrimR,
+      rearCulet
     );
-    swordGrip.position.y = -0.09;
-    const swordPommel = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldMat);
-    swordPommel.position.y = -0.17;
-    swordGroup.add(blade, swordGuard, swordGrip, swordPommel);
-    swordGroup.position.set(0.32, 0.45, 0.1);
-    swordGroup.rotation.x = Math.PI / 4;
-    group.add(swordGroup);
+    group.add(pelvisG);
 
-    // 左手圣盾
-    const shieldGroup = new THREE.Group();
-    const shieldPlate = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.48, 0.36), armorMat);
-    const shieldRim = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.38), goldMat);
-    shieldRim.scale.set(0.95, 0.95, 0.95);
-    const shieldEmblem = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), goldMat);
-    shieldEmblem.position.x = -0.05;
-    shieldGroup.add(shieldPlate, shieldRim, shieldEmblem);
-    shieldGroup.position.set(-0.3, 0.45, 0.05);
-    group.add(shieldGroup);
+    // -------------------------------------------------------------------------
+    // 3. 雄壮英武板甲胸甲、皇家蓝珐琅与护喉 (Contoured Cuirass, Emblem & Gorget)
+    // -------------------------------------------------------------------------
+    const torsoG = new THREE.Group();
+    torsoG.name = 'hero_torso';
 
-    // 角色体型等比缩减 20%
-    group.scale.multiplyScalar(0.8);
+    // (1) 腹部护甲收腰层 (Abdomen Armor)
+    const abdomen = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.198, 0.12, 16), mithrilMat);
+    abdomen.scale.set(1.0, 1.0, 0.76);
+    abdomen.position.set(0, 0.48, 0);
+
+    // (2) 倒三角英武胸甲主板 (Sculpted Breastplate Cuirass)
+    const breastplate = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.185, 0.20, 16), mithrilMat);
+    breastplate.scale.set(1.0, 1.0, 0.74);
+    breastplate.position.set(0, 0.60, 0);
+
+    // 胸甲中央锋脊棱线 (Central Ridge / Keel)
+    const centerKeel = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.20, 0.045), goldMat);
+    centerKeel.position.set(0, 0.60, 0.145);
+
+    // (3) 皇家蓝珐琅胸徽基底 (Royal Azure Enamel Inlay)
+    const royalBluePlate = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.17, 0.035), royalBlueMat);
+    royalBluePlate.position.set(0, 0.60, 0.125);
+
+    // (4) 圣光金色荣耀十字徽章 (Champion Holy Cross & Heart Gem)
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.042, 0.025), goldMat);
+    crossH.position.set(0, 0.61, 0.16);
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.17, 0.025), goldMat);
+    crossV.position.set(0, 0.60, 0.16);
+    const heartRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.032, 0), rubyMat);
+    heartRuby.position.set(0, 0.61, 0.178);
+
+    // (5) 骑士钢护喉与金饰边 (Gorget & Throat Collar)
+    const gorget = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.145, 0.09, 14), mithrilMat);
+    gorget.position.set(0, 0.72, 0.01);
+    const throatRim = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.014, 6, 16), goldMat);
+    throatRim.rotation.x = Math.PI / 2;
+    throatRim.position.set(0, 0.73, 0.01);
+
+    torsoG.add(
+      abdomen, breastplate, centerKeel,
+      royalBluePlate, crossH, crossV, heartRuby,
+      gorget, throatRim
+    );
+    group.add(torsoG);
+
+    // -------------------------------------------------------------------------
+    // 4. 荣耀圣殿冠军头盔与三段飘逸战翎 (Heroic Great Helm, Crown & Flowing Plume)
+    // -------------------------------------------------------------------------
+    const helmG = new THREE.Group();
+    helmG.name = 'hero_helm';
+
+    // (1) 战盔穹顶与面颊护甲 (Helm Dome & Cheek Guards)
+    const helmDome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.155, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
+      mithrilMat
+    );
+    helmDome.position.set(0, 0.90, 0.0);
+
+    const helmCheeks = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.142, 0.17, 16), mithrilMat);
+    helmCheeks.position.set(0, 0.83, 0.0);
+
+    // 前凸式锐角下颌甲 (Bevor Chin Plate)
+    const chinBevor = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.13, 5), mithrilMat);
+    chinBevor.rotation.x = -Math.PI / 2;
+    chinBevor.position.set(0, 0.77, 0.09);
+
+    // (2) 护目狭缝与坚毅目光 (Heroic Visor Slit & Glowing Eyes)
+    const browRim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.165, 0.165, 0.03, 16, 1, false, 0, Math.PI),
+      goldMat
+    );
+    browRim.position.set(0, 0.865, 0.02);
+
+    const slitRecess = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.045), slitMat);
+    slitRecess.position.set(0, 0.845, 0.14);
+
+    const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.016, 0.02), eyeGlowMat);
+    eyeL.position.set(-0.05, 0.845, 0.155);
+    const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.016, 0.02), eyeGlowMat);
+    eyeR.position.set(0.05, 0.845, 0.155);
+
+    // 面罩黄金十字加强梁 (Golden Visor Reinforcement Cross)
+    const nasalGuard = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.14, 0.03), goldMat);
+    nasalGuard.position.set(0, 0.825, 0.155);
+    const visorLip = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.012, 0.03), goldMat);
+    visorLip.position.set(0, 0.865, 0.145);
+
+    // (3) 王者黄金头冠与双翼战徽 (Champion Crown & Winged Diadem)
+    const crownCirclet = new THREE.Mesh(new THREE.CylinderGeometry(0.162, 0.162, 0.028, 16), goldMat);
+    crownCirclet.position.set(0, 0.92, 0.0);
+
+    const crestWingL = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.10, 4), goldMat);
+    crestWingL.rotation.z = 0.45;
+    crestWingL.rotation.x = -0.2;
+    crestWingL.position.set(-0.065, 0.95, 0.13);
+
+    const crestWingR = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.10, 4), goldMat);
+    crestWingR.rotation.z = -0.45;
+    crestWingR.rotation.x = -0.2;
+    crestWingR.position.set(0.065, 0.95, 0.13);
+
+    const crownGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.025, 0), rubyMat);
+    crownGem.position.set(0, 0.94, 0.155);
+
+    // (4) 盔顶高脊与战翎底座 (Helmet Comb & Golden Plume Socket)
+    const helmComb = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.28), goldMat);
+    helmComb.position.set(0, 1.01, -0.01);
+
+    const plumeSocket = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.028, 0.06, 8), goldMat);
+    plumeSocket.position.set(0, 1.03, -0.05);
+
+    // (5) 三重自然飘逸大红战翎与侧羽 (Triple-Tier Champion Plume)
+    const plumeTier1 = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.26, 8), plumeMat);
+    plumeTier1.rotation.x = -0.35;
+    plumeTier1.position.set(0, 1.12, -0.06);
+
+    const plumeTier2 = new THREE.Mesh(new THREE.ConeGeometry(0.046, 0.24, 8), plumeMat);
+    plumeTier2.rotation.x = -0.80;
+    plumeTier2.position.set(0, 1.18, -0.18);
+
+    const plumeTier3 = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.20, 8), plumeMat);
+    plumeTier3.rotation.x = -1.25;
+    plumeTier3.position.set(0, 1.13, -0.30);
+
+    const plumeSideL = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.18, 6), plumeMat);
+    plumeSideL.rotation.z = 0.22;
+    plumeSideL.rotation.x = -0.50;
+    plumeSideL.position.set(-0.04, 1.10, -0.12);
+
+    const plumeSideR = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.18, 6), plumeMat);
+    plumeSideR.rotation.z = -0.22;
+    plumeSideR.rotation.x = -0.50;
+    plumeSideR.position.set(0.04, 1.10, -0.12);
+
+    helmG.add(
+      helmDome, helmCheeks, chinBevor,
+      browRim, slitRecess, eyeL, eyeR, nasalGuard, visorLip,
+      crownCirclet, crestWingL, crestWingR, crownGem,
+      helmComb, plumeSocket,
+      plumeTier1, plumeTier2, plumeTier3, plumeSideL, plumeSideR
+    );
+    group.add(helmG);
+
+    // -------------------------------------------------------------------------
+    // 5. 左臂：重装肩甲、臂铠与神圣守护者纹章大盾 (Left Arm, Spaulder & Shield)
+    // -------------------------------------------------------------------------
+    const leftArmG = new THREE.Group();
+    leftArmG.name = 'hero_left_arm';
+
+    // 左重装肩甲 (Spaulder)
+    const spaulderL = new THREE.Group();
+    const spaulderDomeL = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), mithrilMat);
+    spaulderDomeL.scale.set(1.15, 0.85, 1.15);
+    const spaulderTrimL = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.015, 6, 12, Math.PI), goldMat);
+    spaulderTrimL.rotation.x = Math.PI / 2;
+    const spaulderBossL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), goldMat);
+    spaulderBossL.position.set(-0.09, 0, 0);
+    const spaulderLameL = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.05, 10), mithrilMat);
+    spaulderLameL.position.set(0, -0.06, 0);
+    spaulderL.add(spaulderDomeL, spaulderTrimL, spaulderBossL, spaulderLameL);
+    spaulderL.position.set(-0.27, 0.67, 0.0);
+
+    // 左上臂 (Upper Arm / Bicep)
+    const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.042, 0.16, 8), mithrilMat);
+    upperArmL.position.set(-0.27, 0.53, 0.02);
+    upperArmL.rotation.z = 0.18;
+    upperArmL.rotation.x = 0.15;
+
+    // 左护肘 (Couter with Apex)
+    const couterL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), mithrilMat);
+    couterL.position.set(-0.28, 0.43, 0.06);
+    const couterApexL = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.035, 6), goldMat);
+    couterApexL.rotation.z = Math.PI / 2;
+    couterApexL.position.set(-0.31, 0.43, 0.06);
+
+    // 左前臂 (Vambrace) - 屈臂护盾姿态
+    const forearmL = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.040, 0.16, 8), mithrilMat);
+    forearmL.position.set(-0.26, 0.38, 0.14);
+    forearmL.rotation.x = 0.65;
+    forearmL.rotation.y = 0.25;
+
+    // 左手铁甲手套 (Gauntlet) - 紧扣盾牌内圈把手
+    const gauntletL = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.065, 0.07), mithrilMat);
+    gauntletL.position.set(-0.24, 0.35, 0.22);
+    const gauntletCuffL = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.025, 8), goldMat);
+    gauntletCuffL.position.set(-0.25, 0.36, 0.18);
+
+    // 神圣守护者重盾 (Holy Heater Shield) - 坚固安装在小臂外侧
+    const shieldG = new THREE.Group();
+    shieldG.name = 'hero_shield';
+
+    // 盾牌深色实木与钢衬底
+    const shieldBack = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.44, 0.025), steelDarkMat);
+    shieldBack.position.set(0, 0, -0.015);
+
+    // 盾面主体（皇家蓝高贵盾心，上下弧面与收尖）
+    const shieldFace = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.03), royalBlueMat);
+    shieldFace.position.set(0, 0.07, 0.005);
+
+    const shieldPoint = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.22, 4), royalBlueMat);
+    shieldPoint.rotation.y = Math.PI / 4;
+    shieldPoint.rotation.z = Math.PI;
+    shieldPoint.position.set(0, -0.16, 0.005);
+
+    // 盾牌外围重甲黄金滚边 (Beveled Gold Rims)
+    const rimTop = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.035, 0.045), goldMat);
+    rimTop.position.set(0, 0.21, 0.015);
+    const rimSideL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.30, 0.045), goldMat);
+    rimSideL.position.set(-0.165, 0.07, 0.015);
+    const rimSideR = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.30, 0.045), goldMat);
+    rimSideR.position.set(0.165, 0.07, 0.015);
+    const rimApex = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), goldMat);
+    rimApex.position.set(0, -0.27, 0.015);
+
+    // 盾面浮雕神圣十字勋章与中央耀眼红宝石
+    const shieldCrossH = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.045, 0.035), goldMat);
+    shieldCrossH.position.set(0, 0.06, 0.03);
+    const shieldCrossV = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.34, 0.035), goldMat);
+    shieldCrossV.position.set(0, 0.02, 0.03);
+    const shieldBoss = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), goldMat);
+    shieldBoss.position.set(0, 0.06, 0.05);
+    const shieldRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.032, 0), rubyMat);
+    shieldRuby.position.set(0, 0.06, 0.072);
+
+    shieldG.add(
+      shieldBack, shieldFace, shieldPoint,
+      rimTop, rimSideL, rimSideR, rimApex,
+      shieldCrossH, shieldCrossV, shieldBoss, shieldRuby
+    );
+    // 盾牌自然护卫在小臂与左胸前侧，威严坚固
+    shieldG.position.set(-0.29, 0.44, 0.16);
+    shieldG.rotation.y = 0.28;
+    shieldG.rotation.x = -0.06;
+
+    leftArmG.add(spaulderL, upperArmL, couterL, couterApexL, forearmL, gauntletL, gauntletCuffL, shieldG);
+    group.add(leftArmG);
+
+    // -------------------------------------------------------------------------
+    // 6. 右臂：重装肩甲、臂铠与勇者神圣利刃 (Right Arm, Spaulder & Holy Sword)
+    // -------------------------------------------------------------------------
+    const rightArmG = new THREE.Group();
+    rightArmG.name = 'hero_right_arm';
+
+    // 右重装肩甲 (Spaulder)
+    const spaulderR = new THREE.Group();
+    const spaulderDomeR = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), mithrilMat);
+    spaulderDomeR.scale.set(1.15, 0.85, 1.15);
+    const spaulderTrimR = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.015, 6, 12, Math.PI), goldMat);
+    spaulderTrimR.rotation.x = Math.PI / 2;
+    const spaulderBossR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), goldMat);
+    spaulderBossR.position.set(0.09, 0, 0);
+    const spaulderLameR = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.05, 10), mithrilMat);
+    spaulderLameR.position.set(0, -0.06, 0);
+    spaulderR.add(spaulderDomeR, spaulderTrimR, spaulderBossR, spaulderLameR);
+    spaulderR.position.set(0.27, 0.67, 0.0);
+
+    // 右上臂 (Upper Arm / Bicep)
+    const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.042, 0.16, 8), mithrilMat);
+    upperArmR.position.set(0.27, 0.53, 0.02);
+    upperArmR.rotation.z = -0.20;
+    upperArmR.rotation.x = 0.22;
+
+    // 右护肘 (Couter with Apex)
+    const couterR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), mithrilMat);
+    couterR.position.set(0.29, 0.42, 0.07);
+    const couterApexR = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.035, 6), goldMat);
+    couterApexR.rotation.z = -Math.PI / 2;
+    couterApexR.position.set(0.32, 0.42, 0.07);
+
+    // 右前臂 (Vambrace) - 执剑前倾出击蓄势姿态
+    const forearmR = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.040, 0.16, 8), mithrilMat);
+    forearmR.position.set(0.29, 0.36, 0.16);
+    forearmR.rotation.x = 0.55;
+    forearmR.rotation.y = -0.15;
+
+    // 右手铁甲手套握柄 (Gauntlet)
+    const gauntletR = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.065, 0.075), mithrilMat);
+    gauntletR.position.set(0.30, 0.34, 0.24);
+    const gauntletCuffR = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.025, 8), goldMat);
+    gauntletCuffR.position.set(0.29, 0.35, 0.20);
+
+    // 传奇勇者圣剑 (The Legendary Holy Broadsword)
+    const swordG = new THREE.Group();
+    swordG.name = 'hero_sword';
+
+    // (1) 剑首配重球与镶嵌红宝石 (Pommel & Ruby)
+    const pommel = new THREE.Mesh(new THREE.OctahedronGeometry(0.042, 0), goldMat);
+    pommel.position.y = -0.14;
+    const pommelRuby = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), rubyMat);
+    pommelRuby.position.y = -0.14;
+
+    // (2) 细密皮革缠绕剑柄 (Leather Grip - firmly gripped inside gauntlet)
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.16, 8), leatherMat);
+    grip.position.y = -0.04;
+
+    // (3) 翼展黄金雕花护手与核心红宝石 (Winged Crossguard & Core Gem)
+    const guardBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.042, 0.055), goldMat);
+    guardBar.position.y = 0.05;
+    const guardCenterBoss = new THREE.Mesh(new THREE.OctahedronGeometry(0.038, 0), goldMat);
+    guardCenterBoss.position.set(0, 0.05, 0.03);
+    const guardRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.025, 0), rubyMat);
+    guardRuby.position.set(0, 0.05, 0.045);
+
+    // (4) 锋锐双刃秘银剑身、血槽与尖锋 (Double-Edged Blade, Fuller & Tip)
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.62, 0.016), bladeMat);
+    blade.position.y = 0.36;
+
+    // 剑脊神圣符文血槽 (Runic Fuller)
+    const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.52, 0.02), runicFullerMat);
+    fuller.position.set(0, 0.34, 0);
+
+    // 剑尖折角收敛 (Sword Tip)
+    const swordTip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 4), bladeMat);
+    swordTip.rotation.y = Math.PI / 4;
+    swordTip.position.y = 0.73;
+
+    swordG.add(pommel, pommelRuby, grip, guardBar, guardCenterBoss, guardRuby, blade, fuller, swordTip);
+
+    // 将圣剑精准装配在右手手心，剑刃斜向前上方指向敌人
+    swordG.position.set(0.30, 0.34, 0.24);
+    swordG.rotation.x = 0.45;
+    swordG.rotation.z = -0.15;
+
+    rightArmG.add(spaulderR, upperArmR, couterR, couterApexR, forearmR, gauntletR, gauntletCuffR, swordG);
+    group.add(rightArmG);
+
+    // -------------------------------------------------------------------------
+    // 7. 高贵层叠飘逸猩红斗篷 (Regal Multi-Tier Flowing Red Cape & Lion Clasps)
+    // -------------------------------------------------------------------------
+    const capeG = new THREE.Group();
+    capeG.name = 'hero_cape';
+
+    // 双肩黄金狮首披风扣与红宝石 (Lion Clasps with Rubies)
+    const claspL = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 10), goldMat);
+    claspL.rotation.x = Math.PI / 2;
+    claspL.position.set(-0.16, 0.69, -0.11);
+    const claspGemL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), rubyMat);
+    claspGemL.position.set(-0.16, 0.69, -0.125);
+
+    const claspR = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 10), goldMat);
+    claspR.rotation.x = Math.PI / 2;
+    claspR.position.set(0.16, 0.69, -0.11);
+    const claspGemR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), rubyMat);
+    claspGemR.position.set(0.16, 0.69, -0.125);
+
+    // 背后金色披风连接链 (Golden Mantel Chain)
+    const mantleChain = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.008, 6, 16, Math.PI), goldMat);
+    mantleChain.position.set(0, 0.69, -0.115);
+
+    // 三段式自然垂坠与向后飘扬的立体斗篷褶皱 (Layered Billowing Folds)
+    // 上段：贴合肩颈自然垂落
+    const capeTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.20, 0.02), capeMat);
+    capeTop.position.set(0, 0.58, -0.15);
+    capeTop.rotation.x = 0.12;
+
+    // 中段：逐渐向外展开微扬
+    const capeMid = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.02), capeMat);
+    capeMid.position.set(0, 0.40, -0.19);
+    capeMid.rotation.x = 0.22;
+
+    // 下段：宽大飘逸下摆波浪褶皱
+    const capeBottom = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.02), capeMat);
+    capeBottom.position.set(0, 0.20, -0.25);
+    capeBottom.rotation.x = 0.32;
+
+    // 内衬深色阴影板，营造丰富体积感
+    const capeLining = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.44, 0.015), capeDarkMat);
+    capeLining.position.set(0, 0.38, -0.18);
+    capeLining.rotation.x = 0.20;
+
+    capeG.add(claspL, claspGemL, claspR, claspGemR, mantleChain, capeTop, capeMid, capeBottom, capeLining);
+    group.add(capeG);
+
+    // -------------------------------------------------------------------------
+    // 8. 阴影投射与网格比例调优 (Scale & Shadows)
+    // -------------------------------------------------------------------------
+    group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    // 角色比例调优：0.85 比例在 1x1 地格中威风凛凛且动作舒展无穿模
+    group.scale.multiplyScalar(0.85);
     return group;
   }
 
