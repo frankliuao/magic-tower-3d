@@ -299,7 +299,7 @@ function getFloor10(): FloorData {
 
 function getFloor11(): FloorData {
   const layout: Tile[][] = [
-    [T.floor(), T.floor(), T.floor(), T.wall(), T.item('gem_red'), T.floor(), T.doorY(), T.floor(), T.wall(), T.item('potion_red'), T.item('key_yellow')],
+    [T.npc('elder_exp'), T.floor(), T.floor(), T.wall(), T.item('gem_red'), T.floor(), T.doorY(), T.floor(), T.wall(), T.item('potion_red'), T.item('key_yellow')],
     [T.floor(), T.item('shield_silver'), T.floor(), T.wall(), T.floor(), T.mon('small_bat'), T.wall(), T.mon('orc'), T.wall(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.wall(), T.doorY(), T.wall(), T.wall(), T.floor(), T.doorY(), T.floor(), T.floor()],
     [T.wall(), T.doorI(), T.wall(), T.wall(), T.floor(), T.mon('big_bat'), T.wall(), T.wall(), T.wall(), T.wall(), T.mon('big_slime')],
@@ -307,7 +307,7 @@ function getFloor11(): FloorData {
     [T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.item('potion_red'), T.wall(), T.floor()],
     [T.item('potion_blue'), T.floor(), T.floor(), T.mon('big_bat'), T.floor(), T.floor(), T.doorY(), T.mon('big_slime'), T.floor(), T.wall(), T.floor()],
     [T.wall(), T.doorB(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.mon('big_bat')],
-    [T.floor(), T.mon('big_bat'), T.floor(), T.mon('big_slime'), T.doorY(), T.floor(), T.npc('elder_exp'), T.floor(), T.floor(), T.mon('small_bat'), T.floor()],
+    [T.floor(), T.mon('big_bat'), T.floor(), T.mon('big_slime'), T.doorY(), T.floor(), T.floor(), T.floor(), T.floor(), T.mon('small_bat'), T.floor()],
     [T.item('key_yellow'), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.wall(), T.wall(), T.doorY(), T.wall(), T.floor()],
     [T.item('key_yellow'), T.item('key_yellow'), T.item('key_yellow'), T.item('key_yellow'), T.wall(), T.down(), T.wall(), T.item('potion_blue'), T.mon('big_bat'), T.wall(), T.up()],
   ];

@@ -139,6 +139,8 @@ export interface Translations {
   shopSuccessFloating: string;
   shopNotEnoughGold: string;
   shopTotalPrayers: string;
+  shopConfirmPrompt: string;
+  tipNotEnoughGold: string;
 
   // Experience Elder Shop Modal
   expShopTitle: string;
@@ -152,6 +154,8 @@ export interface Translations {
   expShopLeave: string;
   expSuccessFloating: string;
   expNotEnough: string;
+  expConfirmPrompt: string;
+  tipNotEnoughExp: string;
   expShopSubtitleDetail: string;
   unitAtk: string;
   unitDef: string;
@@ -164,6 +168,7 @@ export interface Translations {
   teleportTitle: string;
   teleportSubtitle: string;
   cancelBtn: string;
+  confirmBtn: string;
 
   // Game Over Modal
   victoryTitle: string;
@@ -337,6 +342,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shopSuccessFloating: '强化成功！属性已提升！',
     shopNotEnoughGold: '金币不足！',
     shopTotalPrayers: '全塔累计强化：{times} 次（所有金币商店共享加价）',
+    shopConfirmPrompt: '确认强化？',
+    tipNotEnoughGold: '金币不足',
 
     // Experience Elder Shop Modal
     expShopTitle: '经验修行精进',
@@ -350,6 +357,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     expShopLeave: '结束修行',
     expSuccessFloating: '参悟功成！属性大幅精进！',
     expNotEnough: '经验值不足！',
+    expConfirmPrompt: '确认提升？',
+    tipNotEnoughExp: '经验不足',
     expShopSubtitleDetail: '经验老人 · 传授武道',
     unitAtk: '攻',
     unitDef: '防',
@@ -362,6 +371,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     teleportTitle: '风之罗盘 · 楼层跃迁',
     teleportSubtitle: '瞬间传送至任意已探索过的楼层',
     cancelBtn: '取消',
+    confirmBtn: '确认',
 
     // Game Over Modal
     victoryTitle: '魔塔征服！英雄凯旋！',
@@ -533,6 +543,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shopSuccessFloating: 'Enhancement successful! Attributes upgraded!',
     shopNotEnoughGold: 'Not enough gold!',
     shopTotalPrayers: 'Total enhancements: {times} (Shared across all shops)',
+    shopConfirmPrompt: 'Confirm upgrade?',
+    tipNotEnoughGold: 'Not enough gold',
 
     // Experience Elder Shop Modal
     expShopTitle: 'Experience Training',
@@ -546,6 +558,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     expShopLeave: 'Leave Training',
     expSuccessFloating: 'Enlightenment reached! Attributes boosted!',
     expNotEnough: 'Not enough EXP!',
+    expConfirmPrompt: 'Confirm upgrade?',
+    tipNotEnoughExp: 'Not enough EXP',
     expShopSubtitleDetail: 'Experience Elder · Martial Dao',
     unitAtk: 'ATK',
     unitDef: 'DEF',
@@ -558,6 +572,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     teleportTitle: 'Wind Compass · Floor Leap',
     teleportSubtitle: 'Instantly teleport to any explored floor',
     cancelBtn: 'Cancel',
+    confirmBtn: 'Confirm',
 
     // Game Over Modal
     victoryTitle: 'Tower Conquered! Victory!',
