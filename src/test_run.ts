@@ -642,7 +642,8 @@ const checkF27 = getFloor(27);
 const checkF42 = getFloor(42);
 assert(checkF5.layout[0][6]?.type === 'npc' && checkF5.layout[0][6]?.npcId === 'elder_exp', '5F (6, 0) 成功配置经验老人且未阻挡门');
 assert(checkF5.layout[0][5]?.type === 'floor', '5F (5, 0) 为畅通平地，允许玩家开启 (4, 0) 房门');
-assert(checkF11.layout[8][6]?.type === 'npc' && checkF11.layout[8][6]?.npcId === 'elder_exp', '11F (6, 8) 成功配置经验老人');
+assert(checkF11.layout[0][0]?.type === 'npc' && checkF11.layout[0][0]?.npcId === 'elder_exp', '11F (0, 0) 成功配置经验老人于银盾房间');
+assert(checkF11.layout[8][6]?.type === 'floor', '11F (6, 8) 走廊畅通，不再阻挡玩家通往楼梯的路线');
 assert(checkF27.layout[0][5]?.type === 'npc' && checkF27.layout[0][5]?.npcId === 'elder_exp', '27F (5, 0) 成功配置经验老人');
 assert(checkF42.layout[3][0]?.type === 'npc' && checkF42.layout[3][0]?.npcId === 'elder_exp', '42F (0, 3) 成功配置经验老人');
 
