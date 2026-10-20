@@ -381,7 +381,7 @@ function getFloor14(): FloorData {
     [T.item('potion_red'), T.floor(), T.floor(), T.mon('big_bat'), T.floor(), T.mon('golem'), T.floor(), T.mon('big_bat'), T.floor(), T.floor(), T.floor()],
     [T.floor(), T.mon('big_slime'), T.floor(), T.wall(), T.wall(), T.doorY(), T.wall(), T.wall(), T.item('potion_red'), T.floor(), T.mon('orc')],
     [T.doorY(), T.wall(), T.doorY(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.doorY()],
-    [T.floor(), T.wall(), T.floor(), T.mon('orc'), T.floor(), T.doorY(), T.floor(), T.mon('big_slime'), T.floor(), T.mon('big_slime'), T.floor()],
+    [T.floor(), T.wall(), T.floor(), T.mon('orc'), T.floor(), T.floor(), T.floor(), T.mon('big_slime'), T.floor(), T.mon('big_slime'), T.floor()],
     [T.mon('senior_mage'), T.wall(), T.mon('senior_mage'), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.doorY(), T.wall(), T.wall()],
     [T.floor(), T.wall(), T.floor(), T.wall(), T.item('potion_red'), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.floor()],
     [T.item('key_blue'), T.wall(), T.floor(), T.doorY(), T.floor(), T.up(), T.floor(), T.wall(), T.floor(), T.floor(), T.down()],
