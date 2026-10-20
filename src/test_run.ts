@@ -726,14 +726,14 @@ const battleCalc = calculateBattle(strongHeroTest, slimeTest);
 assert(battleCalc.damage === 0, '防御力高于怪物攻击力时损血为 0');
 assert(battleCalc.specialNotes.some((n) => n.includes('未受到伤害')), '战力推演日志正确记录【未受到伤害】');
 
-// --- 16. 验证实心饱满墙体 (杜绝细柱与薄壁) 与记事本 (Notepad) 高精 3D 建模 ---
-console.log('\n--- 16. 验证实心墙体规范与记事本高精建模 ---');
+// --- 16. 验证隔断墙体厚度对齐门体 (0.16) 与记事本 (Notepad) 高精 3D 建模 ---
+console.log('\n--- 16. 验证墙体厚度规范与记事本高精建模 ---');
 // 墙体模型验证
 const testWallMesh = ModelFactory.createWallMesh('castle') as any;
 assert(testWallMesh.name === 'wall', '墙体 Mesh 命名正确');
 const wallGeo = testWallMesh.geometry as any;
-assert(wallGeo && wallGeo.parameters.width === 1.0, '墙体完整占据单格宽度 1.0 (非 0.20/0.58)');
-assert(wallGeo && wallGeo.parameters.depth === 1.0, '墙体完整占据单格深度 1.0 (非 0.16 纸片厚度)');
+assert(wallGeo && wallGeo.parameters.width === 1.0, '墙体完整占据单格横向宽度 1.0');
+assert(wallGeo && wallGeo.parameters.depth === 0.16, '隔断墙体厚度严格与门体厚度 0.16 一致');
 
 // 记事本 3D 建模验证
 const notepadMesh = ModelFactory.createItemMesh('notepad');

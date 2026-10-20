@@ -6895,13 +6895,16 @@ export class ModelFactory {
   private static sharedFloorGeo: THREE.BoxGeometry | null = null;
 
   // =========================================================================
-  // 11. 墙体 (Wall) - 坚固城堡石砖整块填充 (完整占据单格 1.0 x 1.0，高 0.90，杜绝孤立立柱与薄壁)
+  // 11. 墙体 (Wall) - 厚度与门体严格一致 (0.16)，智能平滑衔接相邻墙体与门
+  // 规则：
+  // 1. 密集实心山体/2x2及以上厚墙区或纯孤立立柱 (如50F四柱、5F柱)：整格饱满 1.0 x 0.90 x 1.0 方块，杜绝细杆与空心
+  // 2. 隔断墙与走廊墙：厚度严格等于门厚 (0.16)，与门平齐无缝对接
   // =========================================================================
   static createWallMesh(
     theme: string,
-    _layout?: (Tile | null)[][],
-    _x?: number,
-    _y?: number
+    layout?: (Tile | null)[][],
+    x?: number,
+    y?: number
   ): THREE.Object3D {
     const matKey = `wall_mat_${theme}`;
     let wallMat = this.matCache.get(matKey) as THREE.MeshStandardMaterial;
@@ -6916,16 +6919,173 @@ export class ModelFactory {
     }
 
     const WALL_H = 0.90; // 与主角同高 (0.90)，避免遮挡视野
-    if (!this.sharedWallGeo) {
-      this.sharedWallGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
-      this.sharedWallGeo.translate(0, WALL_H / 2, 0);
+    const T = 0.16; // 严格与门体厚度对齐 (0.16)
+
+    const createSolidBlock = () => {
+      if (!this.sharedWallGeo) {
+        this.sharedWallGeo = new THREE.BoxGeometry(1.0, WALL_H, 1.0);
+        this.sharedWallGeo.translate(0, WALL_H / 2, 0);
+      }
+      const solidMesh = new THREE.Mesh(this.sharedWallGeo, wallMat);
+      solidMesh.name = 'wall';
+      solidMesh.castShadow = true;
+      solidMesh.receiveShadow = true;
+      return solidMesh;
+    };
+
+    // 默认或无上下文时（如单元测试）：回退为标准单格实心或薄墙
+    if (!layout || x === undefined || y === undefined) {
+      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.name = 'wall';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
     }
 
-    const mesh = new THREE.Mesh(this.sharedWallGeo, wallMat);
-    mesh.name = 'wall';
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
+    const isWallLike = (tx: number, ty: number): boolean => {
+      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return false;
+      const t = layout[ty]?.[tx];
+      if (!t) return false;
+      return t.type === 'wall' || t.type === 'fake_wall' || t.type.startsWith('door_') || t.type === 'shop';
+    };
+
+    const isSolidWallTile = (tx: number, ty: number): boolean => {
+      if (tx < 0 || tx > 10 || ty < 0 || ty > 10) return true;
+      const t = layout[ty]?.[tx];
+      if (!t) return false;
+      return t.type === 'wall' || t.type === 'fake_wall';
+    };
+
+    let hasNorth = isWallLike(x, y - 1);
+    let hasSouth = isWallLike(x, y + 1);
+    let hasWest = isWallLike(x - 1, y);
+    let hasEast = isWallLike(x + 1, y);
+
+    // 边界延展：若位于地图外沿且有邻接墙体走向，则顺向延展贴满边界，防止边缘断层
+    if (x === 0 && (hasNorth || hasSouth || hasEast)) hasWest = true;
+    if (x === 10 && (hasNorth || hasSouth || hasWest)) hasEast = true;
+    if (y === 0 && (hasWest || hasEast || hasSouth)) hasNorth = true;
+    if (y === 10 && (hasWest || hasEast || hasNorth)) hasSouth = true;
+
+    const wallNeighborCount = (hasNorth ? 1 : 0) + (hasSouth ? 1 : 0) + (hasWest ? 1 : 0) + (hasEast ? 1 : 0);
+
+    // A. 孤立立柱 (无任何正交邻接墙体，如 5F 骷髅兵旁 (0,6)、50F 圣殿四柱 (3,3), (7,3) 等)：
+    // 坚固饱满实心石柱，绝不退化为细竹竿
+    if (wallNeighborCount === 0) {
+      return createSolidBlock();
+    }
+
+    // B. 实心厚墙区判定 (2x2 连续实心方块簇或周围有 3~4 个实体墙邻居)
+    // 包含 4 个拐角对应的对角检查：若处于厚墙内部或拐角内侧，使用整块实心石方块填充，杜绝镂空空心
+    if (wallNeighborCount >= 3) {
+      return createSolidBlock();
+    }
+
+    const isNWCornerSolid = hasNorth && hasWest && isSolidWallTile(x - 1, y - 1);
+    const isNECornerSolid = hasNorth && hasEast && isSolidWallTile(x + 1, y - 1);
+    const isSWCornerSolid = hasSouth && hasWest && isSolidWallTile(x - 1, y + 1);
+    const isSECornerSolid = hasSouth && hasEast && isSolidWallTile(x + 1, y + 1);
+
+    if (isNWCornerSolid || isNECornerSolid || isSWCornerSolid || isSECornerSolid) {
+      return createSolidBlock();
+    }
+
+    // C. 纯横向走向墙段 (水平横向隔断，左右连通，前后通透)
+    if (hasWest && hasEast && !hasNorth && !hasSouth) {
+      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.name = 'wall';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // D. 纯纵向走向墙段 (垂直南北隔断，上下连通，左右通透)
+    if (hasNorth && hasSouth && !hasWest && !hasEast) {
+      const geo = new THREE.BoxGeometry(T, WALL_H, 1.0);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.name = 'wall';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // E. 单向突出隔断尽头 (Dead-End 端头墙)：
+    // 充满整格长度 1.0，厚度严格对齐门厚 T=0.16，不再出现只占半格或断裂
+    if ((hasWest || hasEast) && !hasNorth && !hasSouth) {
+      const geo = new THREE.BoxGeometry(1.0, WALL_H, T);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.name = 'wall';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    if ((hasNorth || hasSouth) && !hasWest && !hasEast) {
+      const geo = new THREE.BoxGeometry(T, WALL_H, 1.0);
+      geo.translate(0, WALL_H / 2, 0);
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.name = 'wall';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // F. 拐角 (L-Corner)、丁字路口 (T-Junction) 与十字交叉 (Cross)
+    // 采用厚度 T=0.16 的核心立柱 + 0.42 延伸悬臂一体化无缝拼装
+    const armLen = (1.0 - T) / 2; // 0.42
+    const armCenter = (1.0 + T) / 4; // 0.29
+
+    const group = new THREE.Group();
+    group.name = 'wall';
+
+    // 核心立柱 (厚度 T x T)
+    const centerGeo = new THREE.BoxGeometry(T, WALL_H, T);
+    centerGeo.translate(0, WALL_H / 2, 0);
+    const centerMesh = new THREE.Mesh(centerGeo, wallMat);
+    centerMesh.castShadow = true;
+    centerMesh.receiveShadow = true;
+    group.add(centerMesh);
+
+    if (hasWest) {
+      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
+      armGeo.translate(-armCenter, WALL_H / 2, 0);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasEast) {
+      const armGeo = new THREE.BoxGeometry(armLen, WALL_H, T);
+      armGeo.translate(armCenter, WALL_H / 2, 0);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasNorth) {
+      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
+      armGeo.translate(0, WALL_H / 2, -armCenter);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+    if (hasSouth) {
+      const armGeo = new THREE.BoxGeometry(T, WALL_H, armLen);
+      armGeo.translate(0, WALL_H / 2, armCenter);
+      const arm = new THREE.Mesh(armGeo, wallMat);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      group.add(arm);
+    }
+
+    return group;
   }
 
   // =========================================================================
