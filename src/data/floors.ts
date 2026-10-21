@@ -28,7 +28,7 @@ function getFloor0(): FloorData {
     [T.wall(), T.item('gem_red'), T.floor(), T.wall(), T.floor(), T.up(), T.floor(), T.wall(), T.floor(), T.item('gem_blue'), T.wall()],
     [T.wall(), T.item('potion_red'), T.floor(), T.floor(), T.floor(), T.npc('fairy'), T.floor(), T.floor(), T.floor(), T.item('potion_red'), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall()],
-    [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.doorR(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
+    [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.doorI(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.item('lucky_coin'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall()],
@@ -575,49 +575,70 @@ function getFloor21(): FloorData {
 function getFloor22(): FloorData {
   const layout: Tile[][] = [
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.up(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.item('potion_red'), T.item('thief_shovel'), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall()],
+    [T.wall(), T.item('key_yellow'), T.floor(), T.floor(), T.fakeWall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.floor(), T.floor(), T.wall(), T.wall()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.down(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
   ];
 
   return {
     floorNumber: 22,
-    name: '22F 炽热走廊',
+    name: '22F 炽热走廊 (小偷的秘道)',
     layout,
-    upStairsPos: { x: 5, y: 5 },
+    upStairsPos: { x: 5, y: 1 },
     downStairsPos: { x: 5, y: 10 },
     theme: 'magma',
   };
 }
 
+export const FLOOR_23_PUZZLE_TILES: { x: number; y: number }[] = [
+  // 字母 '0' (x=1..4, y=1..8)
+  { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 },
+  { x: 1, y: 2 }, { x: 4, y: 2 },
+  { x: 1, y: 3 }, { x: 4, y: 3 },
+  { x: 1, y: 4 }, { x: 4, y: 4 },
+  { x: 1, y: 5 }, { x: 4, y: 5 },
+  { x: 1, y: 6 }, { x: 4, y: 6 },
+  { x: 1, y: 7 }, { x: 4, y: 7 },
+  { x: 1, y: 8 }, { x: 2, y: 8 }, { x: 3, y: 8 }, { x: 4, y: 8 },
+  // 字母 'F' (x=6..9, y=1..8)
+  { x: 6, y: 1 }, { x: 7, y: 1 }, { x: 8, y: 1 }, { x: 9, y: 1 },
+  { x: 6, y: 2 },
+  { x: 6, y: 3 },
+  { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 },
+  { x: 6, y: 5 },
+  { x: 6, y: 6 },
+  { x: 6, y: 7 },
+  { x: 6, y: 8 },
+];
+
 function getFloor23(): FloorData {
   const layout: Tile[][] = [
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall()],
-    [T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.down(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.fakeWall(), T.fakeWall(), T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.fakeWall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall()],
-    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall()],
-    [T.up(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.fakeWall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.up(), T.fakeWall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(), T.wall(), T.wall(), T.wall(), T.wall()],
   ];
 
   return {
     floorNumber: 23,
-    name: '23F 熔岩裂隙',
+    name: '23F 熔岩裂隙 (暗号 0F)',
     layout,
     upStairsPos: { x: 0, y: 10 },
-    downStairsPos: { x: 5, y: 5 },
+    downStairsPos: { x: 6, y: 10 },
     theme: 'magma',
   };
 }

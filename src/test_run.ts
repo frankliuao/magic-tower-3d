@@ -1,6 +1,6 @@
 // src/test_run.ts
 import { GameState } from './game/gameState';
-import { getFloor } from './data/floors';
+import { getFloor, FLOOR_23_PUZZLE_TILES } from './data/floors';
 import { MONSTERS } from './data/monsters';
 import { ITEMS } from './data/items';
 import { IRON_DOOR_RULES, findIronDoorRule } from './data/ironDoors';
@@ -557,8 +557,8 @@ for (let y = 0; y < 11; y++) {
 }
 assert(f0Doors.yellow === 0, '0F 彻底移除 4 扇多余杂乱的黄色大门 (door_yellow 数量为 0)');
 assert(f0Doors.blue === 0, '0F 不使用蓝色大门 (door_blue 数量为 0)');
-assert(f0Doors.red === 1, '0F 中央圣殿大门为红色大门，增加幸运金币获取难度与挑战成就感');
-assert(f0.layout[4][5]?.type === 'door_red', '0F (5, 4) 必须为红色大门');
+assert(f0Doors.iron === 1, '0F 中央金币大门为特殊机关大门，受23层暗号封印');
+assert(f0.layout[4][5]?.type === 'door_iron', '0F (5, 4) 必须为特殊机关大门');
 assert(f0.layout[5][5]?.type === 'item' && f0.layout[5][5]?.itemType === 'lucky_coin', '0F (5, 5) 密藏幸运金币神器');
 
 // 验证四个角落精准精简宝物神台配置
@@ -601,7 +601,7 @@ assert(f0InitialReached.has('1,1') && f0InitialReached.has('1,2'), '西北神台
 assert(f0InitialReached.has('9,1') && f0InitialReached.has('9,2'), '东北神台开放：直接拾取蓝宝石与血瓶');
 assert(f0InitialReached.has('1,9') && f0InitialReached.has('1,8'), '西南神台开放：直接拾取黄钥匙与血瓶');
 assert(f0InitialReached.has('9,9') && f0InitialReached.has('9,8'), '东南神台开放：直接拾取蓝钥匙与血瓶');
-assert(!f0InitialReached.has('5,5'), '未开红门绝无法绕过并拾取中央幸运金币 (5, 5)');
+assert(!f0InitialReached.has('5,5'), '未开金币特殊机关门绝无法绕过并拾取中央幸运金币 (5, 5)');
 
 const f0UnlockedReached = f0Reachable(5, 9, new Set(['5,4']));
 assert(f0UnlockedReached.has('5,5'), '消耗红钥匙开启 (5, 4) 红门后，顺利拾取幸运金币');
@@ -903,13 +903,22 @@ npcAuditGame.closeDialogue();
 // (2) 29F 勘探小偷与暗道
 npcAuditGame.currentFloor = 29;
 const prev29Keys = npcAuditGame.playerStats.yellowKeys;
-npcAuditGame.triggerNPC('thief', 5, 1);
+// 未取得铲子时：小偷请求寻找铲子，不给钥匙
+npcAuditGame.triggerNPC('thief', 4, 1);
+assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('我的铲子找不到了')), '29F 小偷未获得铲子时请求寻找铲子');
+assert(npcAuditGame.playerStats.yellowKeys === prev29Keys, '未获得铲子时不赠送钥匙');
+npcAuditGame.closeDialogue();
+
+// 获得铲子后：交付铲子，小偷挖通暗道并赠送黄钥匙 x2
+npcAuditGame.playerStats.inventory.thief_shovel = 1;
+npcAuditGame.triggerNPC('thief', 4, 1);
 assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('30 层的暗道已经被我挖通了')), '29F 小偷成功挖通 30 层暗道');
 assert(npcAuditGame.playerStats.yellowKeys === prev29Keys + 2, '29F 小偷勘探暗道报恩赠送黄钥匙 x2');
+assert(!npcAuditGame.playerStats.inventory.thief_shovel, '小偷铲子已被成功交接回收');
 npcAuditGame.closeDialogue();
 
 // 再次对话不重复赠礼
-npcAuditGame.triggerNPC('thief', 5, 1);
+npcAuditGame.triggerNPC('thief', 4, 1);
 assert(npcAuditGame.playerStats.yellowKeys === prev29Keys + 2, '29F 小偷不重复赠送钥匙');
 assert(npcAuditGame.activeDialogue?.lines.some(l => l.includes('暗道已经被我挖通了，快去 30 层吧')), '29F 小偷展示暗道挖通后续台词');
 npcAuditGame.closeDialogue();
@@ -1651,9 +1660,9 @@ for (const id of monsterKeys) {
   );
 }
 
-// 2. 验证全部 32 种道具与法宝的双语描述与名称
+// 2. 验证全部 33 种道具与法宝的双语描述与名称
 const itemKeys = Object.keys(ITEMS);
-assert(itemKeys.length === 32, '全塔包含 32 种道具法宝与装备');
+assert(itemKeys.length === 33, '全塔包含 33 种道具法宝与装备');
 
 for (const id of itemKeys) {
   const it = ITEMS[id as ItemType];
@@ -1767,6 +1776,78 @@ const defBefore = shopTestGame.playerStats.def;
 assert(shopTestGame.buyExpUpgrade('def') === true, '经验充足时 buyExpUpgrade 返回 true');
 assert(shopTestGame.playerStats.def > defBefore, '经验充足时防御力提升成功');
 assert(shopTestGame.playerStats.exp === 500 - expGain.costDef, '经验充足时经验正确扣除');
+
+// --- 24. 验证 0F 封印金币大门、22F 小偷铲子、23F 【0F】暗墙解谜与 29F 小偷剧情联动 ---
+console.log('\n--- 24. 验证 0F 封印大门、22F 小偷铲子、23F 拼字暗道与 29F 小偷剧情 ---');
+const storyGame = new GameState();
+storyGame.initGame();
+
+// 1. 0F (5, 4) 神秘金币大门受 23F 封印
+storyGame.currentFloor = 0;
+assert(getFloor(0).layout[4][5]?.type === 'door_iron', '0F (5, 4) 必须为机关铁门 (特殊封印门)');
+const f0DoorCheckLocked = storyGame.checkGuardedIronDoor(5, 4);
+assert(f0DoorCheckLocked.canOpen === false, '未在 23F 走完暗道前，0F 金币大门处于封印状态不可开启');
+assert(f0DoorCheckLocked.reason?.includes('门被神秘力量锁住了，到23层去找找线索吧'), '0F 金币大门提示：“门被神秘力量锁住了，到23层去找找线索吧”');
+
+// 2. 22F 小偷暗道与小偷铲子拾取
+const f22Data = getFloor(22);
+assert(f22Data.layout[3][8]?.type === 'item' && f22Data.layout[3][8]?.itemType === 'thief_shovel', '22F (8, 3) 密室藏有【小偷的铲子】');
+assert(f22Data.layout[6][6]?.type === 'fake_wall', '22F (6, 6) 为通往铲子密室的暗墙');
+assert(f22Data.layout[5][4]?.type === 'fake_wall', '22F (4, 5) 为通往黄钥匙密室的暗墙');
+storyGame.currentFloor = 22;
+storyGame.playerPos = { x: 5, y: 6, dir: 'right' };
+storyGame.move('right'); // 撞开 (6, 6) 暗墙
+assert(storyGame.playerPos.x === 6 && storyGame.playerPos.y === 6, '勇士撞破 22F (6, 6) 暗墙成功进入暗道');
+// 走向 (8, 3) 拾取铲子
+storyGame.playerPos = { x: 8, y: 4, dir: 'up' };
+storyGame.move('up'); // 走入 (8, 3)
+assert(storyGame.playerStats.inventory.thief_shovel === 1, '成功拾取【小偷的铲子】入背包');
+
+// 3. 23F 【0F】暗道点阵拼字解谜验证
+const f23Data = getFloor(23);
+assert(FLOOR_23_PUZZLE_TILES.length === 33, '23F 暗号【0F】由 33 块指定核心点阵暗墙组成');
+storyGame.currentFloor = 23;
+assert(storyGame.isFloor23PuzzleSolved === false, '23F 解谜初始为未完成状态');
+// 模拟勇士在 23F 踏足走完 33 个点阵
+for (const p of FLOOR_23_PUZZLE_TILES) {
+  storyGame.checkFloor23PuzzleProgress(undefined, p.x, p.y);
+}
+assert(storyGame.isFloor23PuzzleSolved === true, '走完 23F 全部【0F】点阵后，成功解开神秘封印！');
+
+// 4. 0F 神秘金币大门在解密后可正常开启
+storyGame.currentFloor = 0;
+const f0DoorCheckUnlocked = storyGame.checkGuardedIronDoor(5, 4);
+assert(f0DoorCheckUnlocked.canOpen === true, '23F 走完 0F 后，0F 神秘金币大门封印解除，可以顺利打开！');
+
+// 5. 29F 小偷剧情联动验证
+const thiefTestGame = new GameState();
+thiefTestGame.initGame();
+thiefTestGame.currentFloor = 29;
+
+// (a) 未拿铲子时：小偷说找不到铲子，不给钥匙，暗道 (5, 2) 封堵
+assert(thiefTestGame.playerStats.inventory.thief_shovel === undefined, '未持有铲子状态');
+thiefTestGame.playerPos = { x: 5, y: 1, dir: 'left' };
+thiefTestGame.triggerNPC('thief', 4, 1);
+assert(thiefTestGame.activeDialogue?.lines[thiefTestGame.activeDialogue.lines.length - 1].includes('我的铲子找不到了，你能帮我找回来吗'), '未持铲子时小偷卡在求助台词：“我的铲子找不到了，你能帮我找回来吗”');
+assert(thiefTestGame.playerStats.yellowKeys === 1, '未获得铲子时不赠送黄钥匙');
+thiefTestGame.closeDialogue();
+
+// 尝试硬闯 29F (5, 2) 暗道
+thiefTestGame.playerPos = { x: 5, y: 1, dir: 'down' };
+thiefTestGame.move('down'); // 试图进入 (5, 2)
+assert(thiefTestGame.playerPos.x === 5 && thiefTestGame.playerPos.y === 1, '未得小偷开凿暗道前，勇士无法穿过 (5, 2)');
+
+// (b) 拿到铲子后：小偷接受铲子，赠送 2 把黄钥匙，消耗铲子，挖通 (5, 2) 暗道
+thiefTestGame.playerStats.inventory.thief_shovel = 1;
+thiefTestGame.triggerNPC('thief', 4, 1);
+assert(thiefTestGame.playerStats.yellowKeys === 3, '交还铲子后，小偷赠送黄色钥匙 x2 (总钥匙数 1+2=3)');
+assert(thiefTestGame.playerStats.inventory.thief_shovel === undefined, '小偷铲子成功交接消耗');
+assert(thiefTestGame.elderGiftsGiven['thief_29f'] === true, '小偷赠礼标记置为 true');
+thiefTestGame.closeDialogue();
+
+// 小偷挖通后，勇士可顺利穿过 (5, 2) 走向上楼梯
+thiefTestGame.move('down'); // 走入 (5, 2)
+assert(thiefTestGame.playerPos.x === 5 && thiefTestGame.playerPos.y === 2, '小偷挖通暗道后，勇士顺畅通行穿过 (5, 2) 迈向 30 层！');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

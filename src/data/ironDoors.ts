@@ -23,6 +23,18 @@ export interface IronDoorRule {
  * 每一扇 door_iron 都必须出现在此表中。
  */
 export const IRON_DOOR_RULES: IronDoorRule[] = [
+  // 0F：仙灵密境·神秘金币大门（需在23层勘破“0F”暗墙印记）
+  {
+    floor: 0,
+    doorX: 5,
+    doorY: 4,
+    guards: [],
+    reasonZh: '门被神秘力量锁住了，到23层去找找线索吧',
+    reasonEn: 'The gate is locked by a mysterious power. Seek clues on Floor 23.',
+    openZh: '神秘力量消散，金币大门轰然开启！',
+    openEn: 'The mysterious power dissipates; the Gold Coin Gate swings open!',
+  },
+
   // 2F：击败两名中级卫兵后，六扇牢房铁门全部开启
   ...[
     [4, 4],

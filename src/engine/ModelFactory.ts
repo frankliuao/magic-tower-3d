@@ -6043,6 +6043,8 @@ export class ModelFactory {
       return this.createCompassMesh();
     } else if (itemType === 'snow_crystal') {
       return this.createSnowCrystalMesh();
+    } else if (itemType === 'thief_shovel') {
+      return this.createShovelMesh();
     } else {
       // 默认道具箱
       const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
@@ -6388,6 +6390,85 @@ export class ModelFactory {
         c.receiveShadow = true;
       }
     });
+    return group;
+  }
+
+  // 小偷的铲子 (Thief's Shovel) - 精致写实 3D 金属掘地铁铲
+  static createShovelMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_thief_shovel';
+
+    const steelMat = new THREE.MeshStandardMaterial({
+      color: 0x94a3b8,
+      metalness: 0.9,
+      roughness: 0.2,
+      emissive: 0x475569,
+      emissiveIntensity: 0.25,
+    });
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x854d0e,
+      roughness: 0.7,
+      metalness: 0.1,
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      metalness: 0.85,
+      roughness: 0.25,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 0.35,
+    });
+
+    const shovelG = new THREE.Group();
+
+    // 1. 铲把 (Wooden Shaft)
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.52, 8), woodMat);
+    shaft.position.y = 0.32;
+    shovelG.add(shaft);
+
+    // 2. 铲柄顶端 D 形握手 (D-Grip)
+    const gripBase = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.025, 0.025), brassMat);
+    gripBase.position.y = 0.58;
+    const gripTop = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.11, 8), woodMat);
+    gripTop.rotation.z = Math.PI / 2;
+    gripTop.position.y = 0.65;
+    const gripLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), brassMat);
+    gripLeft.position.set(-0.045, 0.615, 0);
+    const gripRight = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), brassMat);
+    gripRight.position.set(0.045, 0.615, 0);
+    shovelG.add(gripBase, gripTop, gripLeft, gripRight);
+
+    // 3. 铁铲连接套筒 (Collar / Socket)
+    const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.09, 8), steelMat);
+    socket.position.y = 0.09;
+    shovelG.add(socket);
+
+    // 4. 铁铲头 (Shovel Scoop Blade)
+    const bladeGeo = new THREE.BoxGeometry(0.16, 0.20, 0.02);
+    const blade = new THREE.Mesh(bladeGeo, steelMat);
+    blade.position.y = -0.02;
+    shovelG.add(blade);
+
+    // 铲刃倒角尖锋
+    const tipGeo = new THREE.ConeGeometry(0.11, 0.08, 4);
+    tipGeo.rotateY(Math.PI / 4);
+    tipGeo.rotateX(Math.PI);
+    const tip = new THREE.Mesh(tipGeo, steelMat);
+    tip.position.y = -0.14;
+    shovelG.add(tip);
+
+    // 整体斜向倾斜与微浮
+    shovelG.rotation.z = Math.PI / 6;
+    shovelG.rotation.x = Math.PI / 12;
+    shovelG.position.y = 0.22;
+    group.add(shovelG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
     return group;
   }
 
