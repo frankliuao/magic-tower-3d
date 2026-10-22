@@ -1018,9 +1018,9 @@ function getFloor38(): FloorData {
     [T.wall(), T.wall(), T.wall(), T.wall(), T.doorB(), T.wall(), T.floor(), T.wall(), T.item('key_yellow'), T.wall(), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.doorB(), T.floor(), T.wall(), T.mon('ghost_soldier'), T.wall(), T.item('key_yellow'), T.wall(), T.mon('ghost_soldier')],
     [T.floor(), T.item('shield_knight'), T.floor(), T.wall(), T.wall(), T.wall(), T.mon('dual_swordsman'), T.wall(), T.floor(), T.mon('knight'), T.floor()],
-    [T.floor(), T.floor(), T.floor(), T.wall(), T.item('gem_blue'), T.item('potion_red'), T.floor(), T.wall(), T.wall(), T.wall(), T.doorY()],
+    [T.mon('mid_guard'), T.floor(), T.mon('mid_guard'), T.wall(), T.item('gem_blue'), T.item('potion_red'), T.floor(), T.wall(), T.wall(), T.wall(), T.doorY()],
     [T.wall(), T.doorI(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.item('key_yellow'), T.floor(), T.mon('ghost_soldier')],
-    [T.mon('mid_guard'), T.floor(), T.mon('mid_guard'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.mon('knight'), T.floor()],
+    [T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.mon('knight'), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.doorY(), T.mon('dual_swordsman'), T.floor(), T.mon('orc_knight'), T.doorY(), T.mon('warrior'), T.floor(), T.item('potion_blue')],
   ];
 

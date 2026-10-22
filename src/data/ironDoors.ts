@@ -249,17 +249,17 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Dragon fallen, the iron gate opens!',
   },
 
-  // 38F：中级卫兵守护骑士盾密室
+  // 38F：中级卫兵守护骑士盾密室出口铁门 (护卫位于门上方两侧 (0, 7) 与 (2, 7))
   {
     floor: 38,
     doorX: 1,
     doorY: 8,
     guards: [
-      { x: 0, y: 9 },
-      { x: 2, y: 9 },
+      { x: 0, y: 7 },
+      { x: 2, y: 7 },
     ],
-    reasonZh: '必须消灭门两侧的中级卫兵才能开启！',
-    reasonEn: 'Defeat the Medium Guards on both sides first!',
+    reasonZh: '必须消灭门前两侧的中级卫兵才能开启！',
+    reasonEn: 'Defeat the Medium Guards in front of the gate first!',
     openZh: '中级卫兵已除，铁门开启！',
     openEn: 'Medium Guards defeated, the iron gate opens!',
   },

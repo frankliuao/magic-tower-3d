@@ -341,6 +341,23 @@ assert(f35.layout[5][5]?.type === 'monster' && f35.layout[5][5]?.monsterId === '
 
 const f38 = getFloor(38);
 assert(f38.layout[6][1]?.type === 'item' && f38.layout[6][1]?.itemType === 'shield_knight', '第 38 层迷阵藏有【骑士盾】');
+assert(f38.layout[7][0]?.type === 'monster' && f38.layout[7][0]?.monsterId === 'mid_guard', '第 38 层铁门上方左侧守护者为中级卫兵 (0, 7)');
+assert(f38.layout[7][2]?.type === 'monster' && f38.layout[7][2]?.monsterId === 'mid_guard', '第 38 层铁门上方右侧守护者为中级卫兵 (2, 7)');
+assert(f38.layout[8][1]?.type === 'door_iron', '第 38 层 (1, 8) 为机关铁门');
+assert(f38.layout[9][0]?.type === 'floor', '第 38 层铁门下方通道 (0, 9) 为畅通地面');
+assert(f38.layout[9][2]?.type === 'floor', '第 38 层铁门下方通道 (2, 9) 为畅通地面');
+
+const f38TestGame = new GameState();
+f38TestGame.initGame();
+f38TestGame.currentFloor = 38;
+const f38CheckLocked = f38TestGame.checkGuardedIronDoor(1, 8);
+assert(f38CheckLocked.canOpen === false, '击败门前上方中级卫兵前，38F 铁门处于锁定状态');
+assert(f38CheckLocked.reason?.includes('中级卫兵'), '38F 铁门提示击败门前中级卫兵');
+// 模拟击败上方两侧中级卫兵
+f38TestGame.getCurrentFloorData().layout[7][0] = { type: 'floor' };
+f38TestGame.getCurrentFloorData().layout[7][2] = { type: 'floor' };
+const f38CheckUnlocked = f38TestGame.checkGuardedIronDoor(1, 8);
+assert(f38CheckUnlocked.canOpen === true, '消灭上方两侧中级卫兵后，38F 铁门顺利开启');
 
 const f43 = getFloor(43);
 assert(f43.layout[3][8]?.type === 'item' && f43.layout[3][8]?.itemType === 'shield_holy', '第 43 层圣殿藏有【圣光之盾】');
