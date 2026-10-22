@@ -589,7 +589,7 @@ function getFloor22(): FloorData {
 
   return {
     floorNumber: 22,
-    name: '22F 炽热走廊 (小偷的秘道)',
+    name: '22F 炽热走廊',
     layout,
     upStairsPos: { x: 5, y: 1 },
     downStairsPos: { x: 5, y: 10 },
@@ -635,7 +635,7 @@ function getFloor23(): FloorData {
 
   return {
     floorNumber: 23,
-    name: '23F 熔岩裂隙 (暗号 0F)',
+    name: '23F 熔岩裂隙',
     layout,
     upStairsPos: { x: 0, y: 10 },
     downStairsPos: { x: 6, y: 10 },

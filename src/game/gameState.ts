@@ -366,12 +366,14 @@ export class GameState {
       if (this.currentFloor === 29 && targetX === 5 && targetY === 2 && !this.elderGiftsGiven['thief_29f']) {
         sound.playError();
         if (onFloating) {
-          onFloating(
-            this.language === 'zh'
-              ? '前方的暗道被坚硬巨石封堵，先去询问旁边的小偷吧！'
-              : 'The secret tunnel is blocked by bedrock. Inquire with the thief first!',
-            '#ef4444'
-          );
+          const msg = this.playerStats.inventory.thief_shovel
+            ? (this.language === 'zh'
+                ? '暗道被坚硬巨石封堵，先将找到的铲子交给旁边的小偷吧！'
+                : 'The tunnel is blocked by bedrock. Hand the shovel to the thief nearby!')
+            : (this.language === 'zh'
+                ? '前方的暗道被坚硬巨石封堵，先去询问旁边的小偷吧！'
+                : 'The secret tunnel is blocked by bedrock. Inquire with the thief first!');
+          onFloating(msg, '#ef4444');
         }
         this.notify();
         return;
@@ -1088,6 +1090,7 @@ export class GameState {
               npcId,
               targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
             };
+            this.isDialogueOpen = true;
           }
           this.notify();
           return;
@@ -1113,6 +1116,7 @@ export class GameState {
               npcId,
               targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
             };
+            this.isDialogueOpen = true;
           }
           this.addNotification(
             this.language === 'zh'
@@ -1123,6 +1127,21 @@ export class GameState {
           this.notify();
           return;
         }
+      } else {
+        const dlg = getDialogueData(npcId, this.language, this.currentFloor, false, true);
+        if (dlg) {
+          this.activeDialogue = {
+            name: dlg.name,
+            avatar: dlg.avatar,
+            lines: [...dlg.lines],
+            currentIndex: 0,
+            npcId,
+            targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
+          };
+          this.isDialogueOpen = true;
+        }
+        this.notify();
+        return;
       }
     }
 
@@ -1326,6 +1345,16 @@ export class GameState {
           if (onTileChange) {
             onTileChange(fx, fy, false);
           }
+        }
+      }
+      // 29F 小偷交接铲子后凿通暗道：同步移除 3D 场景中的暗墙
+      if (npcId === 'thief' && this.currentFloor === 29 && this.elderGiftsGiven['thief_29f']) {
+        const floor = this.getCurrentFloorData();
+        if (floor.layout[2]?.[5]?.type === 'fake_wall' || floor.layout[2]?.[5]?.type === 'wall') {
+          floor.layout[2][5] = { type: 'floor' };
+        }
+        if (onTileChange) {
+          onTileChange(5, 2, false);
         }
       }
       this.activeDialogue = null;

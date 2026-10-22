@@ -12,6 +12,7 @@ import {
   KeyRound,
   DoorClosed,
   Navigation,
+  MessageCircle,
 } from 'lucide-react';
 import { Tile, SpecialAbility } from '../types/game';
 import { GameState } from '../game/gameState';
@@ -36,6 +37,7 @@ interface InspectCardProps {
   gridY: number;
   game: GameState;
   onClose: () => void;
+  onEngage?: (x: number, y: number) => void;
 }
 
 export const InspectCard: React.FC<InspectCardProps> = ({
@@ -44,6 +46,7 @@ export const InspectCard: React.FC<InspectCardProps> = ({
   gridY,
   game,
   onClose,
+  onEngage,
 }) => {
   const { lang, t } = useI18n();
 
@@ -292,6 +295,20 @@ export const InspectCard: React.FC<InspectCardProps> = ({
               <p className="text-[11px] text-slate-400 mt-0.5">{npcDesc}</p>
             </div>
           </div>
+          {onEngage && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEngage(gridX, gridY);
+              }}
+              className="w-full mt-0.5 py-1.5 px-3 bg-amber-500/20 hover:bg-amber-500/35 active:bg-amber-500/40 border border-amber-500/50 rounded-xl text-amber-300 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>{lang === 'zh' ? '前往交谈' : 'Talk'}</span>
+            </button>
+          )}
         </div>
       );
     }

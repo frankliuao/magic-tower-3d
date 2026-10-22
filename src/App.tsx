@@ -611,6 +611,10 @@ export const App: React.FC = () => {
               gridY={selectedTile.y}
               game={game}
               onClose={handleCloseInspect}
+              onEngage={(x, y) => {
+                handleCloseInspect();
+                handleEngageOrPath(x, y);
+              }}
             />
           )}
 

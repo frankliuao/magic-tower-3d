@@ -17,6 +17,7 @@ import {
   TRANSLATIONS,
   getCombatNotification,
   getDialogueData,
+  FLOOR_NAMES,
 } from './i18n';
 import { SpecialAbility, ItemType } from './types/game';
 import { ModelFactory } from './engine/ModelFactory';
@@ -1803,7 +1804,12 @@ storyGame.playerPos = { x: 8, y: 4, dir: 'up' };
 storyGame.move('up'); // 走入 (8, 3)
 assert(storyGame.playerStats.inventory.thief_shovel === 1, '成功拾取【小偷的铲子】入背包');
 
-// 3. 23F 【0F】暗道点阵拼字解谜验证
+// 3. 23F 【0F】暗道点阵拼字解谜验证与楼层名称无剧透验证
+assert(!FLOOR_NAMES[23].zh.includes('0F') && !FLOOR_NAMES[23].zh.includes('暗号'), '23F 中文楼层名严禁剧透暗号 (由玩家自行摸索)');
+assert(!FLOOR_NAMES[23].en.includes('0F') && !FLOOR_NAMES[23].en.includes('Crest'), '23F 英文楼层名严禁剧透暗号');
+assert(!getFloor(23).name.includes('0F') && !getFloor(23).name.includes('暗号'), '23F FloorData.name 严禁剧透暗号');
+assert(!FLOOR_NAMES[22].zh.includes('秘道'), '22F 中文楼层名严禁剧透秘道');
+assert(!getFloor(22).name.includes('秘道'), '22F FloorData.name 严禁剧透秘道');
 const f23Data = getFloor(23);
 assert(FLOOR_23_PUZZLE_TILES.length === 33, '23F 暗号【0F】由 33 块指定核心点阵暗墙组成');
 storyGame.currentFloor = 23;
@@ -1828,9 +1834,11 @@ thiefTestGame.currentFloor = 29;
 assert(thiefTestGame.playerStats.inventory.thief_shovel === undefined, '未持有铲子状态');
 thiefTestGame.playerPos = { x: 5, y: 1, dir: 'left' };
 thiefTestGame.triggerNPC('thief', 4, 1);
+assert(thiefTestGame.isDialogueOpen === true, '未持有铲子时小偷对话窗口必须正常开启 (isDialogueOpen === true)');
 assert(thiefTestGame.activeDialogue?.lines[thiefTestGame.activeDialogue.lines.length - 1].includes('我的铲子找不到了，你能帮我找回来吗'), '未持铲子时小偷卡在求助台词：“我的铲子找不到了，你能帮我找回来吗”');
 assert(thiefTestGame.playerStats.yellowKeys === 1, '未获得铲子时不赠送黄钥匙');
 thiefTestGame.closeDialogue();
+assert(thiefTestGame.isDialogueOpen === false, '对话关闭后 isDialogueOpen 正确复位为 false');
 
 // 尝试硬闯 29F (5, 2) 暗道
 thiefTestGame.playerPos = { x: 5, y: 1, dir: 'down' };
@@ -1840,9 +1848,15 @@ assert(thiefTestGame.playerPos.x === 5 && thiefTestGame.playerPos.y === 1, '未�
 // (b) 拿到铲子后：小偷接受铲子，赠送 2 把黄钥匙，消耗铲子，挖通 (5, 2) 暗道
 thiefTestGame.playerStats.inventory.thief_shovel = 1;
 thiefTestGame.triggerNPC('thief', 4, 1);
+assert(thiefTestGame.isDialogueOpen === true, '持有铲子时小偷剧情对话窗口必须正常开启 (isDialogueOpen === true)');
 assert(thiefTestGame.playerStats.yellowKeys === 3, '交还铲子后，小偷赠送黄色钥匙 x2 (总钥匙数 1+2=3)');
 assert(thiefTestGame.playerStats.inventory.thief_shovel === undefined, '小偷铲子成功交接消耗');
 assert(thiefTestGame.elderGiftsGiven['thief_29f'] === true, '小偷赠礼标记置为 true');
+thiefTestGame.closeDialogue();
+
+// (c) 再次对话已完成剧情的小偷：同样必须正常弹出提示窗口
+thiefTestGame.triggerNPC('thief', 4, 1);
+assert(thiefTestGame.isDialogueOpen === true, '再次对话已完成任务的小偷，提示窗口同样正常开启');
 thiefTestGame.closeDialogue();
 
 // 小偷挖通后，勇士可顺利穿过 (5, 2) 走向上楼梯
