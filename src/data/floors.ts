@@ -5,7 +5,7 @@ import { FloorData, Tile, TileType, ItemType } from '../types/game';
 export const T = {
   floor: (): Tile => ({ type: 'floor' }),
   wall: (): Tile => ({ type: 'wall' }),
-  fakeWall: (): Tile => ({ type: 'fake_wall' }),
+  fakeWall: (itemType?: ItemType): Tile => ({ type: 'fake_wall', ...(itemType ? { itemType } : {}) }),
   lava: (): Tile => ({ type: 'lava' }),
   up: (): Tile => ({ type: 'stairs_up' }),
   down: (): Tile => ({ type: 'stairs_down' }),
@@ -574,17 +574,17 @@ function getFloor21(): FloorData {
 
 function getFloor22(): FloorData {
   const layout: Tile[][] = [
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(),  T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(),    T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.item('thief_shovel'), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.fakeWall(),           T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.fakeWall(),           T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(), T.fakeWall(),           T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(),  T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(),  T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(),    T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.fakeWall(),                     T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.wall(),                         T.fakeWall('thief_shovel'), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.wall(),                         T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(),              T.wall(),                         T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.wall(),                         T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(),              T.fakeWall('potion_red'),         T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.fakeWall(),                     T.fakeWall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(),  T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
   ];
 
   return {

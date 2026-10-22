@@ -1901,11 +1901,11 @@ export function getDialogueData(
             : (lang === 'zh'
                 ? [
                     '嘿！朋友！你救了我之后，我一直在为你勘探地道。',
-                    '我的铲子找不到了，你能帮我找回来吗？',
+                    '我的铲子找不到了，好像是在 22 层的暗道深处遗落了……你能帮我找回来吗？',
                   ]
                 : [
                     'Hey friend! Ever since you rescued me, I have been scouting tunnels for you.',
-                    'My shovel is missing, can you help me find it?',
+                    'I lost my shovel, I think I dropped it deep in the secret passages of Floor 22... Could you help me find it?',
                   ])),
       currentIndex: 0,
     };

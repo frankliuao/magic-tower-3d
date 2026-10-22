@@ -747,6 +747,27 @@ export class ThreeCanvas {
     }
   }
 
+  // 动态在场景中生成或替换瓦片三维模型 (如暗墙粉碎后显现隐藏宝物/小偷铁铲)
+  public spawnTile(x: number, y: number, tile: Tile, theme: string = 'magma', layout?: (Tile | null)[][]) {
+    this.removeTile(x, y, false);
+    if (!tile || tile.type === 'floor') return;
+    const tileObj = this.buildTileObject(tile, theme, layout, x, y);
+    if (tileObj) {
+      const world = ThreeCanvas.gridToWorld(x, y);
+      tileObj.position.set(world.x, 0, world.z);
+      this.floorGroup.add(tileObj);
+      this.tileMeshes.set(`${x}_${y}`, tileObj);
+      if (tile.type === 'item') {
+        this.animatedItems.push({
+          type: 'item_rotate',
+          mesh: tileObj,
+          initialX: world.x,
+          initialY: 0.15,
+        });
+      }
+    }
+  }
+
   // 更新玩家位置与朝向（平滑移动与踏步）
   public updatePlayer(x: number, y: number, facing: Direction, immediate: boolean = false) {
     const posChanged = x !== this.playerGridPos.x || y !== this.playerGridPos.y;

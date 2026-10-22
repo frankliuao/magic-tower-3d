@@ -279,7 +279,7 @@ export class GameState {
   // 综合移动指令处理 (WASD / 方向键)
   public moveByCommand(
     cmd: MoveCommand,
-    onTileChange?: (x: number, y: number, isDoor: boolean) => void,
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
     onFloating?: (txt: string, col: string, duration?: number) => void
   ) {
     let dir: Direction;
@@ -294,7 +294,7 @@ export class GameState {
   // 移动指令处理 (WASD / 方向键)
   public move(
     dir: Direction,
-    onTileChange?: (x: number, y: number, isDoor: boolean) => void,
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
     onFloating?: (txt: string, col: string, duration?: number) => void
   ) {
     if (this.isDialogueOpen || this.isShopOpen || this.isMonsterManualOpen || this.isFloorTeleportOpen || this.isGameOver || this.isVictory) {
@@ -379,14 +379,32 @@ export class GameState {
         return;
       }
 
-      // 暗墙撞击粉碎
-      floor.layout[targetY][targetX] = { type: 'floor' };
-      if (onTileChange) onTileChange(targetX, targetY, false);
+      // 暗墙撞击粉碎：墙体瓦解消失，但勇士原地未移动（需下一次前行才踏入）
+      const hiddenItem = tile.itemType;
+      const newTile: Tile = hiddenItem
+        ? { type: 'item', itemType: hiddenItem }
+        : { type: 'floor' };
+      floor.layout[targetY][targetX] = newTile;
+
+      if (onTileChange) onTileChange(targetX, targetY, false, newTile);
       sound.playDoor();
-      this.playerPos.x = targetX;
-      this.playerPos.y = targetY;
-      if (onFloating) onFloating('发现密道！', '#38bdf8');
-      this.checkFloor23PuzzleProgress(onFloating);
+
+      // 勇士原地未移动，仅转向目标方向 (this.playerPos.dir 已在之前设置)
+
+      if (hiddenItem) {
+        const itemMsg = this.language === 'zh'
+          ? (hiddenItem === 'thief_shovel'
+              ? '暗墙粉碎！在暗道深处发现了小偷遗落的铁铲！'
+              : '暗墙粉碎！发现了隐藏的宝物！')
+          : (hiddenItem === 'thief_shovel'
+              ? 'Secret wall shattered! The thief\'s lost shovel appeared in the deep passage!'
+              : 'Secret wall shattered! A hidden treasure appeared!');
+        if (onFloating) onFloating(itemMsg, '#fbbf24', 3500);
+      } else {
+        const secretMsg = this.language === 'zh' ? '发现密道！' : 'Secret path revealed!';
+        if (onFloating) onFloating(secretMsg, '#38bdf8');
+      }
+
       this.notify();
       return;
     }
