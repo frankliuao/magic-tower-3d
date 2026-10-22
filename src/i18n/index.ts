@@ -712,6 +712,7 @@ export const ITEM_NAMES: Record<string, { zh: string; en: string }> = {
   up_fly: { zh: '向上飞行器', en: 'Up Flyer' },
   center_fly: { zh: '中心飞行器', en: 'Center Flyer' },
   sword_dragon: { zh: '屠龙之刃', en: 'Dragon Slayer' },
+  thief_shovel: { zh: '小偷的铲子', en: "Thief's Shovel" },
 };
 
 // 楼层名称双语映射表
@@ -738,8 +739,8 @@ export const FLOOR_NAMES: Record<number, { zh: string; en: string }> = {
   19: { zh: '19F 十字架神堂', en: '19F Holy Cross Chapel' },
   20: { zh: '20F 幽冥吸血鬼王', en: '20F Nether Vampire Lord' },
   21: { zh: '21F 熔岩试炼', en: '21F Magma Trials' },
-  22: { zh: '22F 烈焰迷宫', en: '22F Flame Labyrinth' },
-  23: { zh: '23F 熔火巨剑厅', en: '23F Molten Greatsword Hall' },
+  22: { zh: '22F 炽热走廊', en: '22F Molten Corridor' },
+  23: { zh: '23F 熔岩裂隙', en: '23F Magma Fissure' },
   24: { zh: '24F 烈火守卫要塞', en: '24F Fireguard Stronghold' },
   25: { zh: '25F 烈焰大法师主殿', en: '25F Fire Archmage Sanctuary' },
   26: { zh: '26F 冰霜凝界', en: '26F Frost Realm' },
@@ -1023,6 +1024,12 @@ export function getPickupNotification(
     return {
       text: lang === 'zh' ? '获得神兵【屠龙之刃】攻击 +100！' : 'Obtained [Dragon Slayer] ATK +100!',
       color: '#f43f5e',
+    };
+  }
+  if (itemType === 'thief_shovel') {
+    return {
+      text: lang === 'zh' ? '获得【小偷的铲子】！' : "Obtained [Thief's Shovel]!",
+      color: '#fbbf24',
     };
   }
   if (itemType === 'key_gold') {
@@ -1858,7 +1865,8 @@ export function getDialogueData(
   lang: Language,
   floorNum?: number,
   isTraderBought?: boolean,
-  hasElderGift?: boolean
+  hasElderGift?: boolean,
+  extraFlag?: boolean
 ) {
   // 1. 特殊经验老人
   if (npcId === 'elder_exp') {
@@ -1880,15 +1888,25 @@ export function getDialogueData(
         ? (lang === 'zh'
             ? ['暗道已经被我挖通了，快去 30 层吧！祝你早日救出公主！']
             : ['The tunnel is clear, head straight to Floor 30! May you rescue the princess soon!'])
-        : (lang === 'zh'
-            ? [
-                '嘿！朋友！你救了我之后，我一直在为你勘探地道。',
-                '前面 30 层的暗道已经被我挖通了！这两把【黄色钥匙】送给你，快去吧！',
-              ]
-            : [
-                'Hey friend! Ever since you rescued me, I have been tunneling secret routes for you.',
-                'The secret bypass into Floor 30 is now complete! Take these 2 [Yellow Keys] and go forth!',
-              ]),
+        : (extraFlag
+            ? (lang === 'zh'
+                ? [
+                    '太好了！你帮我找回了铲子！',
+                    '前面 30 层的暗道已经被我挖通了！这两把【黄色钥匙】送给你，快去吧！',
+                  ]
+                : [
+                    'Fantastic! You found my shovel!',
+                    'The secret bypass into Floor 30 is now dug open! Take these 2 [Yellow Keys] and go forth!',
+                  ])
+            : (lang === 'zh'
+                ? [
+                    '嘿！朋友！你救了我之后，我一直在为你勘探地道。',
+                    '我的铲子找不到了，好像是在 22 层的暗道深处遗落了……你能帮我找回来吗？',
+                  ]
+                : [
+                    'Hey friend! Ever since you rescued me, I have been scouting tunnels for you.',
+                    'I lost my shovel, I think I dropped it deep in the secret passages of Floor 22... Could you help me find it?',
+                  ])),
       currentIndex: 0,
     };
   }

@@ -1,5 +1,5 @@
 import { Direction, ItemType, PlayerStats, Tile, SaveSlot, MoveCommand } from '../types/game';
-import { ALL_FLOORS, getFloor } from '../data/floors';
+import { ALL_FLOORS, getFloor, FLOOR_23_PUZZLE_TILES } from '../data/floors';
 import { MONSTERS } from '../data/monsters';
 import { ITEMS } from '../data/items';
 import { findIronDoorRule, getIronDoorRulesForFloor } from '../data/ironDoors';
@@ -120,6 +120,10 @@ export class GameState {
   public tradersBought: Record<string, boolean> = {};
   public elderGiftsGiven: Record<string, boolean> = {};
 
+  // 23F 暗墙解谜与 0F 封印状态
+  public isFloor23PuzzleSolved: boolean = false;
+  public floor23VisitedTiles: Set<string> = new Set();
+
   // 对话数据
   public activeDialogue: {
     name: string;
@@ -158,8 +162,9 @@ export class GameState {
       const hasGift = (this.activeDialogue.npcId === 'elder' || (this.activeDialogue.npcId === 'thief' && this.currentFloor === 29))
         ? !!this.elderGiftsGiven[`${this.activeDialogue.npcId}_${this.currentFloor}f`]
         : false;
+      const hasShovel = Boolean(this.playerStats.inventory.thief_shovel);
 
-      const dlg = getDialogueData(this.activeDialogue.npcId, lang, this.currentFloor, isBought, hasGift);
+      const dlg = getDialogueData(this.activeDialogue.npcId, lang, this.currentFloor, isBought, hasGift, hasShovel);
       if (dlg) {
         this.activeDialogue.name = dlg.name;
         if (isBought && this.activeDialogue.trade?.isBought && tradeId && TRADER_FLOOR_OFFERS[this.currentFloor]) {
@@ -225,6 +230,8 @@ export class GameState {
     this.isExpShopOpen = false;
     this.tradersBought = {};
     this.elderGiftsGiven = {};
+    this.isFloor23PuzzleSolved = false;
+    this.floor23VisitedTiles.clear();
 
     // 默认加载第 0 层仙灵密境
     const f0 = getFloor(0);
@@ -272,7 +279,7 @@ export class GameState {
   // 综合移动指令处理 (WASD / 方向键)
   public moveByCommand(
     cmd: MoveCommand,
-    onTileChange?: (x: number, y: number, isDoor: boolean) => void,
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
     onFloating?: (txt: string, col: string, duration?: number) => void
   ) {
     let dir: Direction;
@@ -287,7 +294,7 @@ export class GameState {
   // 移动指令处理 (WASD / 方向键)
   public move(
     dir: Direction,
-    onTileChange?: (x: number, y: number, isDoor: boolean) => void,
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
     onFloating?: (txt: string, col: string, duration?: number) => void
   ) {
     if (this.isDialogueOpen || this.isShopOpen || this.isMonsterManualOpen || this.isFloorTeleportOpen || this.isGameOver || this.isVictory) {
@@ -318,6 +325,7 @@ export class GameState {
       this.playerPos.x = targetX;
       this.playerPos.y = targetY;
       sound.playStep();
+      this.checkFloor23PuzzleProgress(onFloating);
       this.notify();
       return;
     }
@@ -354,13 +362,59 @@ export class GameState {
       return;
     }
     if (tile.type === 'fake_wall') {
-      // 暗墙撞击粉碎
-      floor.layout[targetY][targetX] = { type: 'floor' };
-      if (onTileChange) onTileChange(targetX, targetY, false);
+      // 29F 小偷暗道：必须先将小偷的铲子交还小偷完成开凿才能通过
+      if (this.currentFloor === 29 && targetX === 5 && targetY === 2 && !this.elderGiftsGiven['thief_29f']) {
+        sound.playError();
+        if (onFloating) {
+          const msg = this.playerStats.inventory.thief_shovel
+            ? (this.language === 'zh'
+                ? '暗道被坚硬巨石封堵，先将找到的铲子交给旁边的小偷吧！'
+                : 'The tunnel is blocked by bedrock. Hand the shovel to the thief nearby!')
+            : (this.language === 'zh'
+                ? '前方的暗道被坚硬巨石封堵，先去询问旁边的小偷吧！'
+                : 'The secret tunnel is blocked by bedrock. Inquire with the thief first!');
+          onFloating(msg, '#ef4444');
+        }
+        this.notify();
+        return;
+      }
+
+      // 暗墙撞击粉碎：墙体瓦解消失，但勇士原地未移动（需下一次前行才踏入）
+      const hiddenItem = tile.itemType;
+      const hiddenMonster = tile.monsterId;
+      const newTile: Tile = hiddenItem
+        ? { type: 'item', itemType: hiddenItem }
+        : hiddenMonster
+        ? { type: 'monster', monsterId: hiddenMonster }
+        : { type: 'floor' };
+      floor.layout[targetY][targetX] = newTile;
+
+      if (onTileChange) onTileChange(targetX, targetY, false, newTile);
       sound.playDoor();
-      this.playerPos.x = targetX;
-      this.playerPos.y = targetY;
-      if (onFloating) onFloating('发现密道！', '#38bdf8');
+
+      // 勇士原地未移动，仅转向目标方向 (this.playerPos.dir 已在之前设置)
+
+      if (hiddenItem) {
+        const itemMsg = this.language === 'zh'
+          ? (hiddenItem === 'thief_shovel'
+              ? '暗墙粉碎！在暗道深处发现了小偷遗落的铁铲！'
+              : '暗墙粉碎！发现了隐藏的宝物！')
+          : (hiddenItem === 'thief_shovel'
+              ? 'Secret wall shattered! The thief\'s lost shovel appeared in the deep passage!'
+              : 'Secret wall shattered! A hidden treasure appeared!');
+        if (onFloating) onFloating(itemMsg, '#fbbf24', 3500);
+      } else if (hiddenMonster) {
+        const monsterObj = MONSTERS[hiddenMonster];
+        const monsterName = this.language === 'zh' ? monsterObj?.name : (monsterObj?.nameEn || monsterObj?.name);
+        const monMsg = this.language === 'zh'
+          ? `暗墙粉碎！深处潜伏的【${monsterName}】现身了！`
+          : `Secret wall shattered! A hidden [${monsterName}] appeared!`;
+        if (onFloating) onFloating(monMsg, '#f87171', 3000);
+      } else {
+        const secretMsg = this.language === 'zh' ? '发现密道！' : 'Secret path revealed!';
+        if (onFloating) onFloating(secretMsg, '#38bdf8');
+      }
+
       this.notify();
       return;
     }
@@ -486,6 +540,39 @@ export class GameState {
       }
       this.triggerNPC(tile.npcId, targetX, targetY);
       return;
+    }
+  }
+
+  // 检查 23F 踏足暗道点阵拼字进度
+  public checkFloor23PuzzleProgress(
+    onFloating?: (txt: string, col: string, duration?: number) => void,
+    checkX?: number,
+    checkY?: number
+  ) {
+    if (this.currentFloor !== 23) return;
+    const curX = checkX !== undefined ? checkX : this.playerPos.x;
+    const curY = checkY !== undefined ? checkY : this.playerPos.y;
+
+    const isPuzzleTile = FLOOR_23_PUZZLE_TILES.some(
+      (p) => p.x === curX && p.y === curY
+    );
+    if (!isPuzzleTile) return;
+
+    this.floor23VisitedTiles.add(`${curX},${curY}`);
+    if (!this.isFloor23PuzzleSolved) {
+      const allSolved = FLOOR_23_PUZZLE_TILES.every((p) =>
+        this.floor23VisitedTiles.has(`${p.x},${p.y}`)
+      );
+      if (allSolved) {
+        this.isFloor23PuzzleSolved = true;
+        sound.playVictory();
+        const msg =
+          this.language === 'zh'
+            ? '你勘破暗道走出了【0F】印记！0层神秘金币大门的封印已解开！'
+            : 'You revealed the [0F] crest! The seal on Floor 0\'s Gold Gate is broken!';
+        this.addNotification(msg, '#fbbf24', 5000);
+        if (onFloating) onFloating(msg, '#fbbf24', 5000);
+      }
     }
   }
 
@@ -623,6 +710,9 @@ export class GameState {
       sound.playItem();
     } else if (itemType === 'center_fly') {
       this.playerStats.inventory.center_fly = (this.playerStats.inventory.center_fly || 0) + 1;
+      sound.playItem();
+    } else if (itemType === 'thief_shovel') {
+      this.playerStats.inventory.thief_shovel = 1;
       sound.playItem();
     }
 
@@ -788,6 +878,19 @@ export class GameState {
 
   // 检查机关铁门是否受到守卫封锁（全塔统一规则表）
   public checkGuardedIronDoor(targetX: number, targetY: number): { canOpen: boolean; reason?: string } {
+    // 0F 仙灵密境：神秘金币大门（需勘破 23F 暗号印记）
+    if (this.currentFloor === 0 && targetX === 5 && targetY === 4) {
+      if (!this.isFloor23PuzzleSolved) {
+        return {
+          canOpen: false,
+          reason: this.language === 'zh'
+            ? '门被神秘力量锁住了，到23层去找找线索吧'
+            : 'The gate is locked by a mysterious power. Seek clues on Floor 23.',
+        };
+      }
+      return { canOpen: true };
+    }
+
     const rule = findIronDoorRule(this.currentFloor, targetX, targetY);
     if (!rule) {
       // 未登记的铁门一律不可开启，避免“白嫖”通行
@@ -1000,15 +1103,74 @@ export class GameState {
       );
     }
 
-    // 29F 小偷勘探暗道报恩赠送黄色钥匙 x2
-    if (npcId === 'thief' && this.currentFloor === 29 && !hadGiftAlready) {
-      this.elderGiftsGiven['thief_29f'] = true;
-      this.playerStats.yellowKeys += 2;
-      sound.playItem();
-      this.addNotification(
-        this.language === 'zh' ? '小偷赠送黄色钥匙 x2' : 'Thief gifted Yellow Keys x2',
-        '#eab308'
-      );
+    // 29F 小偷勘探暗道报恩赠送黄色钥匙 x2（需先找回小偷的铲子）
+    if (npcId === 'thief' && this.currentFloor === 29) {
+      if (!hadGiftAlready) {
+        if (!this.playerStats.inventory.thief_shovel) {
+          // 未持有小偷的铲子：卡在寻找铲子提示，不赠予钥匙，不挖开暗道
+          const dlg = getDialogueData(npcId, this.language, this.currentFloor, false, false, false);
+          if (dlg) {
+            this.activeDialogue = {
+              name: dlg.name,
+              avatar: dlg.avatar,
+              lines: [...dlg.lines],
+              currentIndex: 0,
+              npcId,
+              targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
+            };
+            this.isDialogueOpen = true;
+          }
+          this.notify();
+          return;
+        } else {
+          // 持有小偷的铲子：交付铲子，挖通 (5, 2) 暗道，赠送黄钥匙 x2
+          this.elderGiftsGiven['thief_29f'] = true;
+          this.playerStats.yellowKeys += 2;
+          delete this.playerStats.inventory.thief_shovel;
+          sound.playVictory();
+
+          const f29 = this.getCurrentFloorData();
+          if (f29.layout[2]?.[5]) {
+            f29.layout[2][5] = { type: 'floor' };
+          }
+
+          const dlg = getDialogueData(npcId, this.language, this.currentFloor, false, false, true);
+          if (dlg) {
+            this.activeDialogue = {
+              name: dlg.name,
+              avatar: dlg.avatar,
+              lines: [...dlg.lines],
+              currentIndex: 0,
+              npcId,
+              targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
+            };
+            this.isDialogueOpen = true;
+          }
+          this.addNotification(
+            this.language === 'zh'
+              ? '小偷找回了铁铲并挖通暗道，赠送黄色钥匙 x2！'
+              : 'The thief recovered the shovel, excavated the tunnel, and gifted Yellow Keys x2!',
+            '#eab308'
+          );
+          this.notify();
+          return;
+        }
+      } else {
+        const dlg = getDialogueData(npcId, this.language, this.currentFloor, false, true);
+        if (dlg) {
+          this.activeDialogue = {
+            name: dlg.name,
+            avatar: dlg.avatar,
+            lines: [...dlg.lines],
+            currentIndex: 0,
+            npcId,
+            targetPos: targetX !== undefined && targetY !== undefined ? { x: targetX, y: targetY } : undefined,
+          };
+          this.isDialogueOpen = true;
+        }
+        this.notify();
+        return;
+      }
     }
 
     // 31F 智慧老人赠送蓝宝石 x1 (防御力+3，防备双手剑士)
@@ -1213,6 +1375,16 @@ export class GameState {
           }
         }
       }
+      // 29F 小偷交接铲子后凿通暗道：同步移除 3D 场景中的暗墙
+      if (npcId === 'thief' && this.currentFloor === 29 && this.elderGiftsGiven['thief_29f']) {
+        const floor = this.getCurrentFloorData();
+        if (floor.layout[2]?.[5]?.type === 'fake_wall' || floor.layout[2]?.[5]?.type === 'wall') {
+          floor.layout[2][5] = { type: 'floor' };
+        }
+        if (onTileChange) {
+          onTileChange(5, 2, false);
+        }
+      }
       this.activeDialogue = null;
     }
     this.isDialogueOpen = false;
@@ -1341,6 +1513,8 @@ export class GameState {
         shopTimes: this.shopTimes,
         tradersBought: { ...this.tradersBought },
         elderGiftsGiven: { ...this.elderGiftsGiven },
+        isFloor23PuzzleSolved: this.isFloor23PuzzleSolved,
+        floor23VisitedTiles: Array.from(this.floor23VisitedTiles),
       };
 
       localStorage.setItem(`mota3d_save_${slotId}`, JSON.stringify(slot));
@@ -1365,6 +1539,8 @@ export class GameState {
       this.shopTimes = slot.shopTimes || 0;
       this.tradersBought = slot.tradersBought ? { ...slot.tradersBought } : {};
       this.elderGiftsGiven = slot.elderGiftsGiven ? { ...slot.elderGiftsGiven } : {};
+      this.isFloor23PuzzleSolved = Boolean(slot.isFloor23PuzzleSolved);
+      this.floor23VisitedTiles = new Set(slot.floor23VisitedTiles || []);
 
       this.floorCache.clear();
       for (const fNum in slot.floorStates) {

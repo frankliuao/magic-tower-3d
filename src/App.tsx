@@ -169,12 +169,22 @@ export const App: React.FC = () => {
     (cmd: MoveCommand) => {
       game.moveByCommand(
         cmd,
-        (x, y, isDoor) => {
+        (x, y, isDoor, newTile) => {
           if (threeEngineRef.current) {
-            threeEngineRef.current.removeTile(x, y, isDoor);
+            if (newTile && newTile.type !== 'floor') {
+              threeEngineRef.current.spawnTile(
+                x,
+                y,
+                newTile,
+                game.getCurrentFloorData().theme,
+                game.getCurrentFloorData().layout
+              );
+            } else {
+              threeEngineRef.current.removeTile(x, y, isDoor);
+            }
           }
         },
-        (txt, col) => addFloating(txt, col)
+        (txt, col, duration) => addFloating(txt, col, duration)
       );
 
       // 通知 3D 角色与摄像机平滑更新位置与朝向
@@ -611,6 +621,10 @@ export const App: React.FC = () => {
               gridY={selectedTile.y}
               game={game}
               onClose={handleCloseInspect}
+              onEngage={(x, y) => {
+                handleCloseInspect();
+                handleEngageOrPath(x, y);
+              }}
             />
           )}
 

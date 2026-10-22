@@ -63,7 +63,8 @@ export type ItemType =
   | 'down_fly'       // 向下飞行器
   | 'up_fly'         // 向上飞行器
   | 'center_fly'     // 中心对称飞行器
-  | 'sword_dragon';  // 屠龙剑
+  | 'sword_dragon'   // 屠龙剑
+  | 'thief_shovel';  // 小偷的铲子
 
 export interface ItemDef {
   id: ItemType;
@@ -159,4 +160,6 @@ export interface SaveSlot {
   shopTimes: number;
   tradersBought?: Record<string, boolean>;
   elderGiftsGiven?: Record<string, boolean>;
+  isFloor23PuzzleSolved?: boolean;
+  floor23VisitedTiles?: string[];
 }

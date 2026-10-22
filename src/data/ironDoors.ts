@@ -23,6 +23,18 @@ export interface IronDoorRule {
  * 每一扇 door_iron 都必须出现在此表中。
  */
 export const IRON_DOOR_RULES: IronDoorRule[] = [
+  // 0F：仙灵密境·神秘金币大门（需在23层勘破“0F”暗墙印记）
+  {
+    floor: 0,
+    doorX: 5,
+    doorY: 4,
+    guards: [],
+    reasonZh: '门被神秘力量锁住了，到23层去找找线索吧',
+    reasonEn: 'The gate is locked by a mysterious power. Seek clues on Floor 23.',
+    openZh: '神秘力量消散，金币大门轰然开启！',
+    openEn: 'The mysterious power dissipates; the Gold Coin Gate swings open!',
+  },
+
   // 2F：击败两名中级卫兵后，六扇牢房铁门全部开启
   ...[
     [4, 4],
@@ -237,17 +249,17 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Dragon fallen, the iron gate opens!',
   },
 
-  // 38F：中级卫兵守护骑士盾密室
+  // 38F：中级卫兵守护骑士盾密室出口铁门 (护卫位于门上方两侧 (0, 7) 与 (2, 7))
   {
     floor: 38,
     doorX: 1,
     doorY: 8,
     guards: [
-      { x: 0, y: 9 },
-      { x: 2, y: 9 },
+      { x: 0, y: 7 },
+      { x: 2, y: 7 },
     ],
-    reasonZh: '必须消灭门两侧的中级卫兵才能开启！',
-    reasonEn: 'Defeat the Medium Guards on both sides first!',
+    reasonZh: '必须消灭门前两侧的中级卫兵才能开启！',
+    reasonEn: 'Defeat the Medium Guards in front of the gate first!',
     openZh: '中级卫兵已除，铁门开启！',
     openEn: 'Medium Guards defeated, the iron gate opens!',
   },

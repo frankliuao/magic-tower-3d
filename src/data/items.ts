@@ -310,4 +310,13 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     value: 80,
     color: '#f43f5e',
   },
+  thief_shovel: {
+    id: 'thief_shovel',
+    name: '小偷的铲子',
+    nameEn: "Thief's Shovel",
+    description: '一把磨损但结实的掘地铁铲，刻着小偷独有的暗号徽记。29层的小偷正急需它挖通暗道。',
+    descriptionEn: "A sturdy iron excavation shovel engraved with the thief's mark. The thief on Floor 29 urgently needs it to dig out the tunnel.",
+    category: 'special',
+    color: '#fbbf24',
+  },
 };

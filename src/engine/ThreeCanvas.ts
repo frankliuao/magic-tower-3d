@@ -641,22 +641,8 @@ export class ThreeCanvas {
   ): THREE.Object3D | null {
     switch (tile.type) {
       case 'wall':
+      case 'fake_wall':
         return ModelFactory.createWallMesh(theme, layout, x, y);
-      case 'fake_wall': {
-        const wall = ModelFactory.createWallMesh(theme, layout, x, y);
-        wall.traverse((c) => {
-          if ((c as THREE.Mesh).isMesh) {
-            const mat = (c as THREE.Mesh).material;
-            if (mat && !Array.isArray(mat)) {
-              const m = mat.clone() as THREE.MeshStandardMaterial;
-              m.transparent = true;
-              m.opacity = 0.95;
-              (c as THREE.Mesh).material = m;
-            }
-          }
-        });
-        return wall;
-      }
       case 'door_yellow':
         return ModelFactory.createDoorMesh('yellow');
       case 'door_blue':
@@ -758,6 +744,63 @@ export class ThreeCanvas {
       this.floorGroup.remove(mesh);
       this.tileMeshes.delete(key);
       this.animatedItems = this.animatedItems.filter((item) => item.mesh !== mesh);
+    }
+  }
+
+  // 动态在场景中生成或替换瓦片三维模型 (如暗墙粉碎后显现隐藏宝物/怪物/小偷铁铲)
+  public spawnTile(x: number, y: number, tile: Tile, theme: string = 'magma', layout?: (Tile | null)[][]) {
+    this.removeTile(x, y, false);
+    if (!tile || tile.type === 'floor') return;
+    const tileObj = this.buildTileObject(tile, theme, layout, x, y);
+    if (tileObj) {
+      const world = ThreeCanvas.gridToWorld(x, y);
+      tileObj.position.set(world.x, 0, world.z);
+
+      tileObj.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          const isTransparent = Array.isArray(mesh.material)
+            ? mesh.material.some((m) => m.transparent)
+            : (mesh.material as THREE.Material)?.transparent;
+          if (
+            mesh.name.includes('rune') ||
+            mesh.name.includes('ring') ||
+            mesh.name.includes('face') ||
+            isTransparent
+          ) {
+            mesh.castShadow = false;
+          } else {
+            mesh.castShadow = true;
+          }
+          mesh.receiveShadow = true;
+        }
+      });
+
+      this.floorGroup.add(tileObj);
+      this.tileMeshes.set(`${x}_${y}`, tileObj);
+
+      if (tile.type === 'item') {
+        this.animatedItems.push({
+          type: 'item_rotate',
+          mesh: tileObj,
+          initialX: world.x,
+          initialY: 0.15,
+        });
+      } else if (tile.type === 'monster') {
+        const heroWorld = ThreeCanvas.gridToWorld(this.playerGridPos.x, this.playerGridPos.y);
+        const dx = heroWorld.x - world.x;
+        const dz = heroWorld.z - world.z;
+        tileObj.rotation.y = Math.atan2(dx, dz);
+        if (tileObj.name.includes('slime')) {
+          this.animatedItems.push({
+            type: 'slime',
+            mesh: tileObj,
+            initialX: world.x,
+            initialY: 0,
+            baseScale: tileObj.scale.clone(),
+          });
+        }
+      }
     }
   }
 
