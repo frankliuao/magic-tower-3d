@@ -1016,7 +1016,7 @@ function getFloor38(): FloorData {
     [T.mon('ghost_soldier'), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.doorY(), T.wall(), T.wall(), T.wall(), T.doorY()],
     [T.floor(), T.floor(), T.mon('warrior'), T.mon('warrior'), T.floor(), T.wall(), T.floor(), T.wall(), T.item('key_yellow'), T.wall(), T.floor()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.doorB(), T.wall(), T.floor(), T.wall(), T.item('key_yellow'), T.wall(), T.floor()],
-    [T.floor(), T.floor(), T.floor(), T.doorB(), T.doorB(), T.wall(), T.mon('ghost_soldier'), T.wall(), T.item('key_yellow'), T.wall(), T.mon('ghost_soldier')],
+    [T.floor(), T.floor(), T.floor(), T.doorB(), T.floor(), T.wall(), T.mon('ghost_soldier'), T.wall(), T.item('key_yellow'), T.wall(), T.mon('ghost_soldier')],
     [T.floor(), T.item('shield_knight'), T.floor(), T.wall(), T.wall(), T.wall(), T.mon('dual_swordsman'), T.wall(), T.floor(), T.mon('knight'), T.floor()],
     [T.floor(), T.floor(), T.floor(), T.wall(), T.item('gem_blue'), T.item('potion_red'), T.floor(), T.wall(), T.wall(), T.wall(), T.doorY()],
     [T.wall(), T.doorI(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.item('key_yellow'), T.floor(), T.mon('ghost_soldier')],
