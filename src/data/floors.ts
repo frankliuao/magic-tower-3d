@@ -574,17 +574,17 @@ function getFloor21(): FloorData {
 
 function getFloor22(): FloorData {
   const layout: Tile[][] = [
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.item('potion_red'), T.item('thief_shovel'), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall()],
-    [T.wall(), T.item('key_yellow'), T.floor(), T.floor(), T.fakeWall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.floor(), T.floor(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(),  T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(),    T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.item('thief_shovel'), T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.fakeWall(),           T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.fakeWall(),           T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(), T.fakeWall(),           T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
+    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(),  T.wall(),     T.wall(),     T.wall(),               T.wall(), T.wall()],
   ];
 
   return {

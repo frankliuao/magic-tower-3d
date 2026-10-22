@@ -1794,14 +1794,27 @@ assert(f0DoorCheckLocked.reason?.includes('门被神秘力量锁住了，到23�
 const f22Data = getFloor(22);
 assert(f22Data.layout[3][8]?.type === 'item' && f22Data.layout[3][8]?.itemType === 'thief_shovel', '22F (8, 3) 密室藏有【小偷的铲子】');
 assert(f22Data.layout[6][6]?.type === 'fake_wall', '22F (6, 6) 为通往铲子密室的暗墙');
-assert(f22Data.layout[5][4]?.type === 'fake_wall', '22F (4, 5) 为通往黄钥匙密室的暗墙');
+assert(f22Data.layout[6][7]?.type === 'fake_wall', '22F (7, 6) 为隐藏暗墙');
+assert(f22Data.layout[6][8]?.type === 'fake_wall', '22F (8, 6) 为隐藏暗墙');
+assert(f22Data.layout[5][8]?.type === 'fake_wall', '22F (8, 5) 为隐藏暗墙');
+assert(f22Data.layout[4][8]?.type === 'fake_wall', '22F (8, 4) 为隐藏暗墙');
+assert(f22Data.layout[6][7]?.type !== 'floor', '22F (7, 6) 严禁作为可见地面泄露暗道');
+assert(f22Data.layout[6][8]?.type !== 'floor', '22F (8, 6) 严禁作为可见地面泄露暗道');
+
 storyGame.currentFloor = 22;
 storyGame.playerPos = { x: 5, y: 6, dir: 'right' };
 storyGame.move('right'); // 撞开 (6, 6) 暗墙
 assert(storyGame.playerPos.x === 6 && storyGame.playerPos.y === 6, '勇士撞破 22F (6, 6) 暗墙成功进入暗道');
-// 走向 (8, 3) 拾取铲子
-storyGame.playerPos = { x: 8, y: 4, dir: 'up' };
-storyGame.move('up'); // 走入 (8, 3)
+storyGame.move('right'); // 撞开 (7, 6) 暗墙
+assert(storyGame.playerPos.x === 7 && storyGame.playerPos.y === 6, '勇士撞破 22F (7, 6) 暗道');
+storyGame.move('right'); // 撞开 (8, 6) 暗墙
+assert(storyGame.playerPos.x === 8 && storyGame.playerPos.y === 6, '勇士撞破 22F (8, 6) 暗道');
+storyGame.move('up'); // 撞开 (8, 5) 暗墙
+assert(storyGame.playerPos.x === 8 && storyGame.playerPos.y === 5, '勇士撞破 22F (8, 5) 暗道');
+storyGame.move('up'); // 撞开 (8, 4) 暗墙
+assert(storyGame.playerPos.x === 8 && storyGame.playerPos.y === 4, '勇士撞破 22F (8, 4) 暗道');
+storyGame.move('up'); // 走入 (8, 3) 拾取铲子
+assert(storyGame.playerPos.x === 8 && storyGame.playerPos.y === 3, '勇士探索至尽头进入 (8, 3) 密室');
 assert(storyGame.playerStats.inventory.thief_shovel === 1, '成功拾取【小偷的铲子】入背包');
 
 // 3. 23F 【0F】暗道点阵拼字解谜验证与楼层名称无剧透验证

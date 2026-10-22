@@ -641,22 +641,8 @@ export class ThreeCanvas {
   ): THREE.Object3D | null {
     switch (tile.type) {
       case 'wall':
+      case 'fake_wall':
         return ModelFactory.createWallMesh(theme, layout, x, y);
-      case 'fake_wall': {
-        const wall = ModelFactory.createWallMesh(theme, layout, x, y);
-        wall.traverse((c) => {
-          if ((c as THREE.Mesh).isMesh) {
-            const mat = (c as THREE.Mesh).material;
-            if (mat && !Array.isArray(mat)) {
-              const m = mat.clone() as THREE.MeshStandardMaterial;
-              m.transparent = true;
-              m.opacity = 0.95;
-              (c as THREE.Mesh).material = m;
-            }
-          }
-        });
-        return wall;
-      }
       case 'door_yellow':
         return ModelFactory.createDoorMesh('yellow');
       case 'door_blue':
