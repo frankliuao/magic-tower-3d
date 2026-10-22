@@ -5,7 +5,12 @@ import { FloorData, Tile, TileType, ItemType } from '../types/game';
 export const T = {
   floor: (): Tile => ({ type: 'floor' }),
   wall: (): Tile => ({ type: 'wall' }),
-  fakeWall: (itemType?: ItemType): Tile => ({ type: 'fake_wall', ...(itemType ? { itemType } : {}) }),
+  fakeWall: (itemType?: ItemType, monsterId?: string): Tile => ({
+    type: 'fake_wall',
+    ...(itemType ? { itemType } : {}),
+    ...(monsterId ? { monsterId } : {}),
+  }),
+  fakeWallMonster: (monsterId: string): Tile => ({ type: 'fake_wall', monsterId }),
   lava: (): Tile => ({ type: 'lava' }),
   up: (): Tile => ({ type: 'stairs_up' }),
   down: (): Tile => ({ type: 'stairs_down' }),
@@ -574,17 +579,28 @@ function getFloor21(): FloorData {
 
 function getFloor22(): FloorData {
   const layout: Tile[][] = [
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(),  T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.up(),    T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.fakeWall(),                     T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.wall(),                         T.fakeWall('thief_shovel'), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.fakeWall(),              T.wall(),                         T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(),              T.wall(),                         T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.wall(),                         T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.fakeWall(), T.fakeWall(),              T.fakeWall('potion_red'),         T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.fakeWall(),                     T.fakeWall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.floor(), T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
-    [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.down(),  T.wall(),     T.wall(),                  T.wall(),                         T.wall(), T.wall()],
+    // 0F 顶部边界墙
+    [T.wall(), T.wall(),                      T.wall(),     T.wall(),     T.wall(),     T.wall(),    T.wall(),                         T.wall(),     T.wall(),     T.wall(),                     T.wall()],
+    // 1F 上楼梯与走廊起始
+    [T.wall(), T.wall(),                      T.wall(),     T.wall(),     T.wall(),     T.up(),      T.wall(),                         T.wall(),     T.wall(),     T.wall(),                     T.wall()],
+    // 2F 左上怪物死胡同(1,2)兽人 | 右上怪物死胡同(6,2)高级法师 与 迷宫暗道
+    [T.wall(), T.fakeWallMonster('orc'),      T.fakeWall(), T.fakeWall(), T.wall(),     T.floor(),   T.fakeWallMonster('senior_mage'), T.fakeWall(), T.fakeWall(), T.fakeWall(),                 T.wall()],
+    // 3F 左上暗道枢纽(3,3)与入口(4,3) | 右侧暗道与密室深处小偷铁铲(9,3)
+    [T.wall(), T.wall(),                      T.wall(),     T.fakeWall(), T.fakeWall(), T.floor(),   T.wall(),                         T.fakeWall(), T.wall(),     T.fakeWall('thief_shovel'),   T.wall()],
+    // 4F 左上道具死胡同(1,4)蓝药水 | 右侧纵深暗道
+    [T.wall(), T.fakeWall('potion_blue'),     T.fakeWall(), T.fakeWall(), T.wall(),     T.floor(),   T.wall(),                         T.fakeWall(), T.wall(),     T.wall(),                     T.wall()],
+    // 5F 中央走廊 | 右上暗道入口(6,5)与枢纽(7,5)
+    [T.wall(), T.wall(),                      T.wall(),     T.wall(),     T.wall(),     T.floor(),   T.fakeWall(),                     T.fakeWall(), T.wall(),     T.wall(),                     T.wall()],
+    // 6F 左下道具死胡同(1,6)红宝石 | 右侧中段道具死胡同(9,6)黄钥匙
+    [T.wall(), T.fakeWall('gem_red'),         T.fakeWall(), T.fakeWall(), T.wall(),     T.floor(),   T.wall(),                         T.fakeWall(), T.fakeWall(), T.fakeWall('key_yellow'),     T.wall()],
+    // 7F 左下暗道枢纽(3,7)与入口(4,7) | 分隔墙
+    [T.wall(), T.wall(),                      T.wall(),     T.fakeWall(), T.fakeWall(), T.floor(),   T.wall(),                         T.wall(),     T.wall(),     T.wall(),                     T.wall()],
+    // 8F 左下怪物死胡同(1,8)红蝙蝠 | 右下暗道入口(6,8)、枢纽(7,8)与道具死胡同(9,8)红药水
+    [T.wall(), T.fakeWallMonster('red_bat'),  T.fakeWall(), T.fakeWall(), T.wall(),     T.floor(),   T.fakeWall(),                     T.fakeWall(), T.fakeWall(), T.fakeWall('potion_red'),     T.wall()],
+    // 9F 右下怪物死胡同(9,9)兽人武士
+    [T.wall(), T.wall(),                      T.wall(),     T.wall(),     T.wall(),     T.floor(),   T.wall(),                         T.fakeWall(), T.fakeWall(), T.fakeWallMonster('orc_knight'), T.wall()],
+    // 10F 下楼梯与底部边界墙
+    [T.wall(), T.wall(),                      T.wall(),     T.wall(),     T.wall(),     T.down(),    T.wall(),                         T.wall(),     T.wall(),     T.wall(),                     T.wall()],
   ];
 
   return {

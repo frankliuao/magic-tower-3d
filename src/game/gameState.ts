@@ -381,8 +381,11 @@ export class GameState {
 
       // 暗墙撞击粉碎：墙体瓦解消失，但勇士原地未移动（需下一次前行才踏入）
       const hiddenItem = tile.itemType;
+      const hiddenMonster = tile.monsterId;
       const newTile: Tile = hiddenItem
         ? { type: 'item', itemType: hiddenItem }
+        : hiddenMonster
+        ? { type: 'monster', monsterId: hiddenMonster }
         : { type: 'floor' };
       floor.layout[targetY][targetX] = newTile;
 
@@ -400,6 +403,13 @@ export class GameState {
               ? 'Secret wall shattered! The thief\'s lost shovel appeared in the deep passage!'
               : 'Secret wall shattered! A hidden treasure appeared!');
         if (onFloating) onFloating(itemMsg, '#fbbf24', 3500);
+      } else if (hiddenMonster) {
+        const monsterObj = MONSTERS[hiddenMonster];
+        const monsterName = this.language === 'zh' ? monsterObj?.name : (monsterObj?.nameEn || monsterObj?.name);
+        const monMsg = this.language === 'zh'
+          ? `暗墙粉碎！深处潜伏的【${monsterName}】现身了！`
+          : `Secret wall shattered! A hidden [${monsterName}] appeared!`;
+        if (onFloating) onFloating(monMsg, '#f87171', 3000);
       } else {
         const secretMsg = this.language === 'zh' ? '发现密道！' : 'Secret path revealed!';
         if (onFloating) onFloating(secretMsg, '#38bdf8');

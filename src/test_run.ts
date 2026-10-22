@@ -1790,12 +1790,43 @@ const f0DoorCheckLocked = storyGame.checkGuardedIronDoor(5, 4);
 assert(f0DoorCheckLocked.canOpen === false, '未在 23F 走完暗道前，0F 金币大门处于封印状态不可开启');
 assert(f0DoorCheckLocked.reason?.includes('门被神秘力量锁住了，到23层去找找线索吧'), '0F 金币大门提示：“门被神秘力量锁住了，到23层去找找线索吧”');
 
-// 2. 22F 小偷暗道迷宫、暗墙击碎原地不位移机制、与小偷铲子拾取
+// 2. 22F 左右多岔路暗道迷宫、怪物与宝物死胡同、暗墙击碎原地不位移机制、与小偷铲子拾取
 const f22Data = getFloor(22);
 assert(f22Data.layout[3][9]?.type === 'fake_wall' && f22Data.layout[3][9]?.itemType === 'thief_shovel', '22F (9, 3) 密室暗墙中藏有【小偷的铲子】(未走至暗墙前绝不暴露)');
-assert(f22Data.layout[5][6]?.type === 'fake_wall', '22F (6, 5) 为通往暗道迷宫的入口 1');
-assert(f22Data.layout[7][6]?.type === 'fake_wall', '22F (6, 7) 为通往暗道迷宫的入口 2');
+assert(f22Data.layout[5][6]?.type === 'fake_wall', '22F (6, 5) 为通往右侧上部暗道迷宫的入口');
+assert(f22Data.layout[8][6]?.type === 'fake_wall', '22F (6, 8) 为通往右侧下部暗道迷宫的入口');
+assert(f22Data.layout[3][4]?.type === 'fake_wall', '22F (4, 3) 为通往左侧上部暗道迷宫的入口');
+assert(f22Data.layout[7][4]?.type === 'fake_wall', '22F (4, 7) 为通往左侧下部暗道迷宫的入口');
 assert(f22Data.layout[3][9]?.type !== 'item', '22F (9, 3) 初始绝非可见 item 道具网格');
+
+// 检验死胡同怪物与物品的初始封存状态（全部为暗墙，绝非暴露怪物或物品）
+assert(f22Data.layout[2][1]?.type === 'fake_wall' && f22Data.layout[2][1]?.monsterId === 'orc', '左上死胡同 (1, 2) 封存怪物【兽人】');
+assert(f22Data.layout[4][1]?.type === 'fake_wall' && f22Data.layout[4][1]?.itemType === 'potion_blue', '左中死胡同 (1, 4) 封存道具【蓝药水】');
+assert(f22Data.layout[6][1]?.type === 'fake_wall' && f22Data.layout[6][1]?.itemType === 'gem_red', '左下死胡同 (1, 6) 封存道具【红宝石】');
+assert(f22Data.layout[8][1]?.type === 'fake_wall' && f22Data.layout[8][1]?.monsterId === 'red_bat', '左底死胡同 (1, 8) 封存怪物【红蝙蝠】');
+assert(f22Data.layout[2][6]?.type === 'fake_wall' && f22Data.layout[2][6]?.monsterId === 'senior_mage', '右上死胡同 (6, 2) 封存怪物【高级法师】');
+assert(f22Data.layout[6][9]?.type === 'fake_wall' && f22Data.layout[6][9]?.itemType === 'key_yellow', '右中死胡同 (9, 6) 封存道具【黄钥匙】');
+assert(f22Data.layout[8][9]?.type === 'fake_wall' && f22Data.layout[8][9]?.itemType === 'potion_red', '右下死胡同 (9, 8) 封存道具【红药水】');
+assert(f22Data.layout[9][9]?.type === 'fake_wall' && f22Data.layout[9][9]?.monsterId === 'orc_knight', '右底死胡同 (9, 9) 封存怪物【兽人武士】');
+
+// 检验左侧岔路探索流程：进入 (4, 3) 探索死胡同怪物 (1, 2) 并倒回
+const f22ExploreGame = new GameState();
+f22ExploreGame.initGame();
+f22ExploreGame.currentFloor = 22;
+f22ExploreGame.playerPos = { x: 5, y: 3, dir: 'left' };
+f22ExploreGame.move('left'); // 破拆 (4, 3)
+assert(f22ExploreGame.playerPos.x === 5 && f22ExploreGame.playerPos.y === 3, '勇士在走廊破拆左侧暗墙入口 (4, 3) 后原地未移动');
+f22ExploreGame.move('left'); // 踏入 (4, 3)
+f22ExploreGame.move('left'); f22ExploreGame.move('left'); // 破拆并踏入 (3, 3)
+f22ExploreGame.move('up'); f22ExploreGame.move('up'); // 破拆并踏入 (3, 2)
+f22ExploreGame.move('left'); f22ExploreGame.move('left'); // 破拆并踏入 (2, 2)
+f22ExploreGame.move('left'); // 朝向 (1, 2) 破拆暗墙：怪物现身！
+assert(f22ExploreGame.playerPos.x === 2 && f22ExploreGame.playerPos.y === 2, '暗墙破拆后勇士停在 (2, 2)，深处潜伏怪物现身');
+assert(f22ExploreGame.getCurrentFloorData().layout[2][1]?.type === 'monster' && f22ExploreGame.getCurrentFloorData().layout[2][1]?.monsterId === 'orc', '(1, 2) 暗墙破拆后成功显现出怪物【兽人】');
+// 死胡同走到头倒回探索：原路倒退回 (3, 3) 岔路枢纽
+f22ExploreGame.move('right');
+f22ExploreGame.move('down');
+assert(f22ExploreGame.playerPos.x === 3 && f22ExploreGame.playerPos.y === 3, '走到死胡同尽头后顺利倒退回 (3, 3) 岔路口');
 
 storyGame.currentFloor = 22;
 storyGame.playerPos = { x: 5, y: 5, dir: 'right' };
