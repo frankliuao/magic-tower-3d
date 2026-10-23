@@ -1082,7 +1082,7 @@ export function getPickupNotification(
   }
   if (itemType === 'center_fly') {
     return {
-      text: lang === 'zh' ? '获得【中心飞行器】！' : 'Obtained [Center Flight Wing]!',
+      text: lang === 'zh' ? '获得秘宝【中心对称飞行器】！(一次性道具)' : 'Obtained [Center Flyer]! (One-time consumable)',
       color: '#c084fc',
     };
   }

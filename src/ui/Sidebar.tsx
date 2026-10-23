@@ -13,6 +13,7 @@ import {
   Compass,
   BookOpen,
   Cross,
+  Zap,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -22,9 +23,10 @@ import {
 interface SidebarProps {
   game: GameState;
   onMove: (cmd: MoveCommand) => void;
+  onUseCenterFly?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ game, onMove }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }) => {
   const { lang, t } = useI18n();
   const { playerStats, currentFloor } = game;
   const floorData = game.getCurrentFloorData();
@@ -148,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove }) => {
               {getEquipName(playerStats.shield, lang)}
             </span>
           </div>
-          <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+          <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-700/60">
             {playerStats.inventory.monster_manual ? (
               <span className="px-1.5 py-0.5 bg-emerald-950/60 border border-emerald-500/50 rounded text-[10px] text-emerald-300 font-medium flex items-center gap-1">
                 <BookOpen className="w-3 h-3" /> {t.relicManual}
@@ -166,10 +168,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove }) => {
             ) : null}
             {!playerStats.inventory.monster_manual &&
               !playerStats.inventory.compass &&
-              !playerStats.inventory.cross && (
+              !playerStats.inventory.cross &&
+              !playerStats.inventory.center_fly && (
                 <span className="text-[11px] text-slate-500 italic">{t.noRelics}</span>
               )}
           </div>
+          {playerStats.inventory.center_fly ? (
+            <div className="pt-2 border-t border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => onUseCenterFly?.()}
+                title={lang === 'zh' ? '点击使用【中心对称飞行器】(一次性消耗品，点击跃迁至对称坐标)' : 'Click to use [Center Flyer] (One-time consumable, teleports to symmetric tile)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-purple-900/90 via-fuchsia-950/80 to-purple-900/90 hover:from-purple-800 hover:to-fuchsia-900 border border-purple-400/80 rounded-lg text-xs text-purple-200 font-bold flex items-center justify-between shadow-md hover:shadow-purple-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-purple-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '使用中心飞行器' : 'Use Center Flyer'}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-normal">
+                  {lang === 'zh' ? '一次性' : '1x Use'}
+                </span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -319,8 +319,13 @@ export const InspectCard: React.FC<InspectCardProps> = ({
       const isBlue = tile.type === 'door_blue';
       const isRed = tile.type === 'door_red';
       const isIron = tile.type === 'door_iron';
+      const isCageFlyer = isIron && game.currentFloor === 39 && gridX === 3 && gridY === 3;
 
-      const doorName = isYellow
+      const doorName = isCageFlyer
+        ? lang === 'zh'
+          ? '神圣宝物铁笼'
+          : 'Sacred Relic Cage'
+        : isYellow
         ? lang === 'zh'
           ? '黄铜之门'
           : 'Yellow Gate'

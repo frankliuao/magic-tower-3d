@@ -6045,6 +6045,8 @@ export class ModelFactory {
       return this.createSnowCrystalMesh();
     } else if (itemType === 'thief_shovel') {
       return this.createShovelMesh();
+    } else if (itemType === 'center_fly') {
+      return this.createCenterFlyMesh();
     } else {
       // 默认道具箱
       const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
@@ -6461,6 +6463,220 @@ export class ModelFactory {
     shovelG.rotation.x = Math.PI / 12;
     shovelG.position.y = 0.22;
     group.add(shovelG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 中心对称飞行器 (Center Flyer / 筋斗云时空神翼)
+  static createCenterFlyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_center_fly';
+
+    // 材质定义：时空紫晶与圣金流光
+    const wingMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd8b4fe,
+      emissive: 0x9333ea,
+      emissiveIntensity: 0.65,
+      transmission: 0.6,
+      roughness: 0.2,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.5,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const coreCrystalMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf0abfc,
+      emissive: 0xa855f7,
+      emissiveIntensity: 0.9,
+      roughness: 0.1,
+      transmission: 0.5,
+      transparent: true,
+      opacity: 0.95,
+    });
+
+    const flyG = new THREE.Group();
+
+    // 1. 核心时空八面体能量水晶 (Chronocrystal Core)
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), coreCrystalMat);
+    core.position.y = 0.38;
+    flyG.add(core);
+
+    // 2. 环绕核心的星轨时钟金环 (Orbit Chrono Ring)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.016, 8, 32), goldMat);
+    ring.rotation.x = Math.PI / 3;
+    ring.position.y = 0.38;
+    flyG.add(ring);
+
+    // 3. 对称羽翼构型 (Symmetric Celestial Wings)
+    const createWing = (isRight: boolean): THREE.Group => {
+      const wing = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+
+      // 主羽 (Primary Feather)
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.018), wingMat);
+      f1.rotation.z = sign * 0.45;
+      f1.position.set(sign * 0.14, 0.08, 0);
+
+      // 次羽 (Secondary Feather)
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.045, 0.016), wingMat);
+      f2.rotation.z = sign * 0.25;
+      f2.position.set(sign * 0.13, 0.02, 0);
+
+      // 底羽 (Lower Feather)
+      const f3 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.04, 0.014), wingMat);
+      f3.rotation.z = sign * 0.05;
+      f3.position.set(sign * 0.10, -0.04, 0);
+
+      wing.add(f1, f2, f3);
+      return wing;
+    };
+
+    const leftWing = createWing(false);
+    leftWing.position.set(-0.06, 0.38, 0);
+    const rightWing = createWing(true);
+    rightWing.position.set(0.06, 0.38, 0);
+
+    flyG.add(leftWing, rightWing);
+
+    // 4. 底部微型对称指针轴 (Chrono Needle Marker)
+    const needleV = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.01), goldMat);
+    needleV.position.y = 0.38;
+    const needleH = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.01), goldMat);
+    needleH.position.y = 0.38;
+    flyG.add(needleV, needleH);
+
+    group.add(flyG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 39F 囚禁中心飞行器的神圣铁笼 (Iron Cage holding the Center Flyer)
+  static createFlyerCageMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'cage_center_fly';
+
+    const ironMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      metalness: 0.85,
+      roughness: 0.35,
+    });
+    const darkIronMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.9,
+      roughness: 0.4,
+    });
+    const goldLockMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.8,
+      roughness: 0.25,
+      emissive: 0xb45309,
+      emissiveIntensity: 0.3,
+    });
+
+    const cageGroup = new THREE.Group();
+
+    // 1. 底座方框与顶盖方框
+    const frameSize = 0.78;
+    const barThick = 0.035;
+    const cageHeight = 0.76;
+
+    const createSquareFrame = (yPos: number) => {
+      const f = new THREE.Group();
+      const bNorth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bNorth.position.set(0, yPos, -frameSize / 2);
+      const bSouth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bSouth.position.set(0, yPos, frameSize / 2);
+      const bWest = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bWest.position.set(-frameSize / 2, yPos, 0);
+      const bEast = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bEast.position.set(frameSize / 2, yPos, 0);
+      f.add(bNorth, bSouth, bWest, bEast);
+      return f;
+    };
+
+    cageGroup.add(createSquareFrame(0.04));
+    cageGroup.add(createSquareFrame(cageHeight));
+
+    // 2. 四角坚固方铁柱 (Corner Pillars)
+    const pillarGeom = new THREE.BoxGeometry(barThick * 1.2, cageHeight, barThick * 1.2);
+    const half = frameSize / 2;
+    const corners = [
+      [-half, -half],
+      [half, -half],
+      [-half, half],
+      [half, half],
+    ];
+    for (const [cx, cz] of corners) {
+      const p = new THREE.Mesh(pillarGeom, darkIronMat);
+      p.position.set(cx, cageHeight / 2, cz);
+      cageGroup.add(p);
+    }
+
+    // 3. 四个面的通透铁栅栏圆柱 (4-Sided Vertical Bars)
+    const barRadius = 0.013;
+    const barGeom = new THREE.CylinderGeometry(barRadius, barRadius, cageHeight - 0.04, 8);
+    const barOffsets = [-0.18, 0, 0.18];
+
+    // 南北面栅栏
+    for (const offset of barOffsets) {
+      const barN = new THREE.Mesh(barGeom, ironMat);
+      barN.position.set(offset, cageHeight / 2, -half);
+      const barS = new THREE.Mesh(barGeom, ironMat);
+      barS.position.set(offset, cageHeight / 2, half);
+      cageGroup.add(barN, barS);
+    }
+    // 东西面栅栏
+    for (const offset of barOffsets) {
+      const barW = new THREE.Mesh(barGeom, ironMat);
+      barW.position.set(-half, cageHeight / 2, offset);
+      const barE = new THREE.Mesh(barGeom, ironMat);
+      barE.position.set(half, cageHeight / 2, offset);
+      cageGroup.add(barW, barE);
+    }
+
+    // 4. 顶部十字加固梁 (Top Cross Grate)
+    const topCross1 = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick * 0.8, barThick * 0.8), darkIronMat);
+    topCross1.position.y = cageHeight;
+    const topCross2 = new THREE.Mesh(new THREE.BoxGeometry(barThick * 0.8, barThick * 0.8, frameSize), darkIronMat);
+    topCross2.position.y = cageHeight;
+    cageGroup.add(topCross1, topCross2);
+
+    // 5. 正面门锁与锁链 (Front Heavy Padlock)
+    const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.04), goldLockMat);
+    lockBody.position.set(0, cageHeight * 0.5, half + 0.02);
+    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16, Math.PI), ironMat);
+    shackle.position.set(0, cageHeight * 0.5 + 0.05, half + 0.02);
+    shackle.rotation.z = Math.PI;
+    cageGroup.add(lockBody, shackle);
+
+    group.add(cageGroup);
+
+    // 6. 囚禁在笼内的中心对称飞行器 (Floating & Glowing Center Flyer inside)
+    const innerFlyer = ModelFactory.createCenterFlyMesh();
+    innerFlyer.name = 'cage_inner_flyer';
+    innerFlyer.scale.set(0.85, 0.85, 0.85);
+    innerFlyer.position.set(0, -0.02, 0);
+    group.add(innerFlyer);
 
     group.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) {

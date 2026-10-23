@@ -1942,6 +1942,115 @@ thiefTestGame.closeDialogue();
 thiefTestGame.move('down'); // 走入 (5, 2)
 assert(thiefTestGame.playerPos.x === 5 && thiefTestGame.playerPos.y === 2, '小偷挖通暗道后，勇士顺畅通行穿过 (5, 2) 迈向 30 层！');
 
+// ----------------------------------------------------
+// 25. 验证 39F 时钟九宫格密室、时钟解谜与中心对称飞行器 (筋斗云)
+// ----------------------------------------------------
+console.log('\n--- 25. 验证 39F 时钟九宫格密室、时钟解谜与中心对称飞行器 (筋斗云) ---');
+
+const f39Data = getFloor(39);
+// 1. 验证 39F 开放大厅中 8 扇孤立黄门与中央铁笼
+const doorCoords = [
+  { x: 1, y: 1 }, { x: 3, y: 1 }, { x: 5, y: 1 },
+  { x: 1, y: 3 },                 { x: 5, y: 3 },
+  { x: 1, y: 5 }, { x: 3, y: 5 }, { x: 5, y: 5 },
+];
+for (const coord of doorCoords) {
+  assert(f39Data.layout[coord.y][coord.x]?.type === 'door_yellow', `39F (${coord.x}, ${coord.y}) 必须为时钟九宫格黄色大门`);
+}
+assert(f39Data.layout[3][3]?.type === 'door_iron', '39F (3, 3) 中央必须为关押飞行器的铁笼 (door_iron)');
+assert(f39Data.layout[3][3]?.itemType === 'center_fly', '39F (3, 3) 铁笼内锁着【中心对称飞行器】');
+
+// 门四周开放地面验证 (无需破拆底门即可自由穿行环绕)
+const openFloorCoords = [
+  { x: 0, y: 1 }, { x: 2, y: 1 }, { x: 4, y: 1 }, { x: 6, y: 1 },
+  { x: 0, y: 3 }, { x: 2, y: 3 }, { x: 4, y: 3 }, { x: 6, y: 3 },
+  { x: 0, y: 5 }, { x: 2, y: 5 }, { x: 4, y: 5 }, { x: 6, y: 5 },
+];
+for (const fl of openFloorCoords) {
+  assert(f39Data.layout[fl.y][fl.x]?.type === 'floor', `39F (${fl.x}, ${fl.y}) 必须为通畅地面（门周围开放可绕行）`);
+}
+
+// 2. 解谜流程测试
+const clockGame = new GameState();
+clockGame.initGame();
+clockGame.currentFloor = 39;
+clockGame.playerStats.yellowKeys = 5;
+clockGame.playerStats.blueKeys = 1;
+
+// (a) 未解开谜题前，勇士试图打开中央铁笼 (3, 3)
+clockGame.playerPos = { x: 3, y: 4, dir: 'up' };
+const prevKeysBeforeCenter = clockGame.playerStats.yellowKeys;
+let cageBlockedMessage = '';
+clockGame.move('up', undefined, (txt) => { cageBlockedMessage = txt; });
+assert(clockGame.playerPos.x === 3 && clockGame.playerPos.y === 4, '未解开谜题前，勇士无法穿过 (3, 3) 铁笼');
+assert(clockGame.getCurrentFloorData().layout[3][3]?.type === 'door_iron', '中央铁笼 (3, 3) 依然处于闭锁状态');
+assert(clockGame.playerStats.yellowKeys === prevKeysBeforeCenter, '铁笼拒开时不消耗玩家黄钥匙');
+assert(cageBlockedMessage === '有一个宝物锁在这里，但不知道怎么打开', '勇士试图打开铁笼时提示：“有一个宝物锁在这里，但不知道怎么打开”');
+
+// (b) 移动至 (5, 4) 开启 3 点钟方向黄门 (5, 3)
+clockGame.playerPos = { x: 5, y: 4, dir: 'up' };
+let hint3Msg = '';
+clockGame.move('up', undefined, (txt) => { hint3Msg = txt; });
+assert(clockGame.floor39Clock3Opened === true, '开启 (5, 3) 后，3点钟开门状态置为 true');
+assert(clockGame.isFloor39PuzzleSolved === false, '仅开启 3 点钟大门时，时钟解谜尚未完成');
+assert(clockGame.playerStats.yellowKeys === prevKeysBeforeCenter - 1, '正常开门消耗黄钥匙 x1');
+assert(hint3Msg.includes('3点钟'), '开启 3 点钟大门弹出时针就位提示');
+
+// (c) 绕行前往 (3, 2) 开启 12 点钟方向黄门 (3, 1)
+clockGame.playerPos = { x: 3, y: 2, dir: 'up' };
+let winPuzzleMsg = '';
+let spawnedTileType: string | undefined = undefined;
+clockGame.move(
+  'up',
+  (_x, _y, _isDoor, newTile) => {
+    if (newTile) spawnedTileType = newTile.type;
+  },
+  (txt) => { winPuzzleMsg = txt; }
+);
+assert(clockGame.floor39Clock12Opened === true, '开启 (3, 1) 后，12点钟开门状态置为 true');
+assert(clockGame.isFloor39PuzzleSolved === true, '3点钟与12点钟均开启后，时钟解谜宣布大获全胜！');
+assert(clockGame.getCurrentFloorData().layout[3][3]?.type === 'item' && clockGame.getCurrentFloorData().layout[3][3]?.itemType === 'center_fly', '铁笼瓦解，神圣秘宝【中心对称飞行器】在中心现身！');
+assert(spawnedTileType === 'item', '向三维场景派发生成道具消息');
+assert(winPuzzleMsg.includes('3:00') && winPuzzleMsg.includes('中心对称飞行器'), '弹出铁笼解体与中心对称飞行器现身广播');
+
+// (d) 勇士踏入中央 (3, 3) 拾取【中心对称飞行器】
+clockGame.playerPos = { x: 3, y: 4, dir: 'up' };
+clockGame.move('up'); // 走入 (3, 3)
+assert(clockGame.playerPos.x === 3 && clockGame.playerPos.y === 3, '勇士顺利踏入中央 (3, 3) 格');
+assert(clockGame.playerStats.inventory.center_fly === 1, '成功拾取【中心对称飞行器】入背包！');
+assert(clockGame.isDialogueOpen === true, '拾取飞行器后成功弹出说明对话框');
+assert(clockGame.activeDialogue?.name.includes('中心对称飞行器'), '对话框展示秘宝名称');
+assert(clockGame.activeDialogue?.lines.some(l => l.includes('一次性消耗品')), '对话框明确说明该飞行器为一次性消耗品');
+clockGame.closeDialogue();
+assert(clockGame.isDialogueOpen === false, '对话框正常关闭');
+
+// 3. 验证中心对称飞行器 (一次性消耗品·点击跃迁功能)
+// (a) 对称目标点是实心墙壁时拒绝跳跃
+// 当前站在 (3, 3)，对称目标为 (10 - 3, 10 - 3) = (7, 7)，查看 (7, 7) 为实心墙壁
+assert(clockGame.getCurrentFloorData().layout[7][7]?.type === 'wall', '39F (7, 7) 为实心墙壁');
+const flyFailWall = clockGame.useCenterFly();
+assert(flyFailWall === false, '目标点为墙壁时拒绝跃迁');
+assert(clockGame.playerStats.inventory.center_fly === 1, '跃迁失败不扣除飞行器');
+
+// (b) 移动至安全起飞点 (1, 6)，其对称点为 (9, 4)，为畅通地面
+clockGame.playerPos = { x: 1, y: 6, dir: 'up' };
+assert(clockGame.getCurrentFloorData().layout[4][9]?.type === 'floor', '39F (9, 4) 为畅通地面');
+const flySuccess = clockGame.useCenterFly();
+assert(flySuccess === true, '从 (1, 6) 成功执行中心对称跃迁！');
+assert(clockGame.playerPos.x === 9 && clockGame.playerPos.y === 4, '勇士精准瞬间降落在对称点 (9, 4)！');
+assert(clockGame.playerStats.inventory.center_fly === undefined, '中心对称飞行器为一次性消耗品，使用后正常消耗移除');
+
+// 4. 验证存档与读档持久化
+clockGame.playerStats.inventory.center_fly = 1;
+assert(clockGame.saveGame(99) === true, '成功写入包含 39F 时钟解谜与飞行器的测试存档');
+const restoreGame = new GameState();
+restoreGame.initGame();
+assert(restoreGame.loadGame(99) === true, '成功读取测试存档');
+assert(restoreGame.isFloor39PuzzleSolved === true, '存档中 39F 时钟谜题已解决状态无损恢复');
+assert(restoreGame.floor39Clock3Opened === true, '3点钟门开启状态无损恢复');
+assert(restoreGame.floor39Clock12Opened === true, '12点钟门开启状态无损恢复');
+assert(restoreGame.playerStats.inventory.center_fly === 1, '中心飞行器数量无损恢复');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

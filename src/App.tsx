@@ -416,6 +416,38 @@ export const App: React.FC = () => {
     }
   }, [game.currentFloor, stopAutoWalk, handleCloseInspect]);
 
+  // 中心对称飞行器 (J 键或侧栏点击)
+  const handleUseCenterFly = useCallback(() => {
+    if (game.playerStats.inventory.center_fly) {
+      const success = game.useCenterFly(
+        (x, y, isDoor, newTile) => {
+          if (threeEngineRef.current) {
+            if (newTile && newTile.type !== 'floor') {
+              threeEngineRef.current.spawnTile(
+                x,
+                y,
+                newTile,
+                game.getCurrentFloorData().theme,
+                game.getCurrentFloorData().layout
+              );
+            } else {
+              threeEngineRef.current.removeTile(x, y, isDoor);
+            }
+          }
+        },
+        (txt, col, duration) => addFloating(txt, col, duration)
+      );
+      if (success && threeEngineRef.current) {
+        threeEngineRef.current.updatePlayer(
+          game.playerPos.x,
+          game.playerPos.y,
+          game.playerPos.dir,
+          true
+        );
+      }
+    }
+  }, [game, addFloating]);
+
   // 全局键盘事件监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -557,7 +589,7 @@ export const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen bg-slate-950 overflow-hidden select-none font-sans">
       {/* 左侧经典复古状态栏 */}
-      <Sidebar game={game} onMove={handleMove} />
+      <Sidebar game={game} onMove={handleMove} onUseCenterFly={handleUseCenterFly} />
 
       {/* 主游戏展示区 */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
