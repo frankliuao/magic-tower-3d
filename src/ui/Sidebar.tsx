@@ -13,6 +13,7 @@ import {
   Compass,
   BookOpen,
   Cross,
+  Zap,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -22,9 +23,10 @@ import {
 interface SidebarProps {
   game: GameState;
   onMove: (cmd: MoveCommand) => void;
+  onUseCenterFly?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ game, onMove }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }) => {
   const { lang, t } = useI18n();
   const { playerStats, currentFloor } = game;
   const floorData = game.getCurrentFloorData();
@@ -164,9 +166,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove }) => {
                 <Cross className="w-3 h-3" /> {t.relicCross}
               </span>
             ) : null}
+            {playerStats.inventory.center_fly ? (
+              <button
+                onClick={() => onUseCenterFly?.()}
+                title={lang === 'zh' ? '中心对称飞行器 (快捷键 J): 点击在当前楼层瞬间对称跃迁' : 'Center Flyer (Hotkey J): Teleport symmetrically across current floor'}
+                className="px-1.5 py-0.5 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/60 hover:border-purple-400 rounded text-[10px] text-purple-300 font-medium flex items-center gap-1 transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <Zap className="w-3 h-3 text-purple-400 animate-pulse" />
+                <span>{lang === 'zh' ? '中心飞' : 'Flyer'}</span>
+                {playerStats.inventory.center_fly > 1 ? <span className="text-[9px] font-bold text-purple-200">x{playerStats.inventory.center_fly}</span> : null}
+              </button>
+            ) : null}
             {!playerStats.inventory.monster_manual &&
               !playerStats.inventory.compass &&
-              !playerStats.inventory.cross && (
+              !playerStats.inventory.cross &&
+              !playerStats.inventory.center_fly && (
                 <span className="text-[11px] text-slate-500 italic">{t.noRelics}</span>
               )}
           </div>

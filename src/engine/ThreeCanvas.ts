@@ -395,7 +395,7 @@ export class ThreeCanvas {
           }
 
           // 注册需要持续逐帧微动的场景物体与怪物待机动作
-          if (tileObj.name.startsWith('item_key_') || tileObj.name.startsWith('item_gem_')) {
+          if (tileObj.name.startsWith('item_')) {
             this.animatedItems.push({
               type: 'item_rotate',
               mesh: tileObj,

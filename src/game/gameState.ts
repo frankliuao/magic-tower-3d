@@ -124,6 +124,11 @@ export class GameState {
   public isFloor23PuzzleSolved: boolean = false;
   public floor23VisitedTiles: Set<string> = new Set();
 
+  // 39F 时钟解谜与中心对称飞行器状态
+  public floor39Clock3Opened: boolean = false;
+  public floor39Clock12Opened: boolean = false;
+  public isFloor39PuzzleSolved: boolean = false;
+
   // 对话数据
   public activeDialogue: {
     name: string;
@@ -232,6 +237,9 @@ export class GameState {
     this.elderGiftsGiven = {};
     this.isFloor23PuzzleSolved = false;
     this.floor23VisitedTiles.clear();
+    this.floor39Clock3Opened = false;
+    this.floor39Clock12Opened = false;
+    this.isFloor39PuzzleSolved = false;
 
     // 默认加载第 0 层仙灵密境
     const f0 = getFloor(0);
@@ -421,6 +429,17 @@ export class GameState {
 
     // 3. 门交互
     if (tile.type === 'door_yellow') {
+      // 39F 时钟解谜：中央大门封印，需先开启 3 点钟与 12 点钟大门
+      if (this.currentFloor === 39 && targetX === 3 && targetY === 3 && !this.isFloor39PuzzleSolved) {
+        sound.playError();
+        const msg = this.language === 'zh'
+          ? '时钟核心大门被时空阵法封印！遵循智慧老人的指引，开启【3点钟】与【12点钟】之门以唤醒神迹！'
+          : 'The Clock Core is sealed by chronomancy! Follow the Sage: unlock the [3 o\'clock] and [12 o\'clock] gates to awaken the relic!';
+        if (onFloating) onFloating(msg, '#c084fc', 3500);
+        this.notify();
+        return;
+      }
+
       if (this.playerStats.yellowKeys > 0) {
         this.playerStats.yellowKeys--;
         floor.layout[targetY][targetX] = { type: 'floor' };
@@ -430,6 +449,11 @@ export class GameState {
         this.playerPos.y = targetY;
         const notif = getDoorNotification('yellow', true, this.language);
         if (onFloating) onFloating(notif.text, notif.color);
+
+        // 39F 时钟九宫格谜题判断
+        if (this.currentFloor === 39) {
+          this.checkFloor39ClockPuzzle(targetX, targetY, onTileChange, onFloating);
+        }
       } else {
         sound.playError();
         const notif = getDoorNotification('yellow', false, this.language);
@@ -574,6 +598,159 @@ export class GameState {
         if (onFloating) onFloating(msg, '#fbbf24', 5000);
       }
     }
+  }
+
+  // 检查 39F 时钟九宫格谜题进度
+  public checkFloor39ClockPuzzle(
+    x: number,
+    y: number,
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ) {
+    if (this.currentFloor !== 39 || this.isFloor39PuzzleSolved) return;
+
+    // 开启 3 点钟方向黄门 (5, 3)
+    if (x === 5 && y === 3) {
+      this.floor39Clock3Opened = true;
+      if (!this.floor39Clock12Opened) {
+        const msg =
+          this.language === 'zh'
+            ? '【3点钟】之门开启！时钟时针就位，时空阵法开始律动……'
+            : '[3 o\'clock] gate opened! The hour hand aligns, chronomancy stirs...';
+        if (onFloating) onFloating(msg, '#38bdf8', 3000);
+      }
+    }
+
+    // 开启 12 点钟方向黄门 (3, 1)
+    if (x === 3 && y === 1) {
+      this.floor39Clock12Opened = true;
+      if (!this.floor39Clock3Opened) {
+        const msg =
+          this.language === 'zh'
+            ? '【12点钟】之门开启！分针高悬指向天顶，时空阵法开始律动……'
+            : '[12 o\'clock] gate opened! The minute hand points upward, chronomancy stirs...';
+        if (onFloating) onFloating(msg, '#38bdf8', 3000);
+      }
+    }
+
+    // 两扇关键门均已开启 -> 触发解谜成功！在 (3, 3) 生成中心对称飞行器
+    if (this.floor39Clock3Opened && this.floor39Clock12Opened && !this.isFloor39PuzzleSolved) {
+      this.isFloor39PuzzleSolved = true;
+      sound.playVictory();
+      const floor = this.getCurrentFloorData();
+      const centerTile: Tile = { type: 'item', itemType: 'center_fly' };
+      floor.layout[3][3] = centerTile;
+      if (onTileChange) {
+        onTileChange(3, 3, false, centerTile);
+      }
+      const winMsg =
+        this.language === 'zh'
+          ? '时针与分针指向 3:00 整！时空矩阵共鸣爆发，神圣秘宝【中心对称飞行器】在中心现身！'
+          : 'Clock hands lock at 3:00! Spacetime resonates as the sacred [Center Flyer] appears in the center!';
+      this.addNotification(winMsg, '#facc15', 5000);
+      if (onFloating) onFloating(winMsg, '#facc15', 5000);
+    }
+  }
+
+  // 使用中心对称飞行器 (在当前楼层进行中心对称跃迁)
+  public useCenterFly(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.center_fly || this.playerStats.inventory.center_fly <= 0) {
+      sound.playError();
+      const msg = this.language === 'zh' ? '背包中没有中心对称飞行器！' : 'No Center Flyer in inventory!';
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const curX = this.playerPos.x;
+    const curY = this.playerPos.y;
+    const destX = 10 - curX;
+    const destY = 10 - curY;
+
+    if (destX === curX && destY === curY) {
+      sound.playError();
+      const msg =
+        this.language === 'zh'
+          ? '当前正处于地图对称中心 (5, 5)，无法进行对称跳跃！'
+          : 'Already at the map center (5, 5). Cannot teleport symmetrically!';
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const floor = this.getCurrentFloorData();
+    const destTile = floor.layout[destY]?.[destX];
+
+    // 无法跳跃进入实心墙体、暗墙或熔岩
+    if (
+      !destTile ||
+      destTile.type === 'wall' ||
+      destTile.type === 'fake_wall' ||
+      destTile.type === 'lava'
+    ) {
+      sound.playError();
+      const msg =
+        this.language === 'zh'
+          ? `对称目标点 (${destX}, ${destY}) 为实心障碍，无法安全着陆！`
+          : `Symmetric destination (${destX}, ${destY}) is blocked by solid obstacles!`;
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    // 无法跳跃进入未开启的门
+    if (destTile.type.startsWith('door_')) {
+      sound.playError();
+      const msg =
+        this.language === 'zh'
+          ? `对称目标点 (${destX}, ${destY}) 为封闭大门，无法直接穿越！`
+          : `Symmetric destination (${destX}, ${destY}) is a closed gate!`;
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    // 无法跳跃进入怪物格
+    if (destTile.type === 'monster') {
+      sound.playError();
+      const msg =
+        this.language === 'zh'
+          ? `对称目标点 (${destX}, ${destY}) 盘踞着凶恶怪物，无法安全着陆！`
+          : `Symmetric destination (${destX}, ${destY}) is occupied by a monster!`;
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    // 消耗 1 次飞行器
+    this.playerStats.inventory.center_fly--;
+    if (this.playerStats.inventory.center_fly <= 0) {
+      delete this.playerStats.inventory.center_fly;
+    }
+
+    // 瞬移位置
+    this.playerPos.x = destX;
+    this.playerPos.y = destY;
+    sound.playVictory();
+
+    const succMsg =
+      this.language === 'zh'
+        ? `中心对称跃迁成功！从 (${curX}, ${curY}) 飞跃至 (${destX}, ${destY})！`
+        : `Center-symmetric teleport success! (${curX}, ${curY}) -> (${destX}, ${destY})!`;
+    if (onFloating) onFloating(succMsg, '#c084fc', 3000);
+
+    // 如果目标点有道具，自动拾取
+    if (destTile.type === 'item' && destTile.itemType) {
+      this.collectItem(destTile.itemType, destX, destY, onTileChange, onFloating);
+    }
+
+    // 如果目标点是上下楼梯
+    if (destTile.type === 'stairs_up') {
+      this.changeFloor(this.currentFloor + 1, 'up');
+    } else if (destTile.type === 'stairs_down') {
+      this.changeFloor(this.currentFloor - 1, 'down');
+    }
+
+    this.notify();
+    return true;
   }
 
   // 拾取道具逻辑
@@ -1515,6 +1692,9 @@ export class GameState {
         elderGiftsGiven: { ...this.elderGiftsGiven },
         isFloor23PuzzleSolved: this.isFloor23PuzzleSolved,
         floor23VisitedTiles: Array.from(this.floor23VisitedTiles),
+        floor39Clock3Opened: this.floor39Clock3Opened,
+        floor39Clock12Opened: this.floor39Clock12Opened,
+        isFloor39PuzzleSolved: this.isFloor39PuzzleSolved,
       };
 
       localStorage.setItem(`mota3d_save_${slotId}`, JSON.stringify(slot));
@@ -1541,6 +1721,9 @@ export class GameState {
       this.elderGiftsGiven = slot.elderGiftsGiven ? { ...slot.elderGiftsGiven } : {};
       this.isFloor23PuzzleSolved = Boolean(slot.isFloor23PuzzleSolved);
       this.floor23VisitedTiles = new Set(slot.floor23VisitedTiles || []);
+      this.floor39Clock3Opened = Boolean(slot.floor39Clock3Opened);
+      this.floor39Clock12Opened = Boolean(slot.floor39Clock12Opened);
+      this.isFloor39PuzzleSolved = Boolean(slot.isFloor39PuzzleSolved);
 
       this.floorCache.clear();
       for (const fNum in slot.floorStates) {

@@ -1082,7 +1082,7 @@ export function getPickupNotification(
   }
   if (itemType === 'center_fly') {
     return {
-      text: lang === 'zh' ? '获得【中心飞行器】！' : 'Obtained [Center Flight Wing]!',
+      text: lang === 'zh' ? '获得神器【中心对称飞行器】！(按 J 键进行时空对称跃迁)' : 'Obtained [Center Flyer]! (Press J to teleport symmetrically)',
       color: '#c084fc',
     };
   }

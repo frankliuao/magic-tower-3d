@@ -6045,6 +6045,8 @@ export class ModelFactory {
       return this.createSnowCrystalMesh();
     } else if (itemType === 'thief_shovel') {
       return this.createShovelMesh();
+    } else if (itemType === 'center_fly') {
+      return this.createCenterFlyMesh();
     } else {
       // 默认道具箱
       const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
@@ -6461,6 +6463,102 @@ export class ModelFactory {
     shovelG.rotation.x = Math.PI / 12;
     shovelG.position.y = 0.22;
     group.add(shovelG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 中心对称飞行器 (Center Flyer / 筋斗云时空神翼)
+  static createCenterFlyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_center_fly';
+
+    // 材质定义：时空紫晶与圣金流光
+    const wingMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd8b4fe,
+      emissive: 0x9333ea,
+      emissiveIntensity: 0.65,
+      transmission: 0.6,
+      roughness: 0.2,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.5,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const coreCrystalMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf0abfc,
+      emissive: 0xa855f7,
+      emissiveIntensity: 0.9,
+      roughness: 0.1,
+      transmission: 0.5,
+      transparent: true,
+      opacity: 0.95,
+    });
+
+    const flyG = new THREE.Group();
+
+    // 1. 核心时空八面体能量水晶 (Chronocrystal Core)
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), coreCrystalMat);
+    core.position.y = 0.38;
+    flyG.add(core);
+
+    // 2. 环绕核心的星轨时钟金环 (Orbit Chrono Ring)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.016, 8, 32), goldMat);
+    ring.rotation.x = Math.PI / 3;
+    ring.position.y = 0.38;
+    flyG.add(ring);
+
+    // 3. 对称羽翼构型 (Symmetric Celestial Wings)
+    const createWing = (isRight: boolean): THREE.Group => {
+      const wing = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+
+      // 主羽 (Primary Feather)
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.018), wingMat);
+      f1.rotation.z = sign * 0.45;
+      f1.position.set(sign * 0.14, 0.08, 0);
+
+      // 次羽 (Secondary Feather)
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.045, 0.016), wingMat);
+      f2.rotation.z = sign * 0.25;
+      f2.position.set(sign * 0.13, 0.02, 0);
+
+      // 底羽 (Lower Feather)
+      const f3 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.04, 0.014), wingMat);
+      f3.rotation.z = sign * 0.05;
+      f3.position.set(sign * 0.10, -0.04, 0);
+
+      wing.add(f1, f2, f3);
+      return wing;
+    };
+
+    const leftWing = createWing(false);
+    leftWing.position.set(-0.06, 0.38, 0);
+    const rightWing = createWing(true);
+    rightWing.position.set(0.06, 0.38, 0);
+
+    flyG.add(leftWing, rightWing);
+
+    // 4. 底部微型对称指针轴 (Chrono Needle Marker)
+    const needleV = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.01), goldMat);
+    needleV.position.y = 0.38;
+    const needleH = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.01), goldMat);
+    needleH.position.y = 0.38;
+    flyG.add(needleV, needleH);
+
+    group.add(flyG);
 
     group.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) {
