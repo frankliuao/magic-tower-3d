@@ -150,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }
               {getEquipName(playerStats.shield, lang)}
             </span>
           </div>
-          <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+          <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-700/60">
             {playerStats.inventory.monster_manual ? (
               <span className="px-1.5 py-0.5 bg-emerald-950/60 border border-emerald-500/50 rounded text-[10px] text-emerald-300 font-medium flex items-center gap-1">
                 <BookOpen className="w-3 h-3" /> {t.relicManual}
@@ -166,17 +166,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }
                 <Cross className="w-3 h-3" /> {t.relicCross}
               </span>
             ) : null}
-            {playerStats.inventory.center_fly ? (
-              <button
-                onClick={() => onUseCenterFly?.()}
-                title={lang === 'zh' ? '中心对称飞行器 (快捷键 J): 点击在当前楼层瞬间对称跃迁' : 'Center Flyer (Hotkey J): Teleport symmetrically across current floor'}
-                className="px-1.5 py-0.5 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/60 hover:border-purple-400 rounded text-[10px] text-purple-300 font-medium flex items-center gap-1 transition-all shadow-sm active:scale-95 cursor-pointer"
-              >
-                <Zap className="w-3 h-3 text-purple-400 animate-pulse" />
-                <span>{lang === 'zh' ? '中心飞' : 'Flyer'}</span>
-                {playerStats.inventory.center_fly > 1 ? <span className="text-[9px] font-bold text-purple-200">x{playerStats.inventory.center_fly}</span> : null}
-              </button>
-            ) : null}
             {!playerStats.inventory.monster_manual &&
               !playerStats.inventory.compass &&
               !playerStats.inventory.cross &&
@@ -184,6 +173,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }
                 <span className="text-[11px] text-slate-500 italic">{t.noRelics}</span>
               )}
           </div>
+          {playerStats.inventory.center_fly ? (
+            <div className="pt-2 border-t border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => onUseCenterFly?.()}
+                title={lang === 'zh' ? '神器【中心对称飞行器】(永久法宝，快捷键 J): 点击瞬间跃迁至对称坐标' : 'Sacred [Center Flyer] (Permanent relic, hotkey J): Click to teleport to center-symmetric tile'}
+                className="w-full py-1.5 px-2.5 bg-gradient-to-r from-purple-900/90 via-fuchsia-950/80 to-purple-900/90 hover:from-purple-800 hover:to-fuchsia-900 border border-purple-400/80 rounded-lg text-xs text-purple-200 font-bold flex items-center justify-between shadow-md hover:shadow-purple-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-purple-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '中心对称飞行器' : 'Center Flyer'}</span>
+                </div>
+                <kbd className="px-1.5 py-0.5 bg-purple-950/90 border border-purple-500/60 rounded text-[10px] text-purple-300 font-mono shadow-inner">
+                  J
+                </kbd>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

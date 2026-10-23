@@ -429,17 +429,6 @@ export class GameState {
 
     // 3. 门交互
     if (tile.type === 'door_yellow') {
-      // 39F 时钟解谜：中央大门封印，需先开启 3 点钟与 12 点钟大门
-      if (this.currentFloor === 39 && targetX === 3 && targetY === 3 && !this.isFloor39PuzzleSolved) {
-        sound.playError();
-        const msg = this.language === 'zh'
-          ? '时钟核心大门被时空阵法封印！遵循智慧老人的指引，开启【3点钟】与【12点钟】之门以唤醒神迹！'
-          : 'The Clock Core is sealed by chronomancy! Follow the Sage: unlock the [3 o\'clock] and [12 o\'clock] gates to awaken the relic!';
-        if (onFloating) onFloating(msg, '#c084fc', 3500);
-        this.notify();
-        return;
-      }
-
       if (this.playerStats.yellowKeys > 0) {
         this.playerStats.yellowKeys--;
         floor.layout[targetY][targetX] = { type: 'floor' };
@@ -633,7 +622,7 @@ export class GameState {
       }
     }
 
-    // 两扇关键门均已开启 -> 触发解谜成功！在 (3, 3) 生成中心对称飞行器
+    // 两扇关键门均已开启 -> 触发解谜成功！在 (3, 3) 瓦解铁笼，显现中心对称飞行器
     if (this.floor39Clock3Opened && this.floor39Clock12Opened && !this.isFloor39PuzzleSolved) {
       this.isFloor39PuzzleSolved = true;
       sound.playVictory();
@@ -641,12 +630,12 @@ export class GameState {
       const centerTile: Tile = { type: 'item', itemType: 'center_fly' };
       floor.layout[3][3] = centerTile;
       if (onTileChange) {
-        onTileChange(3, 3, false, centerTile);
+        onTileChange(3, 3, true, centerTile);
       }
       const winMsg =
         this.language === 'zh'
-          ? '时针与分针指向 3:00 整！时空矩阵共鸣爆发，神圣秘宝【中心对称飞行器】在中心现身！'
-          : 'Clock hands lock at 3:00! Spacetime resonates as the sacred [Center Flyer] appears in the center!';
+          ? '时针与分针指向 3:00 整！铁笼轰然解体，神圣秘宝【中心对称飞行器】现身！'
+          : 'Clock hands lock at 3:00! The iron cage shatters, revealing the sacred [Center Flyer]!';
       this.addNotification(winMsg, '#facc15', 5000);
       if (onFloating) onFloating(winMsg, '#facc15', 5000);
     }
@@ -720,11 +709,7 @@ export class GameState {
       return false;
     }
 
-    // 消耗 1 次飞行器
-    this.playerStats.inventory.center_fly--;
-    if (this.playerStats.inventory.center_fly <= 0) {
-      delete this.playerStats.inventory.center_fly;
-    }
+    // 永久神器：拥有后可持续无限次使用，不扣除物品！
 
     // 瞬移位置
     this.playerPos.x = destX;
@@ -1063,6 +1048,19 @@ export class GameState {
           reason: this.language === 'zh'
             ? '门被神秘力量锁住了，到23层去找找线索吧'
             : 'The gate is locked by a mysterious power. Seek clues on Floor 23.',
+        };
+      }
+      return { canOpen: true };
+    }
+
+    // 39F 时钟密室宝物铁笼：必须先解开时钟谜题
+    if (this.currentFloor === 39 && targetX === 3 && targetY === 3) {
+      if (!this.isFloor39PuzzleSolved) {
+        return {
+          canOpen: false,
+          reason: this.language === 'zh'
+            ? '有一个宝物锁在这里，但不知道怎么打开'
+            : 'A treasure is locked here, but I don\'t know how to open it.',
         };
       }
       return { canOpen: true };

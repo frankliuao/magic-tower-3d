@@ -264,6 +264,18 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Medium Guards defeated, the iron gate opens!',
   },
 
+  // 39F：中心对称飞行器宝物铁笼（开启 3 点钟与 12 点钟方向门后解开）
+  {
+    floor: 39,
+    doorX: 3,
+    doorY: 3,
+    guards: [],
+    reasonZh: '有一个宝物锁在这里，但不知道怎么打开',
+    reasonEn: 'A treasure is locked here, but I don\'t know how to open it.',
+    openZh: '时针与分针锁定 3:00！铁笼轰然解体，神圣秘宝【中心对称飞行器】现身！',
+    openEn: 'Clock hands lock at 3:00! The iron cage shatters, revealing the [Center Flyer]!',
+  },
+
   // 44F：高级卫兵守护神圣神盾
   {
     floor: 44,

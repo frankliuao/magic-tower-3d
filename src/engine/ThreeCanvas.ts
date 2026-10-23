@@ -402,6 +402,16 @@ export class ThreeCanvas {
               initialX: world.x,
               initialY: 0,
             });
+          } else if (tileObj.name === 'cage_center_fly') {
+            const innerFlyer = tileObj.getObjectByName('cage_inner_flyer');
+            if (innerFlyer) {
+              this.animatedItems.push({
+                type: 'item_rotate',
+                mesh: innerFlyer,
+                initialX: world.x,
+                initialY: 0,
+              });
+            }
           } else if (tileObj.name === 'altar') {
             this.animatedItems.push({
               type: 'altar',
@@ -650,6 +660,9 @@ export class ThreeCanvas {
       case 'door_red':
         return ModelFactory.createDoorMesh('red');
       case 'door_iron':
+        if (tile.itemType === 'center_fly') {
+          return ModelFactory.createFlyerCageMesh();
+        }
         return ModelFactory.createDoorMesh('iron');
       case 'monster':
         if (tile.monsterId) {

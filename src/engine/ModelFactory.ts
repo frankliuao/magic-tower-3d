@@ -6570,6 +6570,124 @@ export class ModelFactory {
     return group;
   }
 
+  // 39F 囚禁中心飞行器的神圣铁笼 (Iron Cage holding the Center Flyer)
+  static createFlyerCageMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'cage_center_fly';
+
+    const ironMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      metalness: 0.85,
+      roughness: 0.35,
+    });
+    const darkIronMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.9,
+      roughness: 0.4,
+    });
+    const goldLockMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.8,
+      roughness: 0.25,
+      emissive: 0xb45309,
+      emissiveIntensity: 0.3,
+    });
+
+    const cageGroup = new THREE.Group();
+
+    // 1. 底座方框与顶盖方框
+    const frameSize = 0.78;
+    const barThick = 0.035;
+    const cageHeight = 0.76;
+
+    const createSquareFrame = (yPos: number) => {
+      const f = new THREE.Group();
+      const bNorth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bNorth.position.set(0, yPos, -frameSize / 2);
+      const bSouth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bSouth.position.set(0, yPos, frameSize / 2);
+      const bWest = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bWest.position.set(-frameSize / 2, yPos, 0);
+      const bEast = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bEast.position.set(frameSize / 2, yPos, 0);
+      f.add(bNorth, bSouth, bWest, bEast);
+      return f;
+    };
+
+    cageGroup.add(createSquareFrame(0.04));
+    cageGroup.add(createSquareFrame(cageHeight));
+
+    // 2. 四角坚固方铁柱 (Corner Pillars)
+    const pillarGeom = new THREE.BoxGeometry(barThick * 1.2, cageHeight, barThick * 1.2);
+    const half = frameSize / 2;
+    const corners = [
+      [-half, -half],
+      [half, -half],
+      [-half, half],
+      [half, half],
+    ];
+    for (const [cx, cz] of corners) {
+      const p = new THREE.Mesh(pillarGeom, darkIronMat);
+      p.position.set(cx, cageHeight / 2, cz);
+      cageGroup.add(p);
+    }
+
+    // 3. 四个面的通透铁栅栏圆柱 (4-Sided Vertical Bars)
+    const barRadius = 0.013;
+    const barGeom = new THREE.CylinderGeometry(barRadius, barRadius, cageHeight - 0.04, 8);
+    const barOffsets = [-0.18, 0, 0.18];
+
+    // 南北面栅栏
+    for (const offset of barOffsets) {
+      const barN = new THREE.Mesh(barGeom, ironMat);
+      barN.position.set(offset, cageHeight / 2, -half);
+      const barS = new THREE.Mesh(barGeom, ironMat);
+      barS.position.set(offset, cageHeight / 2, half);
+      cageGroup.add(barN, barS);
+    }
+    // 东西面栅栏
+    for (const offset of barOffsets) {
+      const barW = new THREE.Mesh(barGeom, ironMat);
+      barW.position.set(-half, cageHeight / 2, offset);
+      const barE = new THREE.Mesh(barGeom, ironMat);
+      barE.position.set(half, cageHeight / 2, offset);
+      cageGroup.add(barW, barE);
+    }
+
+    // 4. 顶部十字加固梁 (Top Cross Grate)
+    const topCross1 = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick * 0.8, barThick * 0.8), darkIronMat);
+    topCross1.position.y = cageHeight;
+    const topCross2 = new THREE.Mesh(new THREE.BoxGeometry(barThick * 0.8, barThick * 0.8, frameSize), darkIronMat);
+    topCross2.position.y = cageHeight;
+    cageGroup.add(topCross1, topCross2);
+
+    // 5. 正面门锁与锁链 (Front Heavy Padlock)
+    const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.04), goldLockMat);
+    lockBody.position.set(0, cageHeight * 0.5, half + 0.02);
+    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16, Math.PI), ironMat);
+    shackle.position.set(0, cageHeight * 0.5 + 0.05, half + 0.02);
+    shackle.rotation.z = Math.PI;
+    cageGroup.add(lockBody, shackle);
+
+    group.add(cageGroup);
+
+    // 6. 囚禁在笼内的中心对称飞行器 (Floating & Glowing Center Flyer inside)
+    const innerFlyer = ModelFactory.createCenterFlyMesh();
+    innerFlyer.name = 'cage_inner_flyer';
+    innerFlyer.scale.set(0.85, 0.85, 0.85);
+    innerFlyer.position.set(0, -0.02, 0);
+    group.add(innerFlyer);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
   // =========================================================================
   // =========================================================================
   // 9. 传送光圈与空心光柱 (Portal Ground Ring & Hollow Light Cylinder)

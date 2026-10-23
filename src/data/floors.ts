@@ -1036,17 +1036,17 @@ function getFloor38(): FloorData {
 
 function getFloor39(): FloorData {
   const layout: Tile[][] = [
-    // 0F-6F 时钟神殿九宫格密室与东侧走廊
-    [T.wall(), T.wall(),  T.wall(),  T.wall(),  T.wall(),  T.wall(),  T.wall(), T.wall(), T.floor(), T.floor(), T.down()],
-    [T.wall(), T.doorY(), T.wall(),  T.doorY(), T.wall(),  T.doorY(), T.wall(), T.wall(), T.npc('trader'), T.floor(), T.floor()],
-    [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.floor(), T.floor(), T.item('key_yellow')],
-    [T.wall(), T.doorY(), T.wall(),  T.doorY(), T.wall(),  T.doorY(), T.wall(), T.wall(), T.wall(), T.doorY(), T.wall()],
-    [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.floor(), T.floor(), T.mon('warrior')],
-    [T.wall(), T.doorY(), T.wall(),  T.doorY(), T.wall(),  T.doorY(), T.wall(), T.wall(), T.mon('ghost'), T.wall(), T.item('gem_red')],
-    [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.floor(), T.floor(), T.mon('ghost_soldier')],
-    [T.wall(), T.doorB(), T.wall(),  T.wall(),  T.wall(),  T.wall(),  T.wall(), T.wall(), T.wall(), T.doorY(), T.wall()],
+    // 0F-6F 时钟神殿九宫格与开放大厅 (中间 (3, 3) 为关押中心飞行器的铁笼)
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.down()],
+    [T.floor(), T.doorY(), T.floor(), T.doorY(), T.floor(), T.doorY(), T.floor(), T.wall(), T.npc('trader'), T.floor(), T.floor()],
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.item('key_yellow')],
+    [T.floor(), T.doorY(), T.floor(), { type: 'door_iron', itemType: 'center_fly' }, T.floor(), T.doorY(), T.floor(), T.wall(), T.wall(), T.doorY(), T.wall()],
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.mon('warrior')],
+    [T.floor(), T.doorY(), T.floor(), T.doorY(), T.floor(), T.doorY(), T.floor(), T.wall(), T.mon('ghost'), T.wall(), T.item('gem_red')],
+    [T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.mon('ghost_soldier')],
+    [T.wall(),  T.doorB(), T.wall(),  T.wall(),  T.wall(),  T.wall(),  T.wall(),  T.wall(), T.wall(), T.doorY(), T.wall()],
     [T.floor(), T.floor(), T.mon('ghost_soldier'), T.wall(), T.mon('dual_swordsman'), T.item('gem_blue'), T.mon('knight'), T.wall(), T.floor(), T.mon('knight'), T.floor()],
-    [T.wall(), T.mon('ghost_soldier'), T.floor(), T.doorY(), T.floor(), T.wall(), T.floor(), T.doorY(), T.floor(), T.floor(), T.floor()],
+    [T.wall(),  T.mon('ghost_soldier'), T.floor(), T.doorY(), T.floor(), T.wall(), T.floor(), T.doorY(), T.floor(), T.floor(), T.floor()],
     [T.npc('elder'), T.floor(), T.item('key_yellow'), T.wall(), T.floor(), T.mon('ghost'), T.floor(), T.wall(), T.item('potion_red'), T.floor(), T.up()],
   ];
 
