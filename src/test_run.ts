@@ -2018,8 +2018,13 @@ clockGame.playerPos = { x: 3, y: 4, dir: 'up' };
 clockGame.move('up'); // 走入 (3, 3)
 assert(clockGame.playerPos.x === 3 && clockGame.playerPos.y === 3, '勇士顺利踏入中央 (3, 3) 格');
 assert(clockGame.playerStats.inventory.center_fly === 1, '成功拾取【中心对称飞行器】入背包！');
+assert(clockGame.isDialogueOpen === true, '拾取飞行器后成功弹出说明对话框');
+assert(clockGame.activeDialogue?.name.includes('中心对称飞行器'), '对话框展示秘宝名称');
+assert(clockGame.activeDialogue?.lines.some(l => l.includes('一次性消耗品')), '对话框明确说明该飞行器为一次性消耗品');
+clockGame.closeDialogue();
+assert(clockGame.isDialogueOpen === false, '对话框正常关闭');
 
-// 3. 验证中心对称飞行器 (永久神器·无限次使用·J 键跃迁功能)
+// 3. 验证中心对称飞行器 (一次性消耗品·点击跃迁功能)
 // (a) 对称目标点是实心墙壁时拒绝跳跃
 // 当前站在 (3, 3)，对称目标为 (10 - 3, 10 - 3) = (7, 7)，查看 (7, 7) 为实心墙壁
 assert(clockGame.getCurrentFloorData().layout[7][7]?.type === 'wall', '39F (7, 7) 为实心墙壁');
@@ -2033,15 +2038,10 @@ assert(clockGame.getCurrentFloorData().layout[4][9]?.type === 'floor', '39F (9, 
 const flySuccess = clockGame.useCenterFly();
 assert(flySuccess === true, '从 (1, 6) 成功执行中心对称跃迁！');
 assert(clockGame.playerPos.x === 9 && clockGame.playerPos.y === 4, '勇士精准瞬间降落在对称点 (9, 4)！');
-assert(clockGame.playerStats.inventory.center_fly === 1, '中心对称飞行器为永久神器，使用后不消耗，永久保留在背包！');
-
-// (c) 再次使用中心飞行器飞回 (1, 6)
-const flyBackSuccess = clockGame.useCenterFly();
-assert(flyBackSuccess === true, '再次使用中心飞行器成功跃迁！');
-assert(clockGame.playerPos.x === 1 && clockGame.playerPos.y === 6, '勇士瞬间飞回 (1, 6)！');
-assert(clockGame.playerStats.inventory.center_fly === 1, '多次使用后依然永久保留在背包');
+assert(clockGame.playerStats.inventory.center_fly === undefined, '中心对称飞行器为一次性消耗品，使用后正常消耗移除');
 
 // 4. 验证存档与读档持久化
+clockGame.playerStats.inventory.center_fly = 1;
 assert(clockGame.saveGame(99) === true, '成功写入包含 39F 时钟解谜与飞行器的测试存档');
 const restoreGame = new GameState();
 restoreGame.initGame();
@@ -2049,7 +2049,7 @@ assert(restoreGame.loadGame(99) === true, '成功读取测试存档');
 assert(restoreGame.isFloor39PuzzleSolved === true, '存档中 39F 时钟谜题已解决状态无损恢复');
 assert(restoreGame.floor39Clock3Opened === true, '3点钟门开启状态无损恢复');
 assert(restoreGame.floor39Clock12Opened === true, '12点钟门开启状态无损恢复');
-assert(restoreGame.playerStats.inventory.center_fly === 1, '中心飞行器永久神器状态无损恢复');
+assert(restoreGame.playerStats.inventory.center_fly === 1, '中心飞行器数量无损恢复');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

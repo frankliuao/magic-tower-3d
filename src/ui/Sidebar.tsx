@@ -178,16 +178,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ game, onMove, onUseCenterFly }
               <button
                 type="button"
                 onClick={() => onUseCenterFly?.()}
-                title={lang === 'zh' ? '神器【中心对称飞行器】(永久法宝，快捷键 J): 点击瞬间跃迁至对称坐标' : 'Sacred [Center Flyer] (Permanent relic, hotkey J): Click to teleport to center-symmetric tile'}
-                className="w-full py-1.5 px-2.5 bg-gradient-to-r from-purple-900/90 via-fuchsia-950/80 to-purple-900/90 hover:from-purple-800 hover:to-fuchsia-900 border border-purple-400/80 rounded-lg text-xs text-purple-200 font-bold flex items-center justify-between shadow-md hover:shadow-purple-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-purple-400/40"
+                title={lang === 'zh' ? '点击使用【中心对称飞行器】(一次性消耗品，点击跃迁至对称坐标)' : 'Click to use [Center Flyer] (One-time consumable, teleports to symmetric tile)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-purple-900/90 via-fuchsia-950/80 to-purple-900/90 hover:from-purple-800 hover:to-fuchsia-900 border border-purple-400/80 rounded-lg text-xs text-purple-200 font-bold flex items-center justify-between shadow-md hover:shadow-purple-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-purple-400/40"
               >
                 <div className="flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
-                  <span className="tracking-wide">{lang === 'zh' ? '中心对称飞行器' : 'Center Flyer'}</span>
+                  <span className="tracking-wide">{lang === 'zh' ? '使用中心飞行器' : 'Use Center Flyer'}</span>
                 </div>
-                <kbd className="px-1.5 py-0.5 bg-purple-950/90 border border-purple-500/60 rounded text-[10px] text-purple-300 font-mono shadow-inner">
-                  J
-                </kbd>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-normal">
+                  {lang === 'zh' ? '一次性' : '1x Use'}
+                </span>
               </button>
             </div>
           ) : null}

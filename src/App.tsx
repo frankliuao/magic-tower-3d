@@ -485,11 +485,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.code === 'KeyJ' && !game.isDialogueOpen && !game.isShopOpen && !game.isExpShopOpen) {
-        handleUseCenterFly();
-        return;
-      }
-
       if (e.code === 'Space' && !hasModal) {
         e.preventDefault();
         threeEngineRef.current?.resetCameraView();
@@ -525,7 +520,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [game, handleMove, handleUseCenterFly, stopAutoWalk, addFloating, t.spaceResetFloating]);
+  }, [game, handleMove, stopAutoWalk, addFloating, t.spaceResetFloating]);
 
   // 重新开始游戏
   const handleRestart = useCallback(() => {

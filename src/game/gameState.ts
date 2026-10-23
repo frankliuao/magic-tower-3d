@@ -159,26 +159,40 @@ export class GameState {
 
   public setLanguage(lang: Language) {
     this.language = lang;
-    if (this.activeDialogue && this.activeDialogue.npcId) {
-      const tradeId = (this.activeDialogue.npcId === 'trader' || this.activeDialogue.npcId === 'merchant')
-        ? `trader_${this.currentFloor}f`
-        : undefined;
-      const isBought = tradeId ? !!this.tradersBought[tradeId] : false;
-      const hasGift = (this.activeDialogue.npcId === 'elder' || (this.activeDialogue.npcId === 'thief' && this.currentFloor === 29))
-        ? !!this.elderGiftsGiven[`${this.activeDialogue.npcId}_${this.currentFloor}f`]
-        : false;
-      const hasShovel = Boolean(this.playerStats.inventory.thief_shovel);
+    if (this.activeDialogue) {
+      if (this.activeDialogue.npcId === 'item_center_fly') {
+        this.activeDialogue.name = lang === 'zh' ? '秘宝【中心对称飞行器】' : 'Relic [Center Flyer]';
+        this.activeDialogue.lines =
+          lang === 'zh'
+            ? [
+                '你获得了稀世秘宝【中心对称飞行器】！\n\n此宝物蕴含深奥的时空法则，使用后可将你瞬间传送至当前楼层的中心对称位置 (10 - x, 10 - y)。',
+                '【特别注意】：\n此飞行器为【一次性消耗品】，使用一次后能量耗尽即会损毁消失！\n\n为防止按键误触浪费，游戏中未设置键盘快捷键。请在关键时刻，深思熟虑后点击左侧状态栏的【使用中心飞行器】按钮开启跃迁！',
+              ]
+            : [
+                'You obtained the rare relic [Center Flyer]!\n\nImbued with spacetime symmetry, it teleports you to the center-symmetric coordinate (10 - x, 10 - y) on the current floor.',
+                '[IMPORTANT NOTICE]:\nThis flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use!\n\nTo prevent accidental misuse, no keyboard hotkey is assigned. Please click the [Use Center Flyer] button in the left sidebar when you are ready to leap!',
+              ];
+      } else if (this.activeDialogue.npcId) {
+        const tradeId = (this.activeDialogue.npcId === 'trader' || this.activeDialogue.npcId === 'merchant')
+          ? `trader_${this.currentFloor}f`
+          : undefined;
+        const isBought = tradeId ? !!this.tradersBought[tradeId] : false;
+        const hasGift = (this.activeDialogue.npcId === 'elder' || (this.activeDialogue.npcId === 'thief' && this.currentFloor === 29))
+          ? !!this.elderGiftsGiven[`${this.activeDialogue.npcId}_${this.currentFloor}f`]
+          : false;
+        const hasShovel = Boolean(this.playerStats.inventory.thief_shovel);
 
-      const dlg = getDialogueData(this.activeDialogue.npcId, lang, this.currentFloor, isBought, hasGift, hasShovel);
-      if (dlg) {
-        this.activeDialogue.name = dlg.name;
-        if (isBought && this.activeDialogue.trade?.isBought && tradeId && TRADER_FLOOR_OFFERS[this.currentFloor]) {
-          this.activeDialogue.lines = [...TRADER_FLOOR_OFFERS[this.currentFloor].linesAfter[lang]];
-        } else {
-          this.activeDialogue.lines = [...dlg.lines];
-        }
-        if (dlg.trade) {
-          this.activeDialogue.trade = dlg.trade;
+        const dlg = getDialogueData(this.activeDialogue.npcId, lang, this.currentFloor, isBought, hasGift, hasShovel);
+        if (dlg) {
+          this.activeDialogue.name = dlg.name;
+          if (isBought && this.activeDialogue.trade?.isBought && tradeId && TRADER_FLOOR_OFFERS[this.currentFloor]) {
+            this.activeDialogue.lines = [...TRADER_FLOOR_OFFERS[this.currentFloor].linesAfter[lang]];
+          } else {
+            this.activeDialogue.lines = [...dlg.lines];
+          }
+          if (dlg.trade) {
+            this.activeDialogue.trade = dlg.trade;
+          }
         }
       }
     }
@@ -709,7 +723,11 @@ export class GameState {
       return false;
     }
 
-    // 永久神器：拥有后可持续无限次使用，不扣除物品！
+    // 一次性消耗品：消耗 1 次飞行器
+    this.playerStats.inventory.center_fly--;
+    if (this.playerStats.inventory.center_fly <= 0) {
+      delete this.playerStats.inventory.center_fly;
+    }
 
     // 瞬移位置
     this.playerPos.x = destX;
@@ -718,9 +736,9 @@ export class GameState {
 
     const succMsg =
       this.language === 'zh'
-        ? `中心对称跃迁成功！从 (${curX}, ${curY}) 飞跃至 (${destX}, ${destY})！`
-        : `Center-symmetric teleport success! (${curX}, ${curY}) -> (${destX}, ${destY})!`;
-    if (onFloating) onFloating(succMsg, '#c084fc', 3000);
+        ? `中心对称跃迁成功！从 (${curX}, ${curY}) 飞跃至 (${destX}, ${destY})！（飞行器已消耗）`
+        : `Center-symmetric teleport success! (${curX}, ${curY}) -> (${destX}, ${destY})! (Flyer consumed)`;
+    if (onFloating) onFloating(succMsg, '#c084fc', 3500);
 
     // 如果目标点有道具，自动拾取
     if (destTile.type === 'item' && destTile.itemType) {
@@ -872,7 +890,26 @@ export class GameState {
       sound.playItem();
     } else if (itemType === 'center_fly') {
       this.playerStats.inventory.center_fly = (this.playerStats.inventory.center_fly || 0) + 1;
-      sound.playItem();
+      sound.playVictory();
+
+      // 拾取中心对称飞行器时弹出专属说明对话框，说明是一次性的
+      this.activeDialogue = {
+        name: this.language === 'zh' ? '秘宝【中心对称飞行器】' : 'Relic [Center Flyer]',
+        avatar: '🪽',
+        lines:
+          this.language === 'zh'
+            ? [
+                '你获得了稀世秘宝【中心对称飞行器】！\n\n此宝物蕴含深奥的时空法则，使用后可将你瞬间传送至当前楼层的中心对称位置 (10 - x, 10 - y)。',
+                '【特别注意】：\n此飞行器为【一次性消耗品】，使用一次后能量耗尽即会损毁消失！\n\n为防止按键误触浪费，游戏中未设置键盘快捷键。请在关键时刻，深思熟虑后点击左侧状态栏的【使用中心飞行器】按钮开启跃迁！',
+              ]
+            : [
+                'You obtained the rare relic [Center Flyer]!\n\nImbued with spacetime symmetry, it teleports you to the center-symmetric coordinate (10 - x, 10 - y) on the current floor.',
+                '[IMPORTANT NOTICE]:\nThis flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use!\n\nTo prevent accidental misuse, no keyboard hotkey is assigned. Please click the [Use Center Flyer] button in the left sidebar when you are ready to leap!',
+              ],
+        currentIndex: 0,
+        npcId: 'item_center_fly',
+      };
+      this.isDialogueOpen = true;
     } else if (itemType === 'thief_shovel') {
       this.playerStats.inventory.thief_shovel = 1;
       sound.playItem();
