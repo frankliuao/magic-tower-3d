@@ -394,7 +394,9 @@ export const InspectCard: React.FC<InspectCardProps> = ({
     // 5. 传送光圈 (Stairs)
     if (tile?.type === 'stairs_up' || tile?.type === 'stairs_down') {
       const isUp = tile.type === 'stairs_up';
-      const destFloor = isUp ? game.currentFloor + 1 : game.currentFloor - 1;
+      const destFloor = isUp
+        ? (game.currentFloor === 43 ? 45 : game.currentFloor + 1)
+        : (game.currentFloor === 45 ? 43 : game.currentFloor - 1);
       const title = isUp
         ? lang === 'zh'
           ? '传送光圈 · 向上'

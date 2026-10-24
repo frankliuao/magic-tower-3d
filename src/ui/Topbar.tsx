@@ -5,8 +5,6 @@ import { sound } from '../audio/sound';
 import { useI18n } from '../i18n';
 import { isDebugAllowed } from '../utils/env';
 import {
-  Compass,
-  BookOpen,
   Save,
   RotateCcw,
   Volume2,
@@ -18,18 +16,42 @@ import {
 
 interface TopbarProps {
   game: GameState;
-  onOpenManual: () => void;
-  onOpenTeleport: () => void;
   onOpenDebug: () => void;
   onRestart: () => void;
   onQuickSave: () => void;
   onQuickLoad: () => void;
 }
 
+/**
+ * 背景音乐关闭图标（带鲜明斜杠，贯穿音符并带有微切缝遮罩，醒目体现关闭/禁音状态）
+ */
+const MusicOff: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <defs>
+      <mask id="music-slash-mask">
+        <rect width="24" height="24" fill="white" />
+        <path d="M22 2 2 22" stroke="black" strokeWidth="4" strokeLinecap="round" />
+      </mask>
+    </defs>
+    <g mask="url(#music-slash-mask)">
+      <circle cx="8" cy="18" r="4" />
+      <path d="M12 18V2l7 4" />
+    </g>
+    <path d="M22 2 2 22" strokeWidth="2.4" />
+  </svg>
+);
+
 export const Topbar: React.FC<TopbarProps> = ({
   game,
-  onOpenManual,
-  onOpenTeleport,
   onOpenDebug,
   onRestart,
   onQuickSave,
@@ -60,26 +82,6 @@ export const Topbar: React.FC<TopbarProps> = ({
 
       {/* 核心快捷功能按钮 */}
       <div className="flex items-center gap-2">
-        {/* 怪物手册 */}
-        <button
-          onClick={onOpenManual}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 rounded-lg text-xs font-bold text-emerald-300 shadow transition-all hover:scale-105 active:scale-95"
-          title={`${t.monsterManualBtn} (L)`}
-        >
-          <BookOpen className="w-4 h-4 text-emerald-400" />
-          {t.monsterManualBtn}
-        </button>
-
-        {/* 楼层罗盘 */}
-        <button
-          onClick={onOpenTeleport}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/60 rounded-lg text-xs font-bold text-cyan-300 shadow transition-all hover:scale-105 active:scale-95"
-          title={`${t.floorJumpBtn} (G)`}
-        >
-          <Compass className="w-4 h-4 text-cyan-400" />
-          {t.floorJumpBtn}
-        </button>
-
         {/* 快速存档 */}
         <button
           onClick={onQuickSave}
@@ -116,10 +118,14 @@ export const Topbar: React.FC<TopbarProps> = ({
         {/* 背景音乐开关 */}
         <button
           onClick={toggleBgm}
-          className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-slate-300 transition-all"
-          title={bgmEnabled ? 'BGM ON' : 'BGM OFF'}
+          className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-slate-300 transition-all cursor-pointer"
+          title={bgmEnabled ? t.bgmMuteTip : t.bgmUnmuteTip}
         >
-          <Music2 className={`w-4 h-4 ${bgmEnabled ? 'text-amber-400' : 'text-rose-400 opacity-50'}`} />
+          {bgmEnabled ? (
+            <Music2 className="w-4 h-4 text-green-400" />
+          ) : (
+            <MusicOff className="w-4 h-4 text-rose-400" />
+          )}
         </button>
 
         {/* 调试菜单 (仅在本地开发环境可见，生产环境与 GitHub Pages 彻底隐匿以保障可玩性) */}

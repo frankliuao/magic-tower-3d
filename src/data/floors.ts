@@ -1177,7 +1177,7 @@ function getFloor44(): FloorData {
 
   return {
     floorNumber: 44,
-    name: '44F 神秘星空 (神圣神盾)',
+    name: '44F 神秘星空 (神圣之盾)',
     layout,
     upStairsPos: { x: 0, y: 0 },
     downStairsPos: { x: 0, y: 10 },

@@ -15,6 +15,8 @@ export interface Translations {
   loadBtn: string;
   muteTip: string;
   unmuteTip: string;
+  bgmMuteTip: string;
+  bgmUnmuteTip: string;
   debugTip: string;
   restartTip: string;
   langToggleTip: string;
@@ -199,6 +201,23 @@ export interface Translations {
   debugWarpBtn: string;
   debugClearBtn: string;
 
+  // Confirm Center Fly Modal
+  confirmCenterFlyTitle: string;
+  confirmCenterFlyDesc: string;
+  confirmCenterFlyWarning: string;
+  confirmCenterFlyOk: string;
+  confirmCenterFlyCancel: string;
+
+  // Confirm Up Fly Modal
+  confirmUpFlyTitle: string;
+  confirmUpFlyDesc43: string;
+  confirmUpFlyDescOther: string;
+  confirmUpFlyBlocked49: string;
+  confirmUpFlyBlocked50: string;
+  confirmUpFlyWarning: string;
+  confirmUpFlyOk: string;
+  confirmUpFlyCancel: string;
+
   // Notifications
   savedSuccess: string;
   loadSuccess: string;
@@ -218,6 +237,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     loadBtn: '读盘',
     muteTip: '静音',
     unmuteTip: '开启音效',
+    bgmMuteTip: '关闭背景音乐',
+    bgmUnmuteTip: '开启背景音乐',
     debugTip: '开发者作弊与数值调试',
     restartTip: '重新开始游戏',
     langToggleTip: '切换为英文 (Switch to English)',
@@ -402,6 +423,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     debugWarpBtn: '立即传送',
     debugClearBtn: '一键清空当前楼层所有怪物',
 
+    // Confirm Center Fly Modal
+    confirmCenterFlyTitle: '确认使用【时空飞行器】？',
+    confirmCenterFlyDesc: '即将瞬移传送至目标地面。确定要立即开启跃迁吗？',
+    confirmCenterFlyWarning: '【特别注意】：此飞行器为一次性消耗品，使用一次后能量耗尽即会损毁消失！',
+    confirmCenterFlyOk: '确认传送',
+    confirmCenterFlyCancel: '取消',
+
+    // Confirm Up Fly Modal
+    confirmUpFlyTitle: '确认使用【向上飞行器】？',
+    confirmUpFlyDesc43: '【时空共鸣】：感应到正上方存在隐藏的【44F 圣盾密室】结界！使用向上飞行器可直接突破空间结界，升入 44 层获取顶级【神圣之盾】。确定立即开启升层吗？',
+    confirmUpFlyDescOther: '即将使用【向上飞行器】直升一层（从 {from}F 飞往 {to}F）。\n\n【关键警示】：经典魔塔中，向上飞行器最核心的战略价值是用于突破 43 层结界以进入隐藏的【44F 圣盾密室】。若在当前楼层消耗，后续将无法进入 44 层获取顶级神圣盾！确定要现在使用吗？',
+    confirmUpFlyBlocked49: '【结界阻隔】：49层魔能结界剧烈波动，上方通向 50 层的路径已被魔王封印，向上飞行器无法突破决战封印！',
+    confirmUpFlyBlocked50: '当前已是最高层（50F 魔塔之巅），无法向上飞行！',
+    confirmUpFlyWarning: '【特别注意】：此飞行器为一次性消耗品，使用后立即从背包中移除！',
+    confirmUpFlyOk: '确认升层',
+    confirmUpFlyCancel: '取消',
+
     // Notifications
     savedSuccess: '进度已成功保存至槽位 1',
     loadSuccess: '已成功读取存档',
@@ -419,6 +457,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     loadBtn: 'Load',
     muteTip: 'Mute Audio',
     unmuteTip: 'Unmute Audio',
+    bgmMuteTip: 'Mute Music',
+    bgmUnmuteTip: 'Play Music',
     debugTip: 'Developer Debug & Cheats',
     restartTip: 'Restart Game',
     langToggleTip: 'Switch to Chinese (切换为中文)',
@@ -603,6 +643,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     debugWarpBtn: 'Warp Now',
     debugClearBtn: 'Clear all monsters on current floor',
 
+    // Confirm Center Fly Modal
+    confirmCenterFlyTitle: 'Confirm Use [Chrono Flyer]?',
+    confirmCenterFlyDesc: 'You are about to teleport to the selected destination. Activate teleportation now?',
+    confirmCenterFlyWarning: '[NOTICE]: This flyer is a one-time consumable and will be destroyed upon use!',
+    confirmCenterFlyOk: 'Confirm Teleport',
+    confirmCenterFlyCancel: 'Cancel',
+
+    // Confirm Up Fly Modal
+    confirmUpFlyTitle: 'Confirm Use [Up Flyer]?',
+    confirmUpFlyDesc43: '[Spacetime Resonance]: Detected the hidden [44F Holy Shield Vault] barrier above! Using the Up Flyer will breach the seal and ascend directly to Floor 44 to claim the legendary Sacred Shield. Confirm ascension now?',
+    confirmUpFlyDescOther: 'About to use [Up Flyer] to ascend one floor (from {from}F to {to}F).\n\n[Warning]: In Magic Tower, this item is crucially required to breach Floor 43 barrier and access the hidden [44F Holy Shield Vault]. If consumed now, you will be unable to access Floor 44 and its Holy Shield! Are you sure you want to proceed?',
+    confirmUpFlyBlocked49: '[Barrier Blocked]: Floor 49 magic barrier disrupts vertical flight to Floor 50! Cannot ascend from this floor.',
+    confirmUpFlyBlocked50: 'Already on the highest floor (50F Tower Peak), cannot fly up!',
+    confirmUpFlyWarning: '[NOTICE]: This flyer is a one-time consumable and will be permanently removed upon use!',
+    confirmUpFlyOk: 'Confirm Ascend',
+    confirmUpFlyCancel: 'Cancel',
+
     // Notifications
     savedSuccess: 'Game successfully saved to Slot 1',
     loadSuccess: 'Game loaded successfully',
@@ -697,7 +754,7 @@ export const ITEM_NAMES: Record<string, { zh: string; en: string }> = {
   shield_silver: { zh: '银盾', en: 'Silver Shield' },
   shield_knight: { zh: '骑士盾', en: 'Knight Shield' },
   shield_holy: { zh: '圣光之盾', en: 'Holy Shield' },
-  shield_sacred: { zh: '神圣神盾', en: 'Sacred Shield' },
+  shield_sacred: { zh: '神圣之盾', en: 'Sacred Shield' },
   monster_manual: { zh: '怪物手册', en: 'Monster Manual' },
   compass: { zh: '楼层罗盘', en: 'Floor Compass' },
   cross: { zh: '神圣十字架', en: 'Holy Cross' },
@@ -710,7 +767,7 @@ export const ITEM_NAMES: Record<string, { zh: string; en: string }> = {
   snow_crystal: { zh: '冰冻雪花', en: 'Snow Crystal' },
   down_fly: { zh: '向下飞行器', en: 'Down Flyer' },
   up_fly: { zh: '向上飞行器', en: 'Up Flyer' },
-  center_fly: { zh: '中心飞行器', en: 'Center Flyer' },
+  center_fly: { zh: '时空飞行器', en: 'Chrono Flyer' },
   sword_dragon: { zh: '屠龙之刃', en: 'Dragon Slayer' },
   thief_shovel: { zh: '小偷的铲子', en: "Thief's Shovel" },
 };
@@ -761,7 +818,7 @@ export const FLOOR_NAMES: Record<number, { zh: string; en: string }> = {
   41: { zh: '41F 黄金回廊', en: '41F Golden Gallery' },
   42: { zh: '42F 辉煌神堂', en: '42F Radiant Shrine' },
   43: { zh: '43F 圣光之盾密室', en: '43F Holy Shield Vault' },
-  44: { zh: '44F 神圣神盾星殿', en: '44F Sacred Shield Star Chamber' },
+  44: { zh: '44F 神圣之盾星殿', en: '44F Sacred Shield Star Chamber' },
   45: { zh: '45F 极天之梯', en: '45F Empyrean Stairs' },
   46: { zh: '46F 终极祈祷神坛', en: '46F Ultimate Prayer Altar' },
   47: { zh: '47F 圣光之剑宝库', en: '47F Holy Sword Treasury' },
@@ -992,7 +1049,7 @@ export function getPickupNotification(
   }
   if (itemType === 'shield_sacred') {
     return {
-      text: lang === 'zh' ? '获得神盾【神圣神盾】防御 +150！' : 'Obtained [Sacred Shield] DEF +150!',
+      text: lang === 'zh' ? '获得神盾【神圣之盾】防御 +150！' : 'Obtained [Sacred Shield] DEF +150!',
       color: '#38bdf8',
     };
   }
@@ -1082,7 +1139,7 @@ export function getPickupNotification(
   }
   if (itemType === 'center_fly') {
     return {
-      text: lang === 'zh' ? '获得秘宝【中心对称飞行器】！(一次性道具)' : 'Obtained [Center Flyer]! (One-time consumable)',
+      text: lang === 'zh' ? '获得秘宝【时空飞行器】！(一次性道具)' : 'Obtained [Chrono Flyer]! (One-time consumable)',
       color: '#c084fc',
     };
   }
@@ -2053,7 +2110,8 @@ export function getEquipName(name: string | null | undefined, lang: Language): s
     银盾: { zh: '银盾', en: 'Silver Shield' },
     骑士盾: { zh: '骑士盾', en: 'Knight Shield' },
     圣光之盾: { zh: '圣光之盾', en: 'Holy Shield' },
-    神圣神盾: { zh: '神圣神盾', en: 'Sacred Shield' },
+    神圣之盾: { zh: '神圣之盾', en: 'Sacred Shield' },
+    神圣神盾: { zh: '神圣之盾', en: 'Sacred Shield' },
   };
   return map[name]?.[lang] || name;
 }

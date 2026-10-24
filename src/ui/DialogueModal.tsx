@@ -49,7 +49,10 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
         {/* 对话文本 (字体增大 40%: 由 14px 增至 20px) */}
         <div className="p-7 min-h-[140px] flex items-center">
           <p className="text-slate-100 text-[20px] leading-[1.75] font-medium tracking-wide whitespace-pre-line">
-            {dialogue.lines[dialogue.currentIndex]}
+            {dialogue.lines[dialogue.currentIndex]
+              ?.replace(/当前楼层的中心对称位置\s*\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点')
+              ?.replace(/当前楼层与地图中心对称的位置/g, '关于中心对称的点')
+              ?.replace(/\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点')}
           </p>
         </div>
 

@@ -161,16 +161,24 @@ export class GameState {
     this.language = lang;
     if (this.activeDialogue) {
       if (this.activeDialogue.npcId === 'item_center_fly') {
-        this.activeDialogue.name = lang === 'zh' ? '秘宝【中心对称飞行器】' : 'Relic [Center Flyer]';
+        this.activeDialogue.name = lang === 'zh' ? '秘宝【时空飞行器】' : 'Relic [Chrono Flyer]';
         this.activeDialogue.lines =
           lang === 'zh'
             ? [
-                '你获得了稀世秘宝【中心对称飞行器】！\n\n此宝物蕴含深奥的时空法则，使用后可将你瞬间传送至当前楼层的中心对称位置 (10 - x, 10 - y)。',
-                '【特别注意】：\n此飞行器为【一次性消耗品】，使用一次后能量耗尽即会损毁消失！\n\n为防止按键误触浪费，游戏中未设置键盘快捷键。请在关键时刻，深思熟虑后点击左侧状态栏的【使用中心飞行器】按钮开启跃迁！',
+                '你获得了稀世秘宝【时空飞行器】！\n\n此宝物蕴含超越维度的时空法则，使用后可将你瞬间传送至当前楼层的任意通畅地面。\n\n【特别注意】：此飞行器为【一次性消耗品】，使用后能量耗尽即损毁！请在左侧边栏深思熟虑后点击开启跃迁。',
               ]
             : [
-                'You obtained the rare relic [Center Flyer]!\n\nImbued with spacetime symmetry, it teleports you to the center-symmetric coordinate (10 - x, 10 - y) on the current floor.',
-                '[IMPORTANT NOTICE]:\nThis flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use!\n\nTo prevent accidental misuse, no keyboard hotkey is assigned. Please click the [Use Center Flyer] button in the left sidebar when you are ready to leap!',
+                'You obtained the rare relic [Chrono Flyer]!\n\nImbued with transcendental spacetime magic, it teleports you to any open floor tile on the current level.\n\n[NOTICE]: This flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use. Click the button in the left sidebar when ready.',
+              ];
+      } else if (this.activeDialogue.npcId === 'item_up_fly') {
+        this.activeDialogue.name = lang === 'zh' ? '秘宝【向上飞行器】' : 'Relic [Up Flyer]';
+        this.activeDialogue.lines =
+          lang === 'zh'
+            ? [
+                '你获得了稀世秘宝【向上飞行器】！\n\n魔塔中隐藏着【44F 圣盾密室】，常规楼梯无法到达，必须在 43 层使用此飞行器方可突破结界直达 44 层获取至尊【神圣之盾】！\n\n【特别提示】：此道具为【一次性消耗品】，已在左侧栏就绪，请深思熟虑后点击使用。',
+              ]
+            : [
+                'You obtained the rare relic [Up Flyer]!\n\nThe tower conceals the hidden [44F Holy Shield Vault]! You must use this flyer on Floor 43 to breach the spatial barrier and claim the legendary [Sacred Shield]!\n\n[NOTICE]: This flyer is a ONE-TIME CONSUMABLE. Click the button in the left sidebar when ready.',
               ];
       } else if (this.activeDialogue.npcId) {
         const tradeId = (this.activeDialogue.npcId === 'trader' || this.activeDialogue.npcId === 'merchant')
@@ -540,12 +548,15 @@ export class GameState {
     }
 
     // 6. 楼梯跳转 (上楼 / 下楼)
+    // 经典魔塔规则：44F 为隐藏楼层，43F 与 45F 之间的常规楼梯直接互通跳过 44F
     if (tile.type === 'stairs_up') {
-      this.changeFloor(this.currentFloor + 1, 'up');
+      const nextFloor = this.currentFloor === 43 ? 45 : this.currentFloor + 1;
+      this.changeFloor(nextFloor, 'up');
       return;
     }
     if (tile.type === 'stairs_down') {
-      this.changeFloor(this.currentFloor - 1, 'down');
+      const prevFloor = this.currentFloor === 45 ? 43 : this.currentFloor - 1;
+      this.changeFloor(prevFloor, 'down');
       return;
     }
 
@@ -636,7 +647,7 @@ export class GameState {
       }
     }
 
-    // 两扇关键门均已开启 -> 触发解谜成功！在 (3, 3) 瓦解铁笼，显现中心对称飞行器
+    // 两扇关键门均已开启 -> 触发解谜成功！在 (3, 3) 瓦解铁笼，显现时空飞行器
     if (this.floor39Clock3Opened && this.floor39Clock12Opened && !this.isFloor39PuzzleSolved) {
       this.isFloor39PuzzleSolved = true;
       sound.playVictory();
@@ -648,36 +659,40 @@ export class GameState {
       }
       const winMsg =
         this.language === 'zh'
-          ? '时针与分针指向 3:00 整！铁笼轰然解体，神圣秘宝【中心对称飞行器】现身！'
-          : 'Clock hands lock at 3:00! The iron cage shatters, revealing the sacred [Center Flyer]!';
+          ? '时针与分针指向 3:00 整！铁笼轰然解体，神圣秘宝【时空飞行器】现身！'
+          : 'Clock hands lock at 3:00! The iron cage shatters, revealing the sacred [Chrono Flyer]!';
       this.addNotification(winMsg, '#facc15', 5000);
       if (onFloating) onFloating(winMsg, '#facc15', 5000);
     }
   }
 
-  // 使用中心对称飞行器 (在当前楼层进行中心对称跃迁)
-  public useCenterFly(
+  // 使用时空飞行器：瞬移至当前楼层的任意通畅地面
+  public useFreeFly(
+    destX: number,
+    destY: number,
     onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
     onFloating?: (txt: string, col: string, duration?: number) => void
   ): boolean {
     if (!this.playerStats.inventory.center_fly || this.playerStats.inventory.center_fly <= 0) {
       sound.playError();
-      const msg = this.language === 'zh' ? '背包中没有中心对称飞行器！' : 'No Center Flyer in inventory!';
+      const msg = this.language === 'zh' ? '背包中没有时空飞行器！' : 'No Chrono Flyer in inventory!';
       if (onFloating) onFloating(msg, '#ef4444');
       return false;
     }
 
     const curX = this.playerPos.x;
     const curY = this.playerPos.y;
-    const destX = 10 - curX;
-    const destY = 10 - curY;
+
+    if (destX < 0 || destX > 10 || destY < 0 || destY > 10) {
+      sound.playError();
+      const msg = this.language === 'zh' ? '目标点超出地图范围！' : 'Destination out of bounds!';
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
 
     if (destX === curX && destY === curY) {
       sound.playError();
-      const msg =
-        this.language === 'zh'
-          ? '当前正处于地图对称中心 (5, 5)，无法进行对称跳跃！'
-          : 'Already at the map center (5, 5). Cannot teleport symmetrically!';
+      const msg = this.language === 'zh' ? '勇士已在当前位置！' : 'Already at current position!';
       if (onFloating) onFloating(msg, '#ef4444');
       return false;
     }
@@ -693,10 +708,7 @@ export class GameState {
       destTile.type === 'lava'
     ) {
       sound.playError();
-      const msg =
-        this.language === 'zh'
-          ? `对称目标点 (${destX}, ${destY}) 为实心障碍，无法安全着陆！`
-          : `Symmetric destination (${destX}, ${destY}) is blocked by solid obstacles!`;
+      const msg = this.language === 'zh' ? '目标点为障碍物，无法安全着陆！' : 'Destination is blocked by obstacles!';
       if (onFloating) onFloating(msg, '#ef4444');
       return false;
     }
@@ -704,10 +716,7 @@ export class GameState {
     // 无法跳跃进入未开启的门
     if (destTile.type.startsWith('door_')) {
       sound.playError();
-      const msg =
-        this.language === 'zh'
-          ? `对称目标点 (${destX}, ${destY}) 为封闭大门，无法直接穿越！`
-          : `Symmetric destination (${destX}, ${destY}) is a closed gate!`;
+      const msg = this.language === 'zh' ? '目标点为封闭大门，无法直接穿越！' : 'Destination is a closed gate!';
       if (onFloating) onFloating(msg, '#ef4444');
       return false;
     }
@@ -715,10 +724,7 @@ export class GameState {
     // 无法跳跃进入怪物格
     if (destTile.type === 'monster') {
       sound.playError();
-      const msg =
-        this.language === 'zh'
-          ? `对称目标点 (${destX}, ${destY}) 盘踞着凶恶怪物，无法安全着陆！`
-          : `Symmetric destination (${destX}, ${destY}) is occupied by a monster!`;
+      const msg = this.language === 'zh' ? '目标点盘踞着凶恶怪物，无法安全着陆！' : 'Destination is occupied by a monster!';
       if (onFloating) onFloating(msg, '#ef4444');
       return false;
     }
@@ -736,8 +742,8 @@ export class GameState {
 
     const succMsg =
       this.language === 'zh'
-        ? `中心对称跃迁成功！从 (${curX}, ${curY}) 飞跃至 (${destX}, ${destY})！（飞行器已消耗）`
-        : `Center-symmetric teleport success! (${curX}, ${curY}) -> (${destX}, ${destY})! (Flyer consumed)`;
+        ? `时空跃迁成功！已瞬移至目标位置 (${destX}, ${destY})！（飞行器已消耗）`
+        : `Chrono teleport success! Teleported to (${destX}, ${destY})! (Flyer consumed)`;
     if (onFloating) onFloating(succMsg, '#c084fc', 3500);
 
     // 如果目标点有道具，自动拾取
@@ -747,10 +753,82 @@ export class GameState {
 
     // 如果目标点是上下楼梯
     if (destTile.type === 'stairs_up') {
-      this.changeFloor(this.currentFloor + 1, 'up');
+      const nextFloor = this.currentFloor === 43 ? 45 : this.currentFloor + 1;
+      this.changeFloor(nextFloor, 'up');
     } else if (destTile.type === 'stairs_down') {
-      this.changeFloor(this.currentFloor - 1, 'down');
+      const prevFloor = this.currentFloor === 45 ? 43 : this.currentFloor - 1;
+      this.changeFloor(prevFloor, 'down');
     }
+
+    this.notify();
+    return true;
+  }
+
+  // 兼容调用：中心对称跃迁（封装自由传送）
+  public useCenterFly(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    const destX = 10 - this.playerPos.x;
+    const destY = 10 - this.playerPos.y;
+    return this.useFreeFly(destX, destY, onTileChange, onFloating);
+  }
+
+  /**
+   * 使用【向上飞行器】：
+   * 使勇士瞬间垂直上升一层。
+   * 经典魔塔核心规则：
+   * 1. 43F 使用可突破空间结界，升入隐藏的【44F 圣盾密室】（获取顶级防具神圣盾）
+   * 2. 49F 受到假魔王魔法结界阻隔，无法飞跃至 50F
+   * 3. 50F 已经是塔顶，无法向上飞行
+   * 4. 消耗 1 个 up_fly
+   */
+  public useUpFly(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.up_fly || this.playerStats.inventory.up_fly <= 0) {
+      const msg = this.language === 'zh' ? '背包中没有向上飞行器！' : 'No Up Flyer in inventory!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    if (this.currentFloor >= 50) {
+      const msg =
+        this.language === 'zh'
+          ? '当前已是最高层（50F 魔塔之巅），无法向上飞行！'
+          : 'Already on the highest floor (50F), cannot fly up!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    if (this.currentFloor === 49) {
+      const msg =
+        this.language === 'zh'
+          ? '49层魔能结界剧烈波动，向上飞行器无法突破决战封印！'
+          : 'Floor 49 magic barrier disrupts vertical flight!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const targetFloor = this.currentFloor + 1;
+    this.playerStats.inventory.up_fly -= 1;
+    this.changeFloor(targetFloor, 'up');
+
+    sound.playVictory();
+    const successMsg =
+      this.language === 'zh'
+        ? targetFloor === 44
+          ? '成功突破空间结界，升入隐藏的【44F 圣盾密室】！（消耗向上飞行器）'
+          : `向上跃迁成功！已升至 ${targetFloor} 层！（消耗向上飞行器）`
+        : targetFloor === 44
+        ? 'Breached spatial seal, ascended to hidden [44F Holy Shield Vault]! (Flyer consumed)'
+        : `Ascended successfully to Floor ${targetFloor}! (Flyer consumed)`;
+    this.addNotification(successMsg, '#a78bfa');
+    if (onFloating) onFloating(successMsg, '#a78bfa', 4000);
 
     this.notify();
     return true;
@@ -846,7 +924,7 @@ export class GameState {
       sound.playVictory();
     } else if (itemType === 'shield_sacred') {
       this.playerStats.def += 150;
-      this.playerStats.shield = '神圣神盾';
+      this.playerStats.shield = '神圣之盾';
       sound.playVictory();
     }
     // 神器与消耗道具
@@ -887,24 +965,39 @@ export class GameState {
       sound.playItem();
     } else if (itemType === 'up_fly') {
       this.playerStats.inventory.up_fly = (this.playerStats.inventory.up_fly || 0) + 1;
-      sound.playItem();
+      sound.playVictory();
+
+      // 拾取向上飞行器时弹出专属说明对话框，说明是一次性的及经典魔塔用途（单弹窗总结）
+      this.activeDialogue = {
+        name: this.language === 'zh' ? '秘宝【向上飞行器】' : 'Relic [Up Flyer]',
+        avatar: '🚀',
+        lines:
+          this.language === 'zh'
+            ? [
+                '你获得了稀世秘宝【向上飞行器】！\n\n魔塔中隐藏着【44F 圣盾密室】，常规楼梯无法到达，必须在 43 层使用此飞行器方可突破结界直达 44 层获取至尊【神圣之盾】！\n\n【特别提示】：此道具为【一次性消耗品】，已在左侧栏就绪，请深思熟虑后点击使用。',
+              ]
+            : [
+                'You obtained the rare relic [Up Flyer]!\n\nThe tower conceals the hidden [44F Holy Shield Vault]! You must use this flyer on Floor 43 to breach the spatial barrier and claim the legendary [Sacred Shield]!\n\n[NOTICE]: This flyer is a ONE-TIME CONSUMABLE. Click the button in the left sidebar when ready.',
+              ],
+        currentIndex: 0,
+        npcId: 'item_up_fly',
+      };
+      this.isDialogueOpen = true;
     } else if (itemType === 'center_fly') {
       this.playerStats.inventory.center_fly = (this.playerStats.inventory.center_fly || 0) + 1;
       sound.playVictory();
 
-      // 拾取中心对称飞行器时弹出专属说明对话框，说明是一次性的
+      // 拾取时空飞行器时弹出专属说明对话框，说明是一次性的
       this.activeDialogue = {
-        name: this.language === 'zh' ? '秘宝【中心对称飞行器】' : 'Relic [Center Flyer]',
+        name: this.language === 'zh' ? '秘宝【时空飞行器】' : 'Relic [Chrono Flyer]',
         avatar: '🪽',
         lines:
           this.language === 'zh'
             ? [
-                '你获得了稀世秘宝【中心对称飞行器】！\n\n此宝物蕴含深奥的时空法则，使用后可将你瞬间传送至当前楼层的中心对称位置 (10 - x, 10 - y)。',
-                '【特别注意】：\n此飞行器为【一次性消耗品】，使用一次后能量耗尽即会损毁消失！\n\n为防止按键误触浪费，游戏中未设置键盘快捷键。请在关键时刻，深思熟虑后点击左侧状态栏的【使用中心飞行器】按钮开启跃迁！',
+                '你获得了稀世秘宝【时空飞行器】！\n\n此宝物蕴含超越维度的时空法则，使用后可将你瞬间传送至当前楼层的任意通畅地面。\n\n【特别注意】：此飞行器为【一次性消耗品】，使用后能量耗尽即损毁！请在左侧边栏深思熟虑后点击开启跃迁。',
               ]
             : [
-                'You obtained the rare relic [Center Flyer]!\n\nImbued with spacetime symmetry, it teleports you to the center-symmetric coordinate (10 - x, 10 - y) on the current floor.',
-                '[IMPORTANT NOTICE]:\nThis flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use!\n\nTo prevent accidental misuse, no keyboard hotkey is assigned. Please click the [Use Center Flyer] button in the left sidebar when you are ready to leap!',
+                'You obtained the rare relic [Chrono Flyer]!\n\nImbued with transcendental spacetime magic, it teleports you to any open floor tile on the current level.\n\n[NOTICE]: This flyer is a ONE-TIME CONSUMABLE and will be destroyed upon use. Click the button in the left sidebar when ready.',
               ],
         currentIndex: 0,
         npcId: 'item_center_fly',
@@ -1114,6 +1207,14 @@ export class GameState {
       };
     }
 
+    // 无守卫怪物的特殊铁门（若未在上方的特殊逻辑中放行）不可直接开启
+    if (!rule.guards || rule.guards.length === 0) {
+      return {
+        canOpen: false,
+        reason: this.language === 'zh' ? rule.reasonZh : rule.reasonEn,
+      };
+    }
+
     const floor = this.getCurrentFloorData();
     const anyAlive = rule.guards.some((g) => this.isGuardAlive(floor.layout, g.x, g.y));
     if (anyAlive) {
@@ -1140,6 +1241,9 @@ export class GameState {
 
     for (const rule of rules) {
       if (floor.layout[rule.doorY]?.[rule.doorX]?.type !== 'door_iron') continue;
+      // 必须有守卫怪物的铁门才由击败守卫触发自动开启；
+      // 特殊机关门（guards 为空，如 0F 仙灵金币门、39F 时钟解谜铁笼）绝不可在此由击败普通怪物误触发开启！
+      if (!rule.guards || rule.guards.length === 0) continue;
       const anyAlive = rule.guards.some((g) => this.isGuardAlive(floor.layout, g.x, g.y));
       if (anyAlive) continue;
 

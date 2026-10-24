@@ -276,7 +276,7 @@ export const IRON_DOOR_RULES: IronDoorRule[] = [
     openEn: 'Clock hands lock at 3:00! The iron cage shatters, revealing the [Center Flyer]!',
   },
 
-  // 44F：高级卫兵守护神圣神盾
+  // 44F：高级卫兵守护神圣之盾
   {
     floor: 44,
     doorX: 5,

@@ -15,7 +15,9 @@ import { DialogueModal } from './ui/DialogueModal';
 import { GameOverModal } from './ui/GameOverModal';
 import { DebugPanel } from './ui/DebugPanel';
 import { InspectCard } from './ui/InspectCard';
-import { ZoomIn, ZoomOut, Target } from 'lucide-react';
+import { ConfirmCenterFlyModal } from './ui/ConfirmCenterFlyModal';
+import { ConfirmUpFlyModal } from './ui/ConfirmUpFlyModal';
+import { ZoomIn, ZoomOut, Target, Zap } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
 import { isDebugAllowed } from './utils/env';
 
@@ -80,6 +82,14 @@ export const App: React.FC = () => {
   // 视口平移与缩放状态
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const [isPanned, setIsPanned] = useState<boolean>(false);
+
+  // 时空飞行器任意瞬移选点模式与确认弹窗
+  const [isTargetingFly, setIsTargetingFly] = useState<boolean>(false);
+  const [warpTargetCoord, setWarpTargetCoord] = useState<{ x: number; y: number } | null>(null);
+  const [isConfirmCenterFlyOpen, setIsConfirmCenterFlyOpen] = useState<boolean>(false);
+
+  // 向上飞行器确认弹窗
+  const [isConfirmUpFlyOpen, setIsConfirmUpFlyOpen] = useState<boolean>(false);
 
   const addFloating = useCallback((text: string, color: string, customDuration?: number) => {
     // 智能推断展示停留时长：保证玩家有充分时间阅读剧情与首领通报，绝不一闪而过
@@ -206,6 +216,41 @@ export const App: React.FC = () => {
         return;
       }
 
+      // 处于【时空飞行器】选点模式中
+      if (isTargetingFly) {
+        if (gx === game.playerPos.x && gy === game.playerPos.y) {
+          sound.playError();
+          addFloating(lang === 'zh' ? '勇士已在当前位置！' : 'Already at current position!', '#ef4444');
+          return;
+        }
+
+        const floor = game.getCurrentFloorData();
+        const tile = floor.layout[gy]?.[gx];
+
+        if (!tile || tile.type === 'wall' || tile.type === 'fake_wall' || tile.type === 'lava') {
+          sound.playError();
+          addFloating(lang === 'zh' ? '目标点为障碍物，无法安全着陆！' : 'Target is blocked by obstacles!', '#ef4444');
+          return;
+        }
+
+        if (tile.type.startsWith('door_')) {
+          sound.playError();
+          addFloating(lang === 'zh' ? '目标点为封闭大门，无法直接穿越！' : 'Target is a closed gate!', '#ef4444');
+          return;
+        }
+
+        if (tile.type === 'monster') {
+          sound.playError();
+          addFloating(lang === 'zh' ? '目标点盘踞着凶恶怪物，无法安全着陆！' : 'Target is occupied by a monster!', '#ef4444');
+          return;
+        }
+
+        // 合法目标点：弹出确认弹窗
+        setWarpTargetCoord({ x: gx, y: gy });
+        setIsConfirmCenterFlyOpen(true);
+        return;
+      }
+
       const floor = game.getCurrentFloorData();
       const tile = floor.layout[gy]?.[gx] || null;
 
@@ -220,7 +265,7 @@ export const App: React.FC = () => {
       setSelectedTile({ x: gx, y: gy, tile });
       threeEngineRef.current?.setSelectedTile(gx, gy);
     },
-    [game]
+    [game, isTargetingFly, lang, addFloating]
   );
 
   const handleCloseInspect = useCallback(() => {
@@ -232,6 +277,7 @@ export const App: React.FC = () => {
   const handleEngageOrPath = useCallback(
     (targetX: number, targetY: number) => {
       if (
+        isTargetingFly ||
         game.isDialogueOpen ||
         game.isShopOpen ||
         game.isMonsterManualOpen ||
@@ -416,43 +462,70 @@ export const App: React.FC = () => {
     }
   }, [game.currentFloor, stopAutoWalk, handleCloseInspect]);
 
-  // 中心对称飞行器 (J 键或侧栏点击)
-  const handleUseCenterFly = useCallback(() => {
-    if (game.playerStats.inventory.center_fly) {
-      const success = game.useCenterFly(
-        (x, y, isDoor, newTile) => {
-          if (threeEngineRef.current) {
-            if (newTile && newTile.type !== 'floor') {
-              threeEngineRef.current.spawnTile(
-                x,
-                y,
-                newTile,
-                game.getCurrentFloorData().theme,
-                game.getCurrentFloorData().layout
-              );
-            } else {
-              threeEngineRef.current.removeTile(x, y, isDoor);
-            }
+  // 确认执行时空瞬移跃迁
+  const handleConfirmWarp = useCallback(() => {
+    if (!warpTargetCoord) return;
+    const { x, y } = warpTargetCoord;
+    setIsConfirmCenterFlyOpen(false);
+    setIsTargetingFly(false);
+    setWarpTargetCoord(null);
+
+    const success = game.useFreeFly(
+      x,
+      y,
+      (tx, ty, isDoor, newTile) => {
+        if (threeEngineRef.current) {
+          if (newTile && newTile.type !== 'floor') {
+            threeEngineRef.current.spawnTile(
+              tx,
+              ty,
+              newTile,
+              game.getCurrentFloorData().theme,
+              game.getCurrentFloorData().layout
+            );
+          } else {
+            threeEngineRef.current.removeTile(tx, ty, isDoor);
           }
-        },
-        (txt, col, duration) => addFloating(txt, col, duration)
+        }
+      },
+      (txt, col, duration) => addFloating(txt, col, duration)
+    );
+
+    if (success && threeEngineRef.current) {
+      threeEngineRef.current.updatePlayer(
+        game.playerPos.x,
+        game.playerPos.y,
+        game.playerPos.dir,
+        true
       );
-      if (success && threeEngineRef.current) {
-        threeEngineRef.current.updatePlayer(
-          game.playerPos.x,
-          game.playerPos.y,
-          game.playerPos.dir,
-          true
-        );
-      }
     }
-  }, [game, addFloating]);
+  }, [warpTargetCoord, game, addFloating]);
+
+  const handleCancelWarp = useCallback(() => {
+    setIsConfirmCenterFlyOpen(false);
+    setWarpTargetCoord(null);
+  }, []);
+
+  const handleConfirmUpFly = useCallback(() => {
+    setIsConfirmUpFlyOpen(false);
+    const success = game.useUpFly();
+    if (success) {
+      const fData = game.getCurrentFloorData();
+      if (threeEngineRef.current) {
+        threeEngineRef.current.setFloor(fData);
+        threeEngineRef.current.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir, true);
+      }
+      game.notify();
+    }
+  }, [game]);
 
   // 全局键盘事件监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 打开任意模态窗口时拦截普通方向移动
       const hasModal =
+        isConfirmCenterFlyOpen ||
+        isConfirmUpFlyOpen ||
         game.isMonsterManualOpen ||
         game.isFloorTeleportOpen ||
         game.isShopOpen ||
@@ -463,6 +536,21 @@ export const App: React.FC = () => {
         game.isDebugOpen;
 
       if (e.code === 'Escape') {
+        if (isConfirmUpFlyOpen) {
+          setIsConfirmUpFlyOpen(false);
+          return;
+        }
+        if (isConfirmCenterFlyOpen) {
+          setIsConfirmCenterFlyOpen(false);
+          setWarpTargetCoord(null);
+          return;
+        }
+        if (isTargetingFly) {
+          setIsTargetingFly(false);
+          setWarpTargetCoord(null);
+          addFloating(lang === 'zh' ? '已取消飞行传送' : 'Teleport cancelled', '#94a3b8');
+          return;
+        }
         handleCloseInspect();
         game.isMonsterManualOpen = false;
         game.isFloorTeleportOpen = false;
@@ -589,21 +677,43 @@ export const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen bg-slate-950 overflow-hidden select-none font-sans">
       {/* 左侧经典复古状态栏 */}
-      <Sidebar game={game} onMove={handleMove} onUseCenterFly={handleUseCenterFly} />
+      <Sidebar
+        game={game}
+        onMove={handleMove}
+        onOpenManual={() => {
+          game.isMonsterManualOpen = true;
+          game.notify();
+        }}
+        onOpenTeleport={() => {
+          game.isFloorTeleportOpen = true;
+          game.notify();
+        }}
+        onUseCenterFly={() => {
+          if (game.playerStats.inventory.center_fly) {
+            setSelectedTile(null);
+            threeEngineRef.current?.setSelectedTile(null, null);
+            setIsTargetingFly(true);
+            addFloating(
+              lang === 'zh'
+                ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
+                : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
+              '#c084fc',
+              4500
+            );
+          }
+        }}
+        onUseUpFly={() => {
+          if (game.playerStats.inventory.up_fly) {
+            setIsConfirmUpFlyOpen(true);
+          }
+        }}
+      />
 
       {/* 主游戏展示区 */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {/* 顶部工具栏 */}
         <Topbar
           game={game}
-          onOpenManual={() => {
-            game.isMonsterManualOpen = true;
-            game.notify();
-          }}
-          onOpenTeleport={() => {
-            game.isFloorTeleportOpen = true;
-            game.notify();
-          }}
           onOpenDebug={() => {
             if (!isDebugAllowed()) return;
             game.isDebugOpen = true;
@@ -620,6 +730,29 @@ export const App: React.FC = () => {
           className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: 'none' }}
         >
+          {/* 时空飞行器任意瞬移选点模式横幅指示 */}
+          {isTargetingFly && (
+            <div className="absolute top-4 inset-x-0 flex justify-center z-50 pointer-events-auto">
+              <div className="bg-purple-950/95 border-2 border-purple-400/80 rounded-2xl px-5 py-2.5 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-pulse">
+                <Zap className="w-5 h-5 text-yellow-300 animate-bounce" />
+                <span className="text-sm font-bold text-purple-100">
+                  {lang === 'zh'
+                    ? '【时空飞行器】：请点击地图上任意通畅地面进行传送'
+                    : '[Chrono Flyer]: Click any open floor tile on the map to teleport'}
+                </span>
+                <button
+                  onClick={() => {
+                    setIsTargetingFly(false);
+                    setWarpTargetCoord(null);
+                    addFloating(lang === 'zh' ? '已取消飞行传送' : 'Teleport cancelled', '#94a3b8');
+                  }}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold text-slate-300 hover:text-white cursor-pointer transition-all ml-1"
+                >
+                  {lang === 'zh' ? '取消 (ESC)' : 'Cancel (ESC)'}
+                </button>
+              </div>
+            </div>
+          )}
           {/* 屏幕顶部浮动消息通知栈 (垂直自然流排列，错峰登场，杜绝字体重叠与过快消失) */}
           <div className="absolute top-16 inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
             {floatingTexts.map((item) => (
@@ -835,6 +968,22 @@ export const App: React.FC = () => {
           onClearMonsters={handleClearMonsters}
         />
       )}
+
+      {/* 弹窗层：时空飞行器使用确认弹窗 */}
+      <ConfirmCenterFlyModal
+        isOpen={isConfirmCenterFlyOpen}
+        targetCoord={warpTargetCoord}
+        onConfirm={handleConfirmWarp}
+        onCancel={handleCancelWarp}
+      />
+
+      {/* 弹窗层：向上飞行器使用确认弹窗 */}
+      <ConfirmUpFlyModal
+        isOpen={isConfirmUpFlyOpen}
+        currentFloor={game.currentFloor}
+        onConfirm={handleConfirmUpFly}
+        onCancel={() => setIsConfirmUpFlyOpen(false)}
+      />
     </div>
   );
 };

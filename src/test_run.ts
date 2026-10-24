@@ -363,7 +363,7 @@ const f43 = getFloor(43);
 assert(f43.layout[3][8]?.type === 'item' && f43.layout[3][8]?.itemType === 'shield_holy', '第 43 层圣殿藏有【圣光之盾】');
 
 const f44 = getFloor(44);
-assert(f44.layout[5][5]?.type === 'item' && f44.layout[5][5]?.itemType === 'shield_sacred', '第 44 层星空中央藏有至尊神盾【神圣神盾】');
+assert(f44.layout[5][5]?.type === 'item' && f44.layout[5][5]?.itemType === 'shield_sacred', '第 44 层星空中央藏有至尊神盾【神圣之盾】');
 
 const f50 = getFloor(50);
 assert(f50.layout[5][5]?.type === 'monster' && f50.layout[5][5]?.monsterId === 'demon_lord', '第 50 层魔塔之巅盘踞终极【魔王】');
@@ -1768,6 +1768,13 @@ assert(TRANSLATIONS.zh.tipNotEnoughGold === '金币不足', '中文金币不足�
 assert(TRANSLATIONS.zh.tipNotEnoughExp === '经验不足', '中文经验不足提示正确');
 assert(TRANSLATIONS.zh.confirmBtn === '确认', '中文确认按钮正确');
 
+assert(TRANSLATIONS.zh.muteTip === '静音', '中文音效静音提示正确');
+assert(TRANSLATIONS.zh.unmuteTip === '开启音效', '中文开启音效提示正确');
+assert(TRANSLATIONS.zh.bgmMuteTip === '关闭背景音乐', '中文关闭背景音乐提示正确');
+assert(TRANSLATIONS.zh.bgmUnmuteTip === '开启背景音乐', '中文开启背景音乐提示正确');
+assert(TRANSLATIONS.en.bgmMuteTip === 'Mute Music' && !chineseRegex.test(TRANSLATIONS.en.bgmMuteTip), '英文关闭背景音乐无汉字');
+assert(TRANSLATIONS.en.bgmUnmuteTip === 'Play Music' && !chineseRegex.test(TRANSLATIONS.en.bgmUnmuteTip), '英文开启背景音乐无汉字');
+
 // 6. 验证金币/经验不足时无法购买以及足额时的购买逻辑
 const shopTestGame = new GameState();
 shopTestGame.playerStats.gold = 10;
@@ -1976,6 +1983,18 @@ clockGame.initGame();
 clockGame.currentFloor = 39;
 clockGame.playerStats.yellowKeys = 5;
 clockGame.playerStats.blueKeys = 1;
+clockGame.playerStats.hp = 99999;
+clockGame.playerStats.atk = 9999;
+clockGame.playerStats.def = 9999;
+
+// (0) 验证防误触逻辑：在 39F 击败通道怪物，绝对不可提前瓦解中央铁笼或提前发放宝物
+clockGame.playerPos = { x: 10, y: 3, dir: 'down' };
+let monsterFloatingMsg = '';
+clockGame.move('down', undefined, (txt) => { monsterFloatingMsg = txt; });
+assert(clockGame.isFloor39PuzzleSolved === false, '击败 39F 怪物后，时钟解谜绝不可提前判定完成！');
+assert(clockGame.getCurrentFloorData().layout[3][3]?.type === 'door_iron', '击败普通怪物后，(3, 3) 中央铁笼必须完好保持关闭');
+assert(clockGame.getCurrentFloorData().layout[3][3]?.itemType === 'center_fly', '铁笼内飞行器完好被关押');
+assert(!monsterFloatingMsg.includes('飞行器'), '战后不可派发飞行器现身浮动提示');
 
 // (a) 未解开谜题前，勇士试图打开中央铁笼 (3, 3)
 clockGame.playerPos = { x: 3, y: 4, dir: 'up' };
@@ -2009,36 +2028,39 @@ clockGame.move(
 );
 assert(clockGame.floor39Clock12Opened === true, '开启 (3, 1) 后，12点钟开门状态置为 true');
 assert(clockGame.isFloor39PuzzleSolved === true, '3点钟与12点钟均开启后，时钟解谜宣布大获全胜！');
-assert(clockGame.getCurrentFloorData().layout[3][3]?.type === 'item' && clockGame.getCurrentFloorData().layout[3][3]?.itemType === 'center_fly', '铁笼瓦解，神圣秘宝【中心对称飞行器】在中心现身！');
+assert(clockGame.getCurrentFloorData().layout[3][3]?.type === 'item' && clockGame.getCurrentFloorData().layout[3][3]?.itemType === 'center_fly', '铁笼瓦解，神圣秘宝【时空飞行器】在中心现身！');
 assert(spawnedTileType === 'item', '向三维场景派发生成道具消息');
-assert(winPuzzleMsg.includes('3:00') && winPuzzleMsg.includes('中心对称飞行器'), '弹出铁笼解体与中心对称飞行器现身广播');
+assert(winPuzzleMsg.includes('3:00') && winPuzzleMsg.includes('时空飞行器'), '弹出铁笼解体与时空飞行器现身广播');
 
-// (d) 勇士踏入中央 (3, 3) 拾取【中心对称飞行器】
+// (d) 勇士踏入中央 (3, 3) 拾取【时空飞行器】
 clockGame.playerPos = { x: 3, y: 4, dir: 'up' };
 clockGame.move('up'); // 走入 (3, 3)
 assert(clockGame.playerPos.x === 3 && clockGame.playerPos.y === 3, '勇士顺利踏入中央 (3, 3) 格');
-assert(clockGame.playerStats.inventory.center_fly === 1, '成功拾取【中心对称飞行器】入背包！');
+assert(clockGame.playerStats.inventory.center_fly === 1, '成功拾取【时空飞行器】入背包！');
 assert(clockGame.isDialogueOpen === true, '拾取飞行器后成功弹出说明对话框');
-assert(clockGame.activeDialogue?.name.includes('中心对称飞行器'), '对话框展示秘宝名称');
+assert(clockGame.activeDialogue?.name.includes('时空飞行器'), '对话框展示秘宝名称');
 assert(clockGame.activeDialogue?.lines.some(l => l.includes('一次性消耗品')), '对话框明确说明该飞行器为一次性消耗品');
+assert(clockGame.activeDialogue?.lines.every(l => !l.includes('10 - x') && !l.includes('10-x')), '对话框严禁包含 (10-x) 等技术性坐标公式');
+assert(clockGame.activeDialogue?.lines.some(l => l.includes('任意通畅地面')), '对话框包含“任意通畅地面”描述');
 clockGame.closeDialogue();
 assert(clockGame.isDialogueOpen === false, '对话框正常关闭');
 
-// 3. 验证中心对称飞行器 (一次性消耗品·点击跃迁功能)
-// (a) 对称目标点是实心墙壁时拒绝跳跃
-// 当前站在 (3, 3)，对称目标为 (10 - 3, 10 - 3) = (7, 7)，查看 (7, 7) 为实心墙壁
+// 3. 验证时空飞行器 (一次性消耗品·任意空地自由跃迁功能)
+// (a) 目标点是实心墙壁时拒绝跳跃
 assert(clockGame.getCurrentFloorData().layout[7][7]?.type === 'wall', '39F (7, 7) 为实心墙壁');
-const flyFailWall = clockGame.useCenterFly();
+const flyFailWall = clockGame.useFreeFly(7, 7);
 assert(flyFailWall === false, '目标点为墙壁时拒绝跃迁');
 assert(clockGame.playerStats.inventory.center_fly === 1, '跃迁失败不扣除飞行器');
 
-// (b) 移动至安全起飞点 (1, 6)，其对称点为 (9, 4)，为畅通地面
-clockGame.playerPos = { x: 1, y: 6, dir: 'up' };
+// (b) 目标点超出地图时拒绝跳跃
+assert(clockGame.useFreeFly(15, 15) === false, '目标点越界时拒绝跃迁');
+
+// (c) 移动至安全目标点 (9, 4)，为畅通地面
 assert(clockGame.getCurrentFloorData().layout[4][9]?.type === 'floor', '39F (9, 4) 为畅通地面');
-const flySuccess = clockGame.useCenterFly();
-assert(flySuccess === true, '从 (1, 6) 成功执行中心对称跃迁！');
-assert(clockGame.playerPos.x === 9 && clockGame.playerPos.y === 4, '勇士精准瞬间降落在对称点 (9, 4)！');
-assert(clockGame.playerStats.inventory.center_fly === undefined, '中心对称飞行器为一次性消耗品，使用后正常消耗移除');
+const flySuccess = clockGame.useFreeFly(9, 4);
+assert(flySuccess === true, '成功执行时空自由跃迁至 (9, 4)！');
+assert(clockGame.playerPos.x === 9 && clockGame.playerPos.y === 4, '勇士精准瞬间降落在目标点 (9, 4)！');
+assert(clockGame.playerStats.inventory.center_fly === undefined, '时空飞行器为一次性消耗品，使用后正常消耗移除');
 
 // 4. 验证存档与读档持久化
 clockGame.playerStats.inventory.center_fly = 1;
@@ -2050,6 +2072,126 @@ assert(restoreGame.isFloor39PuzzleSolved === true, '存档中 39F 时钟谜题�
 assert(restoreGame.floor39Clock3Opened === true, '3点钟门开启状态无损恢复');
 assert(restoreGame.floor39Clock12Opened === true, '12点钟门开启状态无损恢复');
 assert(restoreGame.playerStats.inventory.center_fly === 1, '中心飞行器数量无损恢复');
+
+// 26. 验证 44F 隐藏楼层机制与 45F 向上飞行器 (Up Flyer) 逻辑
+console.log('\n--- 26. 验证 44F 隐藏楼层机制与 45F 向上飞行器 (Up Flyer) 逻辑 ---');
+const flyGame = new GameState();
+flyGame.initGame();
+
+// 1. 验证 44F 初始未探索状态
+assert(!flyGame.exploredFloors.has(44), '44F 初始必须为未探索隐藏状态');
+
+// 2. 验证常规楼梯往返：43F 与 45F 互通并直接跳过 44F
+flyGame.changeFloor(43, 'up');
+assert(flyGame.currentFloor === 43, '勇士到达 43F');
+// 踏上 43F 上楼梯 (0, 10)
+flyGame.playerPos = { x: 0, y: 9, dir: 'down' };
+flyGame.move('down');
+assert(flyGame.currentFloor === 45, '43F 常规上楼梯直接通往 45F，跳过隐藏的 44F');
+assert(flyGame.playerPos.x === 0 && flyGame.playerPos.y === 0, '从 43F 上楼后降落在 45F 下楼梯口 (0, 0)');
+assert(!flyGame.exploredFloors.has(44), '常规上下楼往返后，44F 依然为未探索隐藏状态');
+
+// 踏上 45F 下楼梯 (0, 0)
+flyGame.playerPos = { x: 0, y: 1, dir: 'up' };
+flyGame.move('up');
+assert(flyGame.currentFloor === 43, '45F 常规下楼梯直接通往 43F，跳过隐藏的 44F');
+assert(flyGame.playerPos.x === 0 && flyGame.playerPos.y === 10, '从 45F 下楼后降落在 43F 上楼梯口 (0, 10)');
+
+// 3. 拾取 45F 的向上飞行器
+flyGame.changeFloor(45, 'up');
+const f45Layout = flyGame.getCurrentFloorData().layout;
+assert(f45Layout[9][1]?.type === 'item' && f45Layout[9][1]?.itemType === 'up_fly', '45F (1, 9) 藏有【向上飞行器】');
+flyGame.playerPos = { x: 1, y: 8, dir: 'down' };
+flyGame.move('down');
+assert(flyGame.playerStats.inventory.up_fly === 1, '勇士顺利拾取【向上飞行器】入背包');
+assert(flyGame.isDialogueOpen === true, '拾取向上飞行器后自动弹出剧情说明对话框');
+assert(flyGame.activeDialogue?.name?.includes('向上飞行器'), '对话框展示向上飞行器秘宝名称');
+assert(flyGame.activeDialogue?.lines.length === 1, '拾取提示已总结为一个独立弹窗 (杜绝翻页繁琐)');
+assert(flyGame.activeDialogue?.lines[0]?.includes('44F') && flyGame.activeDialogue?.lines[0]?.includes('一次性'), '单弹窗中明确揭露 44F 隐藏密室及一次性消耗属性');
+assert(!flyGame.activeDialogue?.lines[0]?.includes('核心秘密'), '弹窗用语自然亲切，严禁使用“核心秘密”');
+assert(flyGame.activeDialogue?.lines[0]?.includes('神圣之盾'), '宝物正名为【神圣之盾】');
+flyGame.isDialogueOpen = false;
+
+// 4. 验证顶层与结界层的限制
+flyGame.changeFloor(50, 'up');
+assert(flyGame.useUpFly() === false, '50F 塔顶使用向上飞行器直接拒绝');
+assert(flyGame.playerStats.inventory.up_fly === 1, '50F 飞行失败不扣除飞行器');
+
+flyGame.changeFloor(49, 'up');
+assert(flyGame.useUpFly() === false, '49F 假魔王结界阻断向上飞行');
+assert(flyGame.playerStats.inventory.up_fly === 1, '49F 飞行失败不扣除飞行器');
+
+// 5. 在 43F 使用【向上飞行器】突破结界进入隐藏 44F
+flyGame.changeFloor(43, 'up');
+assert(flyGame.useUpFly() === true, '43F 成功使用向上飞行器突破空间结界');
+assert(flyGame.currentFloor === 44, '勇士瞬间跃迁直升至隐藏的【44F 圣盾密室】！');
+assert(flyGame.playerStats.inventory.up_fly === 0, '向上飞行器为一次性消耗品，使用后成功消耗');
+assert(flyGame.exploredFloors.has(44), '44F 已被成功探索并记录在探索楼层集合中');
+assert(flyGame.playerPos.x === 0 && flyGame.playerPos.y === 10, '勇士安全降落在 44F 入口通道 (0, 10)');
+
+// 6. 验证 44F 内部楼梯能够顺畅离开
+flyGame.playerPos = { x: 0, y: 9, dir: 'down' };
+flyGame.move('down');
+assert(flyGame.currentFloor === 43, '44F 踏入下楼梯 (0, 10) 顺利下移至 43F');
+
+flyGame.changeFloor(44, 'up');
+flyGame.playerPos = { x: 0, y: 1, dir: 'up' };
+flyGame.move('up');
+assert(flyGame.currentFloor === 45, '44F 踏入上楼梯 (0, 0) 顺利上移至 45F');
+
+// 7. 验证向上飞行器与向下飞行器高精 3D 专属实体模型
+const upFlyMesh = ModelFactory.createItemMesh('up_fly');
+assert(upFlyMesh.name === 'item_up_fly', '向上飞行器拥有专属 3D 模型实体 (拒绝通用普通道具箱)');
+let upFlyParts = 0;
+upFlyMesh.traverse((child) => {
+  if ((child as any).isMesh) upFlyParts++;
+});
+assert(upFlyParts >= 10, `向上飞行器具象化冲霄飞升神翼、能量方尖核与金矢多重构件 (实际部件数: ${upFlyParts} >= 10)`);
+
+const downFlyMesh = ModelFactory.createItemMesh('down_fly');
+assert(downFlyMesh.name === 'item_down_fly', '向下飞行器拥有专属 3D 模型实体');
+
+// 8. 彻底杜绝全塔所有道具与宝物的通用荒木方块
+console.log('\n--- 27. 验证全塔宝物与道具 3D 建模完整性（绝无荒木方块） ---');
+const sacredShieldMesh = ModelFactory.createItemMesh('shield_sacred');
+assert(sacredShieldMesh.name === 'item_shield_sacred', '44F 神圣之盾拥有专属 3D 模型实体');
+let sacredShieldParts = 0;
+sacredShieldMesh.traverse((child) => {
+  if ((child as any).isMesh) sacredShieldParts++;
+});
+assert(sacredShieldParts >= 10, `神圣之盾由琉璃盾板、黄金展翼、圣十字光芒、天界光环与庇护法珠构成 (实际部件数: ${sacredShieldParts} >= 10)`);
+
+const bombMesh = ModelFactory.createItemMesh('bomb');
+assert(bombMesh.name === 'item_bomb', '炸弹拥有专属球形重爆雷与导火索火花模型');
+
+const earthquakeMesh = ModelFactory.createItemMesh('earthquake');
+assert(earthquakeMesh.name === 'item_earthquake', '地震卷轴拥有羊皮纸、滚轴、裂地符文与封蜡模型');
+
+const pickaxeMesh = ModelFactory.createItemMesh('pickaxe');
+assert(pickaxeMesh.name === 'item_pickaxe', '破墙镐拥有双向精钢弧形镐刃与防滑握柄');
+
+const goldKeyMesh = ModelFactory.createItemMesh('key_gold');
+assert(goldKeyMesh.name === 'item_key_gold', '大金钥匙拥有皇冠雕花弓、红宝石与万能钥匙齿');
+
+// 遍历游戏内登记的全部 33 种道具，确保无一例外拥有精美专属/高精模型
+const allItemKeys = Object.keys(ITEMS) as (keyof typeof ITEMS)[];
+for (const itKey of allItemKeys) {
+  const mesh = ModelFactory.createItemMesh(itKey as any);
+  assert(Boolean(mesh), `道具 [${itKey}] 能够成功实例化 3D Mesh`);
+  let partCount = 0;
+  mesh.traverse((child) => {
+    if ((child as any).isMesh) partCount++;
+  });
+  assert(partCount >= 1, `道具 [${itKey}] 包含有效三维几何体`);
+  // 严禁存在任何单一的 0.32 方形裸木块兜底
+  if (mesh.children.length === 1 && (mesh.children[0] as any).geometry?.type === 'BoxGeometry') {
+    const geom = (mesh.children[0] as any).geometry;
+    const params = geom.parameters;
+    const isGenericBox = params && params.width === 0.32 && params.height === 0.32 && params.depth === 0.32;
+    assert(!isGenericBox, `道具 [${itKey}] 严禁退化为 0.32 通用荒木方块`);
+  }
+}
+assert(allItemKeys.length >= 25, `已全面检验全塔 ${allItemKeys.length} 种宝物与道具模型，绝无荒木方块！`);
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
