@@ -319,8 +319,13 @@ export const InspectCard: React.FC<InspectCardProps> = ({
       const isBlue = tile.type === 'door_blue';
       const isRed = tile.type === 'door_red';
       const isIron = tile.type === 'door_iron';
+      const isCageFlyer = isIron && game.currentFloor === 39 && gridX === 3 && gridY === 3;
 
-      const doorName = isYellow
+      const doorName = isCageFlyer
+        ? lang === 'zh'
+          ? '神圣宝物铁笼'
+          : 'Sacred Relic Cage'
+        : isYellow
         ? lang === 'zh'
           ? '黄铜之门'
           : 'Yellow Gate'
@@ -389,7 +394,9 @@ export const InspectCard: React.FC<InspectCardProps> = ({
     // 5. 传送光圈 (Stairs)
     if (tile?.type === 'stairs_up' || tile?.type === 'stairs_down') {
       const isUp = tile.type === 'stairs_up';
-      const destFloor = isUp ? game.currentFloor + 1 : game.currentFloor - 1;
+      const destFloor = isUp
+        ? (game.currentFloor === 43 ? 45 : game.currentFloor + 1)
+        : (game.currentFloor === 45 ? 43 : game.currentFloor - 1);
       const title = isUp
         ? lang === 'zh'
           ? '传送光圈 · 向上'

@@ -5892,7 +5892,9 @@ export class ModelFactory {
     group.name = `item_${itemType}`;
 
     // 钥匙：精致复古金属骷髅钥匙 (Skeleton Key with Ring & Teeth)
-    if (itemType.startsWith('key_')) {
+    if (itemType === 'key_gold') {
+      return this.createGoldKeyMesh();
+    } else if (itemType.startsWith('key_')) {
       let keyColor = 0xfacc15;
       if (itemType === 'key_blue') keyColor = 0x38bdf8;
       if (itemType === 'key_red') keyColor = 0xef4444;
@@ -5930,11 +5932,9 @@ export class ModelFactory {
       group.add(gem);
     } else if (itemType.startsWith('potion_') || itemType === 'holy_water') {
       // 药水：玻璃炼金药剂瓶与冒泡药液 (Alchemy Flask with Glowing Potion)
-      // 用户规范：小血瓶与大血瓶必须均为红色生命药水，绝不可为蓝色，小血瓶相比大血瓶体型更加紧凑精巧
       const isSmallPotion = itemType === 'potion_red';
       const isBigPotion = itemType === 'potion_blue';
 
-      // 无论小血瓶还是大血瓶，均为红色药水 (小血瓶为鲜亮红宝石色，大血瓶为深邃赤红晶露)
       let liquidColor = 0xef4444;
       if (isBigPotion) liquidColor = 0xdc2626;
       if (itemType === 'holy_water') liquidColor = 0xa855f7;
@@ -5947,11 +5947,10 @@ export class ModelFactory {
         roughness: 0.1,
       });
 
-      // 瓶身体型分级：小血瓶小巧精致 (半径 0.17)，大血瓶饱满硕大 (半径 0.25)
       const flaskRadius = isSmallPotion ? 0.17 : isBigPotion ? 0.25 : 0.22;
       const bottleY = isSmallPotion ? 0.28 : isBigPotion ? 0.36 : 0.33;
       const neckRadius = isSmallPotion ? 0.065 : isBigPotion ? 0.092 : 0.082;
-      const neckHeight = isSmallPotion ? 0.14 : isBigPotion ? 0.20 : 0.17;
+      const neckHeight = isSmallPotion ? 0.14 : isBigPotion ? 0.2 : 0.17;
       const neckY = bottleY + flaskRadius * 0.86;
 
       const bottle = new THREE.Mesh(new THREE.SphereGeometry(flaskRadius, 16, 16), glassMat);
@@ -5968,7 +5967,7 @@ export class ModelFactory {
       liquid.position.y = bottleY - 0.015;
 
       const corkRadius = neckRadius * 0.9;
-      const corkHeight = isSmallPotion ? 0.08 : 0.10;
+      const corkHeight = isSmallPotion ? 0.08 : 0.1;
       const cork = new THREE.Mesh(
         new THREE.CylinderGeometry(corkRadius, corkRadius, corkHeight),
         new THREE.MeshStandardMaterial({ color: 0x92400e })
@@ -5977,7 +5976,6 @@ export class ModelFactory {
 
       group.add(bottle, neck, liquid, cork);
 
-      // 大血瓶专属：颈部装饰华丽纯金项圈以凸显大血瓶的尊贵高阶效力
       if (isBigPotion) {
         const goldRing = new THREE.Mesh(
           new THREE.TorusGeometry(neckRadius * 1.06, 0.016, 8, 16),
@@ -5988,31 +5986,15 @@ export class ModelFactory {
         group.add(goldRing);
       }
     } else if (itemType.startsWith('sword_')) {
-      // 武器剑类
-      const bladeMat = new THREE.MeshStandardMaterial({
-        color: 0xf8fafc,
-        metalness: 0.95,
-        roughness: 0.1,
-      });
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.65, 0.02), bladeMat);
-      blade.position.y = 0.45;
-      const hilt = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.22),
-        new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 })
-      );
-      hilt.position.y = 0.1;
-      group.add(blade, hilt);
-      group.rotation.z = Math.PI / 4;
+      return this.createSwordMesh(itemType);
     } else if (itemType.startsWith('shield_')) {
-      // 防具盾类
-      const shieldMat = new THREE.MeshStandardMaterial({
-        color: 0x475569,
-        metalness: 0.85,
-        roughness: 0.2,
-      });
-      const shield = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.52, 0.08), shieldMat);
-      shield.position.y = 0.42;
-      group.add(shield);
+      return this.createShieldMesh(itemType);
+    } else if (itemType === 'bomb') {
+      return this.createBombMesh();
+    } else if (itemType === 'earthquake') {
+      return this.createEarthquakeMesh();
+    } else if (itemType === 'pickaxe') {
+      return this.createPickaxeMesh();
     } else if (itemType === 'lucky_coin') {
       // 幸运金币 (Lucky Gold Coin - 璀璨黄金巨币与发光星纹)
       const goldMat = new THREE.MeshStandardMaterial({
@@ -6045,12 +6027,15 @@ export class ModelFactory {
       return this.createSnowCrystalMesh();
     } else if (itemType === 'thief_shovel') {
       return this.createShovelMesh();
+    } else if (itemType === 'center_fly') {
+      return this.createCenterFlyMesh();
+    } else if (itemType === 'up_fly') {
+      return this.createUpFlyMesh();
+    } else if (itemType === 'down_fly') {
+      return this.createDownFlyMesh();
     } else {
-      // 默认道具箱
-      const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), boxMat);
-      box.position.y = 0.32;
-      group.add(box);
+      // 彻底杜绝荒木方块：兜底亦为精致宝藏密箱
+      return this.createTreasureChestMesh();
     }
 
     // 关键修正：递归为所有道具部件开启阴影投射与阴影接收（如钥匙齿、圆环、药水瓶等）
@@ -6461,6 +6446,1284 @@ export class ModelFactory {
     shovelG.rotation.x = Math.PI / 12;
     shovelG.position.y = 0.22;
     group.add(shovelG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 中心对称飞行器 (Center Flyer / 筋斗云时空神翼)
+  static createCenterFlyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_center_fly';
+
+    // 材质定义：时空紫晶与圣金流光
+    const wingMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd8b4fe,
+      emissive: 0x9333ea,
+      emissiveIntensity: 0.65,
+      transmission: 0.6,
+      roughness: 0.2,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.5,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const coreCrystalMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf0abfc,
+      emissive: 0xa855f7,
+      emissiveIntensity: 0.9,
+      roughness: 0.1,
+      transmission: 0.5,
+      transparent: true,
+      opacity: 0.95,
+    });
+
+    const flyG = new THREE.Group();
+
+    // 1. 核心时空八面体能量水晶 (Chronocrystal Core)
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), coreCrystalMat);
+    core.position.y = 0.38;
+    flyG.add(core);
+
+    // 2. 环绕核心的星轨时钟金环 (Orbit Chrono Ring)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.016, 8, 32), goldMat);
+    ring.rotation.x = Math.PI / 3;
+    ring.position.y = 0.38;
+    flyG.add(ring);
+
+    // 3. 对称羽翼构型 (Symmetric Celestial Wings)
+    const createWing = (isRight: boolean): THREE.Group => {
+      const wing = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+
+      // 主羽 (Primary Feather)
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.018), wingMat);
+      f1.rotation.z = sign * 0.45;
+      f1.position.set(sign * 0.14, 0.08, 0);
+
+      // 次羽 (Secondary Feather)
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.045, 0.016), wingMat);
+      f2.rotation.z = sign * 0.25;
+      f2.position.set(sign * 0.13, 0.02, 0);
+
+      // 底羽 (Lower Feather)
+      const f3 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.04, 0.014), wingMat);
+      f3.rotation.z = sign * 0.05;
+      f3.position.set(sign * 0.10, -0.04, 0);
+
+      wing.add(f1, f2, f3);
+      return wing;
+    };
+
+    const leftWing = createWing(false);
+    leftWing.position.set(-0.06, 0.38, 0);
+    const rightWing = createWing(true);
+    rightWing.position.set(0.06, 0.38, 0);
+
+    flyG.add(leftWing, rightWing);
+
+    // 4. 底部微型对称指针轴 (Chrono Needle Marker)
+    const needleV = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.01), goldMat);
+    needleV.position.y = 0.38;
+    const needleH = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.01), goldMat);
+    needleH.position.y = 0.38;
+    flyG.add(needleV, needleH);
+
+    group.add(flyG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 45F 向上飞行器 (Up Flyer / 冲天神翼)
+  static createUpFlyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_up_fly';
+
+    // 材质：天空青碧水晶 + 辉煌黄金
+    const cyanCrystalMat = new THREE.MeshPhysicalMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.8,
+      transmission: 0.6,
+      roughness: 0.15,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.45,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x67e8f9,
+    });
+
+    const flyG = new THREE.Group();
+
+    // 1. 悬浮底座万向金环托架
+    const gimbal = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.018, 8, 32), goldMat);
+    gimbal.rotation.x = Math.PI / 2;
+    gimbal.position.y = 0.24;
+    flyG.add(gimbal);
+
+    // 2. 核心菱形悬浮天界青晶 (Ascension Crystal Core)
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), cyanCrystalMat);
+    core.scale.set(0.9, 1.4, 0.9);
+    core.position.y = 0.40;
+    flyG.add(core);
+
+    // 3. 向上伸展的辉煌黄金羽翼 (Upward Arching Wings)
+    const createUpWing = (isRight: boolean): THREE.Group => {
+      const wing = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+
+      // 向上昂首的主天羽
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.02), goldMat);
+      p1.rotation.z = -sign * 0.45;
+      p1.position.set(sign * 0.12, 0.10, 0);
+
+      // 次天羽
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.22, 0.018), goldMat);
+      p2.rotation.z = -sign * 0.70;
+      p2.position.set(sign * 0.16, 0.05, 0);
+
+      // 青晶外翼尖
+      const p3 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.16, 4), cyanCrystalMat);
+      p3.rotation.z = -sign * 0.35;
+      p3.position.set(sign * 0.10, 0.22, 0);
+
+      wing.add(p1, p2, p3);
+      return wing;
+    };
+
+    const leftWing = createUpWing(false);
+    leftWing.position.set(-0.04, 0.38, 0);
+    const rightWing = createUpWing(true);
+    rightWing.position.set(0.04, 0.38, 0);
+    flyG.add(leftWing, rightWing);
+
+    // 4. 双层向上冲天光标折线箭头 (Two Stacked Upward Chevrons ^)
+    for (let i = 0; i < 2; i++) {
+      const chevron = new THREE.Group();
+      const chevL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.015), glowMat);
+      chevL.rotation.z = Math.PI / 4;
+      chevL.position.set(-0.035, 0, 0.08);
+
+      const chevR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.015), glowMat);
+      chevR.rotation.z = -Math.PI / 4;
+      chevR.position.set(0.035, 0, 0.08);
+
+      chevron.add(chevL, chevR);
+      chevron.position.y = 0.35 + i * 0.11;
+      flyG.add(chevron);
+    }
+
+    // 5. 顶端冲天星芒尖顶
+    const tipStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), cyanCrystalMat);
+    tipStar.position.y = 0.58;
+    flyG.add(tipStar);
+
+    group.add(flyG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 向下飞行器 (Down Flyer / 裂地神翼)
+  static createDownFlyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_down_fly';
+
+    // 材质：深渊紫曜晶 + 幽暗秘银
+    const darkCrystalMat = new THREE.MeshPhysicalMaterial({
+      color: 0x818cf8,
+      emissive: 0x4338ca,
+      emissiveIntensity: 0.8,
+      transmission: 0.6,
+      roughness: 0.15,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const silverMat = new THREE.MeshStandardMaterial({
+      color: 0xc7d2fe,
+      emissive: 0x3730a3,
+      emissiveIntensity: 0.35,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0xa5b4fc,
+    });
+
+    const flyG = new THREE.Group();
+
+    // 1. 悬浮顶冠万向环
+    const gimbal = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.018, 8, 32), silverMat);
+    gimbal.rotation.x = Math.PI / 2;
+    gimbal.position.y = 0.54;
+    flyG.add(gimbal);
+
+    // 2. 核心倒立紫晶
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), darkCrystalMat);
+    core.scale.set(0.9, 1.4, 0.9);
+    core.position.y = 0.38;
+    flyG.add(core);
+
+    // 3. 向下俯冲的幽暗之翼 (Downward Pointing Wings)
+    const createDownWing = (isRight: boolean): THREE.Group => {
+      const wing = new THREE.Group();
+      const sign = isRight ? 1 : -1;
+
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.02), silverMat);
+      p1.rotation.z = sign * 0.45;
+      p1.position.set(sign * 0.12, -0.10, 0);
+
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.22, 0.018), silverMat);
+      p2.rotation.z = sign * 0.70;
+      p2.position.set(sign * 0.16, -0.05, 0);
+
+      const p3 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.16, 4), darkCrystalMat);
+      p3.rotation.z = sign * 0.35 + Math.PI;
+      p3.position.set(sign * 0.10, -0.22, 0);
+
+      wing.add(p1, p2, p3);
+      return wing;
+    };
+
+    const leftWing = createDownWing(false);
+    leftWing.position.set(-0.04, 0.40, 0);
+    const rightWing = createDownWing(true);
+    rightWing.position.set(0.04, 0.40, 0);
+    flyG.add(leftWing, rightWing);
+
+    // 4. 双层向下俯冲光标折线箭头 (Two Stacked Downward Chevrons v)
+    for (let i = 0; i < 2; i++) {
+      const chevron = new THREE.Group();
+      const chevL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.015), glowMat);
+      chevL.rotation.z = -Math.PI / 4;
+      chevL.position.set(-0.035, 0, 0.08);
+
+      const chevR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.015), glowMat);
+      chevR.rotation.z = Math.PI / 4;
+      chevR.position.set(0.035, 0, 0.08);
+
+      chevron.add(chevL, chevR);
+      chevron.position.y = 0.43 - i * 0.11;
+      flyG.add(chevron);
+    }
+
+    group.add(flyG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 破墙十字镐 (Pickaxe)
+  static createPickaxeMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_pickaxe';
+
+    const steelMat = new THREE.MeshStandardMaterial({
+      color: 0x94a3b8,
+      metalness: 0.9,
+      roughness: 0.25,
+    });
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x78350f,
+      roughness: 0.7,
+      metalness: 0.1,
+    });
+    const darkBandMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.8,
+      roughness: 0.3,
+    });
+
+    const pickG = new THREE.Group();
+
+    // 1. 坚固木柄 (Handle)
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.032, 0.65, 12), woodMat);
+    handle.position.y = 0.32;
+    pickG.add(handle);
+
+    // 握把皮带防滑环
+    for (let i = 0; i < 4; i++) {
+      const gripRing = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.005, 6, 16), darkBandMat);
+      gripRing.rotation.x = Math.PI / 2;
+      gripRing.position.y = 0.10 + i * 0.05;
+      pickG.add(gripRing);
+    }
+
+    // 柄底金属包头
+    const bottomCap = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.036, 0.04, 12), steelMat);
+    bottomCap.position.y = 0.02;
+    pickG.add(bottomCap);
+
+    // 2. 镐头中枢套筒 (Head Collar)
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.042, 0.11, 12), steelMat);
+    collar.position.y = 0.61;
+    pickG.add(collar);
+
+    // 顶端防脱铁楔
+    const topCap = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.04, 8), darkBandMat);
+    topCap.position.y = 0.68;
+    pickG.add(topCap);
+
+    // 3. 双向锻钢弧形镐刃 (Curved Pickaxe Blades)
+    const createBladeHalf = (isLeft: boolean): THREE.Group => {
+      const half = new THREE.Group();
+      const sign = isLeft ? -1 : 1;
+
+      // 主弧臂
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.042, 0.032), steelMat);
+      arm.rotation.z = sign * 0.18;
+      arm.position.set(sign * 0.09, -0.015, 0);
+
+      // 尖锐锥形镐尖
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 4), steelMat);
+      tip.rotation.z = sign * (Math.PI / 2 - 0.25);
+      tip.position.set(sign * 0.22, -0.05, 0);
+
+      half.add(arm, tip);
+      return half;
+    };
+
+    const leftBlade = createBladeHalf(true);
+    const rightBlade = createBladeHalf(false);
+    leftBlade.position.set(0, 0.62, 0);
+    rightBlade.position.set(0, 0.62, 0);
+    pickG.add(leftBlade, rightBlade);
+
+    // 动态倾斜展示姿态
+    pickG.rotation.z = -Math.PI / 5;
+    pickG.rotation.y = Math.PI / 6;
+    pickG.position.set(0.05, 0, 0);
+    group.add(pickG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 炼金炸弹 (Alchemy Bomb)
+  static createBombMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_bomb';
+
+    const ironMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.85,
+      roughness: 0.35,
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const fuseMat = new THREE.MeshStandardMaterial({
+      color: 0xd4d4d8,
+      roughness: 0.9,
+      metalness: 0.05,
+    });
+    const sparkMat = new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+    });
+    const sparkHotMat = new THREE.MeshBasicMaterial({
+      color: 0xef4444,
+    });
+
+    const bombG = new THREE.Group();
+
+    // 1. 铸铁重力主球体
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), ironMat);
+    body.position.y = 0.24;
+    bombG.add(body);
+
+    // 2. 黄铜赤道加固铆钉带
+    const brassBelt = new THREE.Mesh(new THREE.TorusGeometry(0.222, 0.016, 8, 32), brassMat);
+    brassBelt.rotation.x = Math.PI / 2;
+    brassBelt.position.y = 0.24;
+    bombG.add(brassBelt);
+
+    // 经线加固带
+    const meridianBelt = new THREE.Mesh(new THREE.TorusGeometry(0.222, 0.012, 8, 32), brassMat);
+    meridianBelt.position.y = 0.24;
+    bombG.add(meridianBelt);
+
+    // 3. 顶部黄铜点火引信接口颈部
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.065, 0.07, 16), brassMat);
+    neck.position.y = 0.46;
+    bombG.add(neck);
+
+    // 4. 弯曲导火索
+    const fuse1 = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 8), fuseMat);
+    fuse1.rotation.z = -0.25;
+    fuse1.position.set(0.015, 0.52, 0);
+
+    const fuse2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 8), fuseMat);
+    fuse2.rotation.z = 0.45;
+    fuse2.position.set(0.05, 0.58, 0);
+    bombG.add(fuse1, fuse2);
+
+    // 5. 顶端火花粒子团 (Sparks)
+    const sparkCenter = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), sparkHotMat);
+    sparkCenter.position.set(0.07, 0.62, 0);
+    const sparkRays = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), sparkMat);
+    sparkRays.position.set(0.07, 0.62, 0);
+    bombG.add(sparkCenter, sparkRays);
+
+    group.add(bombG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 地震卷轴 (Earthquake Scroll)
+  static createEarthquakeMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_earthquake';
+
+    const parchmentMat = new THREE.MeshStandardMaterial({
+      color: 0xfef3c7,
+      roughness: 0.85,
+      metalness: 0.05,
+    });
+    const rodMat = new THREE.MeshStandardMaterial({
+      color: 0x78350f,
+      roughness: 0.6,
+      metalness: 0.15,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const runeGlowMat = new THREE.MeshBasicMaterial({
+      color: 0xd97706,
+    });
+    const sealMat = new THREE.MeshStandardMaterial({
+      color: 0x991b1b,
+      roughness: 0.35,
+      metalness: 0.1,
+    });
+
+    const scrollG = new THREE.Group();
+
+    // 1. 展开的中央古老羊皮纸面
+    const parchment = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.30, 0.016), parchmentMat);
+    parchment.position.y = 0.32;
+    scrollG.add(parchment);
+
+    // 2. 左右两侧卷轴木轴与金顶饰
+    for (const sign of [-1, 1]) {
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.38, 12), rodMat);
+      rod.position.set(sign * 0.20, 0.32, 0);
+
+      // 上金饰
+      const goldTop = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldMat);
+      goldTop.position.set(sign * 0.20, 0.52, 0);
+
+      // 下金饰
+      const goldBtm = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldMat);
+      goldBtm.position.set(sign * 0.20, 0.12, 0);
+
+      scrollG.add(rod, goldTop, goldBtm);
+    }
+
+    // 3. 羊皮纸上的发光裂地符文纹路 (Earthquake Fissure Runes)
+    const fissure1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.02, 0.02), runeGlowMat);
+    fissure1.rotation.z = 0.22;
+    fissure1.position.set(0, 0.34, 0.01);
+
+    const fissure2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.018, 0.02), runeGlowMat);
+    fissure2.rotation.z = -0.35;
+    fissure2.position.set(-0.02, 0.28, 0.01);
+
+    const runeStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), runeGlowMat);
+    runeStar.position.set(0.05, 0.32, 0.01);
+    scrollG.add(fissure1, fissure2, runeStar);
+
+    // 4. 垂落的红蜡封印 (Red Wax Seal & Ribbon)
+    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.01), sealMat);
+    ribbon.position.set(0, 0.14, 0.015);
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.018, 16), sealMat);
+    seal.rotation.x = Math.PI / 2;
+    seal.position.set(0, 0.16, 0.022);
+    scrollG.add(ribbon, seal);
+
+    scrollG.rotation.x = -Math.PI / 10;
+    group.add(scrollG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 至尊纯金钥匙 (Gold Key)
+  static createGoldKeyMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_key_gold';
+
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      metalness: 0.95,
+      roughness: 0.15,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.35,
+    });
+    const rubyMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      metalness: 0.2,
+      roughness: 0.1,
+      emissive: 0xb91c1c,
+      emissiveIntensity: 0.7,
+    });
+
+    const keyG = new THREE.Group();
+
+    // 1. 钥匙长柄 (Fluted Shaft)
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.44, 12), goldMat);
+    shaft.position.y = 0.28;
+    keyG.add(shaft);
+
+    // 装饰圆环箍
+    const collar1 = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.009, 8, 16), goldMat);
+    collar1.rotation.x = Math.PI / 2;
+    collar1.position.y = 0.45;
+    const collar2 = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.008, 8, 16), goldMat);
+    collar2.rotation.x = Math.PI / 2;
+    collar2.position.y = 0.18;
+    keyG.add(collar1, collar2);
+
+    // 2. 皇冠雕花钥匙弓 (Royal Crown Bow)
+    const bowRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.024, 12, 24), goldMat);
+    bowRing.position.y = 0.58;
+    keyG.add(bowRing);
+
+    // 皇冠尖顶 (Crown Spikes)
+    for (let i = -2; i <= 2; i++) {
+      const angle = (i * Math.PI) / 6;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 4), goldMat);
+      spike.rotation.z = -angle;
+      spike.position.set(Math.sin(angle) * 0.15, 0.58 + Math.cos(angle) * 0.15, 0);
+      keyG.add(spike);
+    }
+
+    // 弓心镶嵌耀眼红宝石
+    const ruby = new THREE.Mesh(new THREE.OctahedronGeometry(0.05, 0), rubyMat);
+    ruby.position.y = 0.58;
+    keyG.add(ruby);
+
+    // 3. 复杂双向万能钥匙齿 (Master Key Bit Teeth)
+    const bitPlate = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.025), goldMat);
+    bitPlate.position.set(0.08, 0.13, 0);
+    const tooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.03), goldMat);
+    tooth1.position.set(0.14, 0.16, 0);
+    const tooth2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.03), goldMat);
+    tooth2.position.set(0.135, 0.09, 0);
+
+    const leftTooth = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.03), goldMat);
+    leftTooth.position.set(-0.04, 0.12, 0);
+
+    keyG.add(bitPlate, tooth1, tooth2, leftTooth);
+
+    // 动态展示倾角
+    keyG.rotation.z = Math.PI / 6;
+    group.add(keyG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 防具盾牌系列 (Shields: 铁盾/银盾/骑士盾/圣光之盾/神圣之盾)
+  static createShieldMesh(shieldType: string): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `item_${shieldType}`;
+
+    const shieldG = new THREE.Group();
+
+    if (shieldType === 'shield_sacred') {
+      // 44F 全塔至尊【神圣之盾】 (Sacred Shield)
+      const celestialCrystalMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.8,
+        transmission: 0.5,
+        roughness: 0.1,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.95,
+      });
+      const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.4,
+        metalness: 0.95,
+        roughness: 0.15,
+      });
+      const diamondMat = new THREE.MeshBasicMaterial({
+        color: 0xa5f3fc,
+      });
+
+      // 1. 悬浮天界圣光环 (Floating Halo Ring)
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.016, 8, 32), goldMat);
+      halo.position.set(0, 0.44, -0.04);
+      shieldG.add(halo);
+
+      // 2. 晶体主盾面 (Kite Shield Plate)
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.06, 0.56, 4, 1), celestialCrystalMat);
+      plate.rotation.y = Math.PI / 4;
+      plate.scale.set(1.1, 1, 0.22);
+      plate.position.y = 0.44;
+      shieldG.add(plate);
+
+      // 3. 黄金展翼护边 (Golden Winged Borders)
+      for (const sign of [-1, 1]) {
+        const wingRim = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.46, 0.04), goldMat);
+        wingRim.rotation.z = sign * 0.26;
+        wingRim.position.set(sign * 0.16, 0.45, 0.02);
+
+        // 展翼羽尖装饰
+        const feather1 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 4), goldMat);
+        feather1.rotation.z = sign * 0.7;
+        feather1.position.set(sign * 0.24, 0.58, 0.02);
+        const feather2 = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 4), goldMat);
+        feather2.rotation.z = sign * 0.9;
+        feather2.position.set(sign * 0.26, 0.46, 0.02);
+
+        shieldG.add(wingRim, feather1, feather2);
+      }
+
+      // 顶部圣金冠饰
+      const crownTop = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 4), goldMat);
+      crownTop.position.set(0, 0.74, 0.02);
+      shieldG.add(crownTop);
+
+      // 4. 盾心十字圣光星芒 (Holy 8-Pointed Star Boss)
+      const starV = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.24, 0.03), goldMat);
+      starV.position.set(0, 0.46, 0.04);
+      const starH = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.035, 0.03), goldMat);
+      starH.position.set(0, 0.46, 0.04);
+      const starD1 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.03), goldMat);
+      starD1.rotation.z = Math.PI / 4;
+      starD1.position.set(0, 0.46, 0.04);
+      const starD2 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.03), goldMat);
+      starD2.rotation.z = -Math.PI / 4;
+      starD2.position.set(0, 0.46, 0.04);
+
+      // 中心耀眼神圣钻石
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), diamondMat);
+      gem.position.set(0, 0.46, 0.06);
+
+      shieldG.add(starV, starH, starD1, starD2, gem);
+
+      // 5. 四枚悬浮庇护法珠 (Floating Protective Crystal Orbs)
+      const orbOffsets = [
+        [0, 0.78],
+        [0, 0.10],
+        [-0.30, 0.44],
+        [0.30, 0.44],
+      ];
+      for (const [ox, oy] of orbOffsets) {
+        const orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.032, 0), celestialCrystalMat);
+        orb.position.set(ox, oy, 0);
+        shieldG.add(orb);
+      }
+    } else if (shieldType === 'shield_holy') {
+      // 43F 圣光之盾 (Holy Shield) - 黄金圣十字骑士鸢盾
+      const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        metalness: 0.95,
+        roughness: 0.18,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.3,
+      });
+      const whiteMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        roughness: 0.2,
+        metalness: 0.8,
+      });
+      const rubyMat = new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        roughness: 0.1,
+        metalness: 0.3,
+        emissive: 0xb91c1c,
+        emissiveIntensity: 0.6,
+      });
+
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.06, 0.54, 4, 1), whiteMat);
+      plate.rotation.y = Math.PI / 4;
+      plate.scale.set(1.05, 1, 0.2);
+      plate.position.y = 0.42;
+
+      // 纯金边框
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.02, 6, 4), goldMat);
+      rim.rotation.z = Math.PI / 4;
+      rim.scale.set(0.9, 1.25, 1);
+      rim.position.set(0, 0.42, 0.02);
+
+      // 黄金浮雕圣十字
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 0.025), goldMat);
+      crossV.position.set(0, 0.42, 0.03);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.025), goldMat);
+      crossH.position.set(0, 0.47, 0.03);
+
+      // 圣十字中心红宝石
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), rubyMat);
+      gem.position.set(0, 0.47, 0.05);
+
+      shieldG.add(plate, rim, crossV, crossH, gem);
+    } else if (shieldType === 'shield_knight') {
+      // 25F 骑士盾 (Knight Shield) - 经典四分象限红蓝贵族骑士盾
+      const redMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.35, metalness: 0.5 });
+      const blueMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35, metalness: 0.5 });
+      const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
+
+      // 四分象限盾板
+      const qSize = 0.13;
+      const qDepth = 0.03;
+      const q1 = new THREE.Mesh(new THREE.BoxGeometry(qSize, 0.22, qDepth), redMat);
+      q1.position.set(-qSize / 2, 0.50, 0);
+      const q2 = new THREE.Mesh(new THREE.BoxGeometry(qSize, 0.22, qDepth), blueMat);
+      q2.position.set(qSize / 2, 0.50, 0);
+      const q3 = new THREE.Mesh(new THREE.BoxGeometry(qSize, 0.22, qDepth), blueMat);
+      q3.position.set(-qSize / 2, 0.30, 0);
+      const q4 = new THREE.Mesh(new THREE.BoxGeometry(qSize, 0.22, qDepth), redMat);
+      q4.position.set(qSize / 2, 0.30, 0);
+
+      // 银质分界十字与包边
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.46, 0.035), silverMat);
+      crossV.position.set(0, 0.40, 0.01);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.03, 0.035), silverMat);
+      crossH.position.set(0, 0.40, 0.01);
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.46, 0.015), silverMat);
+      rim.position.set(0, 0.40, -0.01);
+
+      shieldG.add(q1, q2, q3, q4, crossV, crossH, rim);
+    } else if (shieldType === 'shield_silver') {
+      // 11F 银盾 (Silver Shield) - 纯银雕花冷光鸢盾
+      const silverMat = new THREE.MeshStandardMaterial({
+        color: 0xf1f5f9,
+        metalness: 0.95,
+        roughness: 0.12,
+      });
+      const sapphireMat = new THREE.MeshStandardMaterial({
+        color: 0x2563eb,
+        metalness: 0.4,
+        roughness: 0.15,
+        emissive: 0x1d4ed8,
+        emissiveIntensity: 0.4,
+      });
+
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.05, 0.50, 4, 1), silverMat);
+      plate.rotation.y = Math.PI / 4;
+      plate.scale.set(1.05, 1, 0.2);
+      plate.position.y = 0.40;
+
+      // 中央纯银雕花凸台与蓝宝石
+      const centerBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.03, 16), silverMat);
+      centerBoss.rotation.x = Math.PI / 2;
+      centerBoss.position.set(0, 0.42, 0.03);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), sapphireMat);
+      gem.position.set(0, 0.42, 0.05);
+
+      shieldG.add(plate, centerBoss, gem);
+    } else {
+      // 9F 铁盾 (Iron Shield) - 锻铁铆钉坚毅圆盾
+      const ironMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        metalness: 0.88,
+        roughness: 0.35,
+      });
+      const darkIronMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        metalness: 0.9,
+        roughness: 0.45,
+      });
+
+      // 圆形盾板
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 24), ironMat);
+      plate.rotation.x = Math.PI / 2;
+      plate.position.y = 0.40;
+
+      // 十字加固生铁梁
+      const beamV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.02), darkIronMat);
+      beamV.position.set(0, 0.40, 0.025);
+      const beamH = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.02), darkIronMat);
+      beamH.position.set(0, 0.40, 0.025);
+
+      // 中央尖锥突起 (Umbo / Shield Boss)
+      const boss = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.08, 16), ironMat);
+      boss.rotation.x = Math.PI / 2;
+      boss.position.set(0, 0.40, 0.06);
+
+      shieldG.add(plate, beamV, beamH, boss);
+    }
+
+    // 盾牌整体微侧转动以展现立体质感
+    shieldG.rotation.y = -Math.PI / 8;
+    group.add(shieldG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 武器剑类系列 (Swords: 铁剑/银剑/骑士剑/屠龙刃/圣光剑/神圣神剑)
+  static createSwordMesh(swordType: string): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `item_${swordType}`;
+
+    const swordG = new THREE.Group();
+
+    if (swordType === 'sword_sacred') {
+      // 48F 全塔至尊【神圣神剑】 (Sacred Sword)
+      const celestialBladeMat = new THREE.MeshPhysicalMaterial({
+        color: 0x67e8f9,
+        emissive: 0x06b6d4,
+        emissiveIntensity: 0.9,
+        transmission: 0.55,
+        roughness: 0.1,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.95,
+      });
+      const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.45,
+        metalness: 0.95,
+        roughness: 0.15,
+      });
+
+      // 1. 极光琉璃晶刃
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.68, 0.025), celestialBladeMat);
+      blade.position.y = 0.50;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.064, 0.14, 4), celestialBladeMat);
+      tip.position.y = 0.91;
+      tip.rotation.y = Math.PI / 4;
+
+      // 2. 黄金天使双翼剑格护手 (Winged Crossguard)
+      const guardL = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.20, 4), goldMat);
+      guardL.rotation.z = Math.PI / 2.8;
+      guardL.position.set(-0.11, 0.18, 0);
+      const guardR = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.20, 4), goldMat);
+      guardR.rotation.z = -Math.PI / 2.8;
+      guardR.position.set(0.11, 0.18, 0);
+      const guardCenter = new THREE.Mesh(new THREE.OctahedronGeometry(0.05, 0), goldMat);
+      guardCenter.position.y = 0.17;
+
+      // 3. 金丝手柄
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.16, 12), goldMat);
+      hilt.position.y = 0.09;
+
+      // 4. 剑柄悬浮圣光环与柄首 (Halo Pommel)
+      const pommelHalo = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 8, 20), goldMat);
+      pommelHalo.position.y = 0.01;
+      const pommelGem = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), celestialBladeMat);
+      pommelGem.position.y = 0.01;
+
+      swordG.add(blade, tip, guardL, guardR, guardCenter, hilt, pommelHalo, pommelGem);
+    } else if (swordType === 'sword_dragon') {
+      // 屠龙之刃 (Dragon Slayer) - 锯齿赤炎龙纹阔剑
+      const dragonMat = new THREE.MeshStandardMaterial({
+        color: 0x991b1b,
+        roughness: 0.3,
+        metalness: 0.8,
+        emissive: 0x7f1d1d,
+        emissiveIntensity: 0.4,
+      });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+      // 锯齿剑身
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.03), dragonMat);
+      blade.position.y = 0.48;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.15, 4), dragonMat);
+      tip.position.y = 0.88;
+      tip.rotation.y = Math.PI / 4;
+
+      // 龙牙锯齿
+      for (let i = 0; i < 3; i++) {
+        const toothL = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.06, 3), dragonMat);
+        toothL.rotation.z = Math.PI / 3;
+        toothL.position.set(-0.07, 0.35 + i * 0.12, 0);
+        const toothR = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.06, 3), dragonMat);
+        toothR.rotation.z = -Math.PI / 3;
+        toothR.position.set(0.07, 0.35 + i * 0.12, 0);
+        swordG.add(toothL, toothR);
+      }
+
+      // 金龙首剑格
+      const dragonHead = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.06), goldMat);
+      dragonHead.position.y = 0.17;
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), eyeMat);
+      eyeL.position.set(-0.05, 0.18, 0.032);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), eyeMat);
+      eyeR.position.set(0.05, 0.18, 0.032);
+
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.16, 12), dragonMat);
+      hilt.position.y = 0.09;
+
+      const pommel = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.06, 4), goldMat);
+      pommel.rotation.x = Math.PI;
+      pommel.position.y = 0.01;
+
+      swordG.add(blade, tip, dragonHead, eyeL, eyeR, hilt, pommel);
+    } else if (swordType === 'sword_holy') {
+      // 47F 圣光之剑 (Holy Sword) - 纯金圣光阔剑
+      const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        metalness: 0.95,
+        roughness: 0.15,
+        emissive: 0xb45309,
+        emissiveIntensity: 0.35,
+      });
+      const sapphireMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.2 });
+
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.65, 0.025), goldMat);
+      blade.position.y = 0.48;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.056, 0.13, 4), goldMat);
+      tip.position.y = 0.87;
+      tip.rotation.y = Math.PI / 4;
+
+      const guard = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.04), goldMat);
+      guard.position.y = 0.17;
+
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.15, 12), goldMat);
+      hilt.position.y = 0.09;
+
+      const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 12), sapphireMat);
+      pommel.position.y = 0.01;
+
+      swordG.add(blade, tip, guard, hilt, pommel);
+    } else if (swordType === 'sword_knight') {
+      // 24F 骑士剑 (Knight Sword) - 双刃皇家骑士佩剑
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.92, roughness: 0.18 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.25 });
+      const leatherMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.65 });
+
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.62, 0.022), steelMat);
+      blade.position.y = 0.46;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.053, 0.12, 4), steelMat);
+      tip.position.y = 0.83;
+      tip.rotation.y = Math.PI / 4;
+
+      const guard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.035, 0.035), goldMat);
+      guard.position.y = 0.16;
+
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.14, 12), leatherMat);
+      hilt.position.y = 0.09;
+
+      const pommel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.025, 12), goldMat);
+      pommel.position.y = 0.02;
+
+      swordG.add(blade, tip, guard, hilt, pommel);
+    } else if (swordType === 'sword_silver') {
+      // 11F 银剑 (Silver Sword) - 秘银雕花长剑
+      const silverMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.96, roughness: 0.12 });
+      const sapphireMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.15, metalness: 0.3 });
+
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.60, 0.02), silverMat);
+      blade.position.y = 0.45;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.046, 0.12, 4), silverMat);
+      tip.position.y = 0.81;
+      tip.rotation.y = Math.PI / 4;
+
+      const guard = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 0.03), silverMat);
+      guard.position.y = 0.16;
+
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.14, 12), silverMat);
+      hilt.position.y = 0.09;
+
+      const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), sapphireMat);
+      pommel.position.y = 0.02;
+
+      swordG.add(blade, tip, guard, hilt, pommel);
+    } else {
+      // 5F 铁剑 (Iron Sword) - 沉稳生铁阔剑
+      const ironMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.88, roughness: 0.3 });
+      const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
+
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.56, 0.022), ironMat);
+      blade.position.y = 0.43;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.11, 4), ironMat);
+      tip.position.y = 0.76;
+      tip.rotation.y = Math.PI / 4;
+
+      const guard = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.032, 0.032), brassMat);
+      guard.position.y = 0.16;
+
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.14, 12), woodMat);
+      hilt.position.y = 0.09;
+
+      const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), brassMat);
+      pommel.position.y = 0.02;
+
+      swordG.add(blade, tip, guard, hilt, pommel);
+    }
+
+    // 剑身英武斜立姿态
+    swordG.rotation.z = Math.PI / 4;
+    group.add(swordG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 华丽复古宝藏密箱 (Treasure Chest - 兜底模型，绝无通用荒木方块)
+  static createTreasureChestMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'item_treasure_chest';
+
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x78350f, // 贵重胡桃木
+      roughness: 0.65,
+      metalness: 0.1,
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b, // 黄铜包边与金属条
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const lockMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      metalness: 0.95,
+      roughness: 0.15,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.35,
+    });
+    const slitGlowMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a, // 箱缝流露的金芒
+    });
+
+    const chestG = new THREE.Group();
+
+    // 1. 宝箱底座箱体 (Chest Base)
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.28), woodMat);
+    base.position.y = 0.15;
+    chestG.add(base);
+
+    // 2. 弧形圆拱宝箱盖 (Arched Barrel Lid)
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.38, 16, 1, false, 0, Math.PI), woodMat);
+    lid.rotation.z = Math.PI / 2;
+    lid.scale.set(1, 0.7, 1);
+    lid.position.set(0, 0.26, 0);
+    chestG.add(lid);
+
+    // 3. 黄铜包角与加固金属箍条
+    for (const xOff of [-0.15, 0.15]) {
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.23, 0.284), brassMat);
+      strap.position.set(xOff, 0.15, 0);
+      chestG.add(strap);
+
+      const lidStrap = new THREE.Mesh(new THREE.CylinderGeometry(0.144, 0.144, 0.03, 16, 1, false, 0, Math.PI), brassMat);
+      lidStrap.rotation.z = Math.PI / 2;
+      lidStrap.scale.set(1, 0.7, 1);
+      lidStrap.position.set(xOff, 0.26, 0);
+      chestG.add(lidStrap);
+    }
+
+    // 4. 正面开启金锁与锁扣 (Golden Lock & Plate)
+    const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.02), brassMat);
+    lockPlate.position.set(0, 0.24, 0.145);
+    const lockKeyhole = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.03, 0.022), lockMat);
+    lockKeyhole.position.set(0, 0.23, 0.15);
+    chestG.add(lockPlate, lockKeyhole);
+
+    // 5. 宝箱接缝处的微光金线 (Golden Light Seam)
+    const slitGlow = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.012, 0.01), slitGlowMat);
+    slitGlow.position.set(0, 0.26, 0.141);
+    chestG.add(slitGlow);
+
+    group.add(chestG);
+
+    group.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+
+    return group;
+  }
+
+  // 39F 囚禁中心飞行器的神圣铁笼 (Iron Cage holding the Center Flyer)
+  static createFlyerCageMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'cage_center_fly';
+
+    const ironMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      metalness: 0.85,
+      roughness: 0.35,
+    });
+    const darkIronMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.9,
+      roughness: 0.4,
+    });
+    const goldLockMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.8,
+      roughness: 0.25,
+      emissive: 0xb45309,
+      emissiveIntensity: 0.3,
+    });
+
+    const cageGroup = new THREE.Group();
+
+    // 1. 底座方框与顶盖方框
+    const frameSize = 0.78;
+    const barThick = 0.035;
+    const cageHeight = 0.76;
+
+    const createSquareFrame = (yPos: number) => {
+      const f = new THREE.Group();
+      const bNorth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bNorth.position.set(0, yPos, -frameSize / 2);
+      const bSouth = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick, barThick), darkIronMat);
+      bSouth.position.set(0, yPos, frameSize / 2);
+      const bWest = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bWest.position.set(-frameSize / 2, yPos, 0);
+      const bEast = new THREE.Mesh(new THREE.BoxGeometry(barThick, barThick, frameSize), darkIronMat);
+      bEast.position.set(frameSize / 2, yPos, 0);
+      f.add(bNorth, bSouth, bWest, bEast);
+      return f;
+    };
+
+    cageGroup.add(createSquareFrame(0.04));
+    cageGroup.add(createSquareFrame(cageHeight));
+
+    // 2. 四角坚固方铁柱 (Corner Pillars)
+    const pillarGeom = new THREE.BoxGeometry(barThick * 1.2, cageHeight, barThick * 1.2);
+    const half = frameSize / 2;
+    const corners = [
+      [-half, -half],
+      [half, -half],
+      [-half, half],
+      [half, half],
+    ];
+    for (const [cx, cz] of corners) {
+      const p = new THREE.Mesh(pillarGeom, darkIronMat);
+      p.position.set(cx, cageHeight / 2, cz);
+      cageGroup.add(p);
+    }
+
+    // 3. 四个面的通透铁栅栏圆柱 (4-Sided Vertical Bars)
+    const barRadius = 0.013;
+    const barGeom = new THREE.CylinderGeometry(barRadius, barRadius, cageHeight - 0.04, 8);
+    const barOffsets = [-0.18, 0, 0.18];
+
+    // 南北面栅栏
+    for (const offset of barOffsets) {
+      const barN = new THREE.Mesh(barGeom, ironMat);
+      barN.position.set(offset, cageHeight / 2, -half);
+      const barS = new THREE.Mesh(barGeom, ironMat);
+      barS.position.set(offset, cageHeight / 2, half);
+      cageGroup.add(barN, barS);
+    }
+    // 东西面栅栏
+    for (const offset of barOffsets) {
+      const barW = new THREE.Mesh(barGeom, ironMat);
+      barW.position.set(-half, cageHeight / 2, offset);
+      const barE = new THREE.Mesh(barGeom, ironMat);
+      barE.position.set(half, cageHeight / 2, offset);
+      cageGroup.add(barW, barE);
+    }
+
+    // 4. 顶部十字加固梁 (Top Cross Grate)
+    const topCross1 = new THREE.Mesh(new THREE.BoxGeometry(frameSize, barThick * 0.8, barThick * 0.8), darkIronMat);
+    topCross1.position.y = cageHeight;
+    const topCross2 = new THREE.Mesh(new THREE.BoxGeometry(barThick * 0.8, barThick * 0.8, frameSize), darkIronMat);
+    topCross2.position.y = cageHeight;
+    cageGroup.add(topCross1, topCross2);
+
+    // 5. 正面门锁与锁链 (Front Heavy Padlock)
+    const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.04), goldLockMat);
+    lockBody.position.set(0, cageHeight * 0.5, half + 0.02);
+    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16, Math.PI), ironMat);
+    shackle.position.set(0, cageHeight * 0.5 + 0.05, half + 0.02);
+    shackle.rotation.z = Math.PI;
+    cageGroup.add(lockBody, shackle);
+
+    group.add(cageGroup);
+
+    // 6. 囚禁在笼内的中心对称飞行器 (Floating & Glowing Center Flyer inside)
+    const innerFlyer = ModelFactory.createCenterFlyMesh();
+    innerFlyer.name = 'cage_inner_flyer';
+    innerFlyer.scale.set(0.85, 0.85, 0.85);
+    innerFlyer.position.set(0, -0.02, 0);
+    group.add(innerFlyer);
 
     group.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) {

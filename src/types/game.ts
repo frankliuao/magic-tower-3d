@@ -162,4 +162,7 @@ export interface SaveSlot {
   elderGiftsGiven?: Record<string, boolean>;
   isFloor23PuzzleSolved?: boolean;
   floor23VisitedTiles?: string[];
+  floor39Clock3Opened?: boolean;
+  floor39Clock12Opened?: boolean;
+  isFloor39PuzzleSolved?: boolean;
 }

@@ -174,7 +174,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   shield_sacred: {
     id: 'shield_sacred',
-    name: '神圣神盾',
+    name: '神圣之盾',
     nameEn: 'Sacred Shield',
     description: '绝对守护结界的神圣护盾，防御力 +150。',
     descriptionEn: 'A sacred aegis establishing an impenetrable defensive barrier. Defense +150.',
@@ -293,10 +293,10 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   center_fly: {
     id: 'center_fly',
-    name: '中心飞行器',
-    nameEn: 'Center Flyer',
-    description: '在当前楼层中心对称跃迁。',
-    descriptionEn: 'Teleports the hero symmetrically across the center of the current floor.',
+    name: '时空飞行器',
+    nameEn: 'Chrono Flyer',
+    description: '使用后可瞬间传送至当前楼层的任意通畅地面。',
+    descriptionEn: 'Instantly teleports the hero to any open floor tile on the current level.',
     category: 'special',
     color: '#c084fc',
   },
