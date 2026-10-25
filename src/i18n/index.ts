@@ -218,6 +218,31 @@ export interface Translations {
   confirmUpFlyOk: string;
   confirmUpFlyCancel: string;
 
+  // 存盘与读盘多槽位系统
+  saveModalTitle: string;
+  saveModalSubtitle: string;
+  loadModalTitle: string;
+  loadModalSubtitle: string;
+  saveTab: string;
+  loadTab: string;
+  slotBadge: string;
+  slotEmpty: string;
+  slotEmptyDesc: string;
+  slotNoData: string;
+  saveToSlot: string;
+  overwriteSlot: string;
+  loadFromSlot: string;
+  deleteSlot: string;
+  confirmOverwriteTitle: string;
+  confirmOverwriteDesc: string;
+  confirmLoadTitle: string;
+  confirmLoadDesc: string;
+  confirmDeleteTitle: string;
+  confirmDeleteDesc: string;
+  saveSlotSuccess: string;
+  loadSlotSuccess: string;
+  deleteSlotSuccess: string;
+
   // Notifications
   savedSuccess: string;
   loadSuccess: string;
@@ -440,6 +465,31 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     confirmUpFlyOk: '确认升层',
     confirmUpFlyCancel: '取消',
 
+    // 存盘与读盘多槽位系统
+    saveModalTitle: '游戏存盘',
+    saveModalSubtitle: '请选择要保存当前进度的目标槽位',
+    loadModalTitle: '读取存档',
+    loadModalSubtitle: '请选择要恢复的冒险游戏存档',
+    saveTab: '💾 存盘',
+    loadTab: '📂 读盘',
+    slotBadge: '槽位 {slot}',
+    slotEmpty: '空槽位',
+    slotEmptyDesc: '空闲槽位，点击即可将当前冒险进度保存至此',
+    slotNoData: '暂无存档记录',
+    saveToSlot: '存入此槽位',
+    overwriteSlot: '覆盖此存档',
+    loadFromSlot: '读取此存档',
+    deleteSlot: '删除',
+    confirmOverwriteTitle: '⚠️ 确认覆盖存档？',
+    confirmOverwriteDesc: '槽位 {slot} 已有存档数据（{floor} · {time}）。覆盖后原有进度将无法找回，是否确认覆盖？',
+    confirmLoadTitle: '⚠️ 确认读取存档？',
+    confirmLoadDesc: '即将载入 槽位 {slot}（{floor} · {time}）的进度，当前未保存的游玩数据将会丢失，是否确认读取？',
+    confirmDeleteTitle: '🗑️ 确认删除存档？',
+    confirmDeleteDesc: '确定要彻底删除 槽位 {slot} 的存档吗？此操作无法撤销。',
+    saveSlotSuccess: '游戏进度已成功保存至槽位 {slot}！',
+    loadSlotSuccess: '已成功读取槽位 {slot} 的存档！',
+    deleteSlotSuccess: '槽位 {slot} 存档已成功删除！',
+
     // Notifications
     savedSuccess: '进度已成功保存至槽位 1',
     loadSuccess: '已成功读取存档',
@@ -659,6 +709,31 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     confirmUpFlyWarning: '[NOTICE]: This flyer is a one-time consumable and will be permanently removed upon use!',
     confirmUpFlyOk: 'Confirm Ascend',
     confirmUpFlyCancel: 'Cancel',
+
+    // 存盘与读盘多槽位系统
+    saveModalTitle: 'Save Game',
+    saveModalSubtitle: 'Select a slot to save your current progress',
+    loadModalTitle: 'Load Game',
+    loadModalSubtitle: 'Select a saved game to resume your adventure',
+    saveTab: '💾 Save',
+    loadTab: '📂 Load',
+    slotBadge: 'Slot {slot}',
+    slotEmpty: 'Empty Slot',
+    slotEmptyDesc: 'Empty slot, click to save current progress here',
+    slotNoData: 'No save data',
+    saveToSlot: 'Save Here',
+    overwriteSlot: 'Overwrite Save',
+    loadFromSlot: 'Load Save',
+    deleteSlot: 'Delete',
+    confirmOverwriteTitle: '⚠️ Confirm Overwrite?',
+    confirmOverwriteDesc: 'Slot {slot} already has saved data ({floor} · {time}). Overwriting will permanently replace it. Are you sure?',
+    confirmLoadTitle: '⚠️ Confirm Load Save?',
+    confirmLoadDesc: 'About to load Slot {slot} ({floor} · {time}). Any unsaved progress will be lost. Are you sure?',
+    confirmDeleteTitle: '🗑️ Confirm Delete?',
+    confirmDeleteDesc: 'Are you sure you want to permanently delete Slot {slot} save? This cannot be undone.',
+    saveSlotSuccess: 'Game successfully saved to Slot {slot}!',
+    loadSlotSuccess: 'Successfully loaded Slot {slot} save!',
+    deleteSlotSuccess: 'Slot {slot} save deleted successfully!',
 
     // Notifications
     savedSuccess: 'Game successfully saved to Slot 1',
@@ -1091,7 +1166,7 @@ export function getPickupNotification(
   }
   if (itemType === 'key_gold') {
     return {
-      text: lang === 'zh' ? '获得【金钥匙】全钥匙 +1！' : 'Obtained [Gold Key] +1 to all keys!',
+      text: lang === 'zh' ? '获得金钥匙，全钥匙 +1！' : 'Obtained Gold Key, +1 to all keys!',
       color: '#fbbf24',
     };
   }
@@ -1258,10 +1333,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 4 把黄钥匙', en: 'Buy 4 Yellow Keys' },
     linesBefore: {
       zh: [
-        '感谢你打开地牢救了我！作为报恩，我将身上的 4 把【黄色钥匙】以 50 金币超值赠与你！',
+        '感谢你打开地牢救了我！作为报恩，我将身上的 4 把黄钥匙以 50 金币超值赠与你！',
       ],
       en: [
-        'Thank you for unlocking my dungeon cell! As gratitude, take these 4 [Yellow Keys] for just 50 Gold!',
+        'Thank you for unlocking my dungeon cell! As gratitude, take these 4 Yellow Keys for just 50 Gold!',
       ],
     },
     linesAfter: {
@@ -1281,11 +1356,11 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 5 把黄钥匙', en: 'Buy 5 Yellow Keys' },
     linesBefore: {
       zh: [
-        '年轻人，我这里有 5 把【黄色钥匙】，只要 50 个金币打包卖给你！',
+        '年轻人，我这里有 5 把黄钥匙，只要 50 个金币打包卖给你！',
         '每一扇黄门都需要精打细算，前期物资紧缺，这 5 把黄钥匙能解你的燃眉之急！要来一份吗？',
       ],
       en: [
-        'Young warrior, I have 5 [Yellow Keys] here—bundled for only 50 Gold!',
+        'Young warrior, I have 5 Yellow Keys here—bundled for only 50 Gold!',
         'Every yellow door counts in this tower. These 5 keys will greatly relieve your key drought! Care to purchase?',
       ],
     },
@@ -1306,10 +1381,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
     linesBefore: {
       zh: [
-        '嘿嘿，看你打破暗墙有缘，这把价值连城的【红色钥匙】特惠价只要 200 金币！你要买下它吗？',
+        '嘿嘿，看你打破暗墙有缘，这把价值连城的红钥匙特惠价只要 200 金币！你要买下它吗？',
       ],
       en: [
-        'Hehehe, since you broke through the secret wall, I offer this priceless [Red Key] for a special bargain: only 200 Gold! Care to buy?',
+        'Hehehe, since you broke through the secret wall, I offer this priceless Red Key for a special bargain: only 200 Gold! Care to buy?',
       ],
     },
     linesAfter: {
@@ -1329,10 +1404,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 1 把蓝钥匙', en: 'Buy 1 Blue Key' },
     linesBefore: {
       zh: [
-        '年轻人，二区的蓝门越来越多了吧？我这里有 1 把【蓝色钥匙】，特惠只要 100 金币！',
+        '年轻人，二区的蓝门越来越多了吧？我这里有 1 把蓝钥匙，特惠只要 100 金币！',
       ],
       en: [
-        'Young warrior, more blue doors in Sector 2? I have 1 [Blue Key] for only 100 Gold!',
+        'Young warrior, more blue doors in Sector 2? I have 1 Blue Key for only 100 Gold!',
       ],
     },
     linesAfter: {
@@ -1352,10 +1427,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 1 把蓝钥匙', en: 'Buy 1 Blue Key' },
     linesBefore: {
       zh: [
-        '熔岩深处危机四伏，我这里有 1 把珍贵的【蓝色钥匙】，只要 100 金币！你需要吗？',
+        '熔岩深处危机四伏，我这里有 1 把珍贵的蓝钥匙，只要 100 金币！你需要吗？',
       ],
       en: [
-        'Perils lurk in the magma depths! I offer 1 rare [Blue Key] for 100 Gold. Need it?',
+        'Perils lurk in the magma depths! I offer 1 rare Blue Key for 100 Gold. Need it?',
       ],
     },
     linesAfter: {
@@ -1375,10 +1450,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 4 把黄钥匙', en: 'Buy 4 Yellow Keys' },
     linesBefore: {
       zh: [
-        '三区到处都是机关大门，4 把【黄色钥匙】特惠价 200 金币，要买吗？',
+        '三区到处都是机关大门，4 把黄钥匙特惠价 200 金币，要买吗？',
       ],
       en: [
-        'Sector 3 is filled with gates! 4 [Yellow Keys] for only 200 Gold, interested?',
+        'Sector 3 is filled with gates! 4 Yellow Keys for only 200 Gold, interested?',
       ],
     },
     linesAfter: {
@@ -1398,10 +1473,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 3 把黄钥匙', en: 'Buy 3 Yellow Keys' },
     linesBefore: {
       zh: [
-        '3 把【黄色钥匙】只要 100 金币，超值甩卖助你探索迷阵！',
+        '3 把黄钥匙只要 100 金币，超值甩卖助你探索迷阵！',
       ],
       en: [
-        '3 [Yellow Keys] for just 100 Gold, special bargain to help you navigate!',
+        '3 Yellow Keys for just 100 Gold, special bargain to help you navigate!',
       ],
     },
     linesAfter: {
@@ -1421,10 +1496,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 3 把蓝钥匙', en: 'Buy 3 Blue Keys' },
     linesBefore: {
       zh: [
-        '3 把珍贵的【蓝色钥匙】，打包特惠 600 金币，你需要吗？',
+        '3 把珍贵的蓝钥匙，打包特惠 600 金币，你需要吗？',
       ],
       en: [
-        '3 rare [Blue Keys] bundled for only 600 Gold, need them?',
+        '3 rare Blue Keys bundled for only 600 Gold, need them?',
       ],
     },
     linesAfter: {
@@ -1444,10 +1519,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
     linesBefore: {
       zh: [
-        '天界深处封印重重！这把绝版【红色钥匙】开价 500 金币，助你解开神圣殿堂！',
+        '天界深处封印重重！这把绝版红钥匙开价 500 金币，助你解开神圣殿堂！',
       ],
       en: [
-        'Deep celestial barriers await! This rare [Red Key] is 500 Gold, unlocking sacred halls!',
+        'Deep celestial barriers await! This rare Red Key is 500 Gold, unlocking sacred halls!',
       ],
     },
     linesAfter: {
@@ -1467,10 +1542,10 @@ export const TRADER_FLOOR_OFFERS: Record<number, TraderFloorOffer> = {
     title: { zh: '购买 1 把红钥匙', en: 'Buy 1 Red Key' },
     linesBefore: {
       zh: [
-        '勇士，决战在即！这把最后的【红色钥匙】特惠 300 金币赠售，为你开启圣光神剑！',
+        '勇士，决战在即！这把最后的红钥匙特惠 300 金币赠售，为你开启圣光神剑！',
       ],
       en: [
-        'Final showdown approaches! This last [Red Key] for 300 Gold will unlock the Sacred Blade!',
+        'Final showdown approaches! This last Red Key for 300 Gold will unlock the Sacred Blade!',
       ],
     },
     linesAfter: {
@@ -1497,12 +1572,12 @@ export const ELDER_FLOOR_DIALOGUES: Record<number, ElderFloorConfig> = {
       zh: [
         '年轻的勇士，欢迎来到魔塔1层！魔塔危机四伏，鲁莽战斗只会白白送命。',
         '每一把钥匙都要精打细算！仔细搜寻角落和看似完整的石壁，这里隐藏着意想不到的暗墙与通道！',
-        '这把【黄钥匙】赠予你，愿它能在关键时刻助你一臂之力！',
+        '这把黄钥匙赠予你，愿它能在关键时刻助你一臂之力！',
       ],
       en: [
         'Young warrior, welcome to Floor 1! Perils lurk everywhere; reckless battles will only lead to your demise.',
         'Manage every key with utmost care! Search corners and solid stone walls, for unexpected false walls and passages hide within.',
-        'Take this [Yellow Key] as my humble gift. May it aid you at a critical moment!',
+        'Take this Yellow Key as my humble gift. May it aid you at a critical moment!',
       ],
     },
     linesAfterGift: {
@@ -1656,11 +1731,11 @@ export const ELDER_FLOOR_DIALOGUES: Record<number, ElderFloorConfig> = {
     name: { zh: '智慧老人', en: 'Wise Sage' },
     lines: {
       zh: [
-        '老夫游历全塔多年，可以明确告诉你：整座魔塔中隐藏着极其罕见的【红钥匙】，每一把都通往足以改变战局的重宝密室！',
+        '老夫游历全塔多年，可以明确告诉你：整座魔塔中隐藏着极其罕见的红钥匙，每一把都通往足以改变战局的重宝密室！',
         '这颗【红宝石】赠予你，愿它为你灌注神力，破敌斩煞！',
       ],
       en: [
-        'I have wandered this tower for decades. Rare [Red Keys] are hidden across the floors, each unlocking sanctums that turn the tide of battle!',
+        'I have wandered this tower for decades. Rare Red Keys are hidden across the floors, each unlocking sanctums that turn the tide of battle!',
         'Take this [Red Gem] as my gift. May it empower your strikes to crush any foe!',
       ],
     },
@@ -1816,11 +1891,11 @@ export const ELDER_FLOOR_DIALOGUES: Record<number, ElderFloorConfig> = {
     lines: {
       zh: [
         '古老的密宝谜题：在时钟的3点钟方向，拥有任意传送功能的神秘时空密宝就会显现神迹……',
-        '这把【蓝色钥匙】赠予你，愿它为你打开通往谜底的核心大门！',
+        '这把蓝钥匙赠予你，愿它为你打开通往谜底的核心大门！',
       ],
       en: [
         'An ancient relic riddle: At the 3 o’clock position of the clock dial, the sacred relic granting boundless teleportation shall reveal its divine light...',
-        'Take this [Blue Key] to unlock the gateway toward this mystic enigma!',
+        'Take this Blue Key to unlock the gateway toward this mystic enigma!',
       ],
     },
     linesAfterGift: {
@@ -1949,11 +2024,11 @@ export function getDialogueData(
             ? (lang === 'zh'
                 ? [
                     '太好了！你帮我找回了铲子！',
-                    '前面 30 层的暗道已经被我挖通了！这两把【黄色钥匙】送给你，快去吧！',
+                    '前面 30 层的暗道已经被我挖通了！这两把黄钥匙送给你，快去吧！',
                   ]
                 : [
                     'Fantastic! You found my shovel!',
-                    'The secret bypass into Floor 30 is now dug open! Take these 2 [Yellow Keys] and go forth!',
+                    'The secret bypass into Floor 30 is now dug open! Take these 2 Yellow Keys and go forth!',
                   ])
             : (lang === 'zh'
                 ? [

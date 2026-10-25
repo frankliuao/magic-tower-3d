@@ -18,7 +18,10 @@ import {
   getCombatNotification,
   getDialogueData,
   FLOOR_NAMES,
+  TRADER_FLOOR_OFFERS,
+  ELDER_FLOOR_DIALOGUES,
 } from './i18n';
+import { formatDialogueText } from './ui/DialogueModal';
 import { SpecialAbility, ItemType } from './types/game';
 import { ModelFactory } from './engine/ModelFactory';
 import { ThreeCanvas } from './engine/ThreeCanvas';
@@ -180,6 +183,8 @@ const mockStorage: Record<string, string> = {};
 (globalThis as any).localStorage = {
   getItem: (k: string) => mockStorage[k] || null,
   setItem: (k: string, v: string) => { mockStorage[k] = v; },
+  removeItem: (k: string) => { delete mockStorage[k]; },
+  clear: () => { Object.keys(mockStorage).forEach(k => delete mockStorage[k]); },
 };
 
 const saved = game.saveGame(1);
@@ -2192,6 +2197,122 @@ for (const itKey of allItemKeys) {
   }
 }
 assert(allItemKeys.length >= 25, `已全面检验全塔 ${allItemKeys.length} 种宝物与道具模型，绝无荒木方块！`);
+
+// --- 28. 验证多槽位存盘与读盘管理系统 (Multi-Slot Save & Load System) ---
+console.log('\n--- 28. 验证多槽位存盘与读盘管理系统 (Multi-Slot Save & Load System) ---');
+const slotTestGame = new GameState();
+slotTestGame.initGame();
+
+// 初始状态下检查槽位列表获取
+const initialSlots = slotTestGame.getAllSaveSlots(6);
+assert(Array.isArray(initialSlots) && initialSlots.length === 6, '成功获取 6 个存档槽位列表');
+
+// 在第 7 层保存至槽位 2
+slotTestGame.changeFloor(7, 'up');
+slotTestGame.playerStats.hp = 3500;
+slotTestGame.playerStats.atk = 88;
+slotTestGame.playerStats.def = 77;
+slotTestGame.playerStats.gold = 520;
+slotTestGame.playerStats.yellowKeys = 4;
+slotTestGame.playerStats.blueKeys = 2;
+slotTestGame.playerStats.redKeys = 1;
+assert(slotTestGame.saveGame(2) === true, '成功将进度保存至槽位 2');
+
+// 验证槽位 2 信息只读读取与元数据完整性
+const slot2Info = slotTestGame.getSaveSlot(2);
+assert(slot2Info !== null, '成功读取槽位 2 存档元数据');
+assert(slot2Info?.slotId === 2, '槽位 2 编号正确');
+assert(slot2Info?.floor === 7, '槽位 2 记录楼层为 7F');
+assert(Boolean(slot2Info?.floorName), '槽位 2 包含可读楼层名称');
+assert(slot2Info?.stats.hp === 3500, '槽位 2 记录生命值为 3500');
+assert(slot2Info?.stats.atk === 88, '槽位 2 记录攻击力为 88');
+assert(slot2Info?.stats.def === 77, '槽位 2 记录防御力为 77');
+assert(slot2Info?.stats.gold === 520, '槽位 2 记录金币为 520');
+assert(slot2Info?.stats.yellowKeys === 4, '槽位 2 记录黄钥匙为 4');
+assert(Boolean(slot2Info?.timestamp), '槽位 2 记录有效时间戳');
+
+// 在第 15 层保存至槽位 5
+slotTestGame.changeFloor(15, 'up');
+slotTestGame.playerStats.hp = 9999;
+assert(slotTestGame.saveGame(5) === true, '成功将进度保存至槽位 5');
+const slot5Info = slotTestGame.getSaveSlot(5);
+assert(slot5Info?.floor === 15 && slot5Info.stats.hp === 9999, '槽位 5 记录 15F 及满血数据');
+
+// 验证 getAllSaveSlots() 正确反映槽位状态
+const updatedSlots = slotTestGame.getAllSaveSlots(6);
+assert(updatedSlots[1]?.slotId === 2, '槽位列表索引 1 对应槽位 2 存档');
+assert(updatedSlots[4]?.slotId === 5, '槽位列表索引 4 对应槽位 5 存档');
+
+// 测试读取槽位 2 并恢复状态
+const restoreSlotGame = new GameState();
+restoreSlotGame.initGame();
+assert(restoreSlotGame.currentFloor === 0, '新游戏初始位于 0F');
+assert(restoreSlotGame.loadGame(2) === true, '成功从槽位 2 恢复游戏存档');
+assert(restoreSlotGame.currentFloor === 7, '恢复后勇士精准回到 7F');
+assert(restoreSlotGame.playerStats.hp === 3500, '恢复后勇士生命值无损还原为 3500');
+assert(restoreSlotGame.playerStats.atk === 88, '恢复后勇士攻击力还原为 88');
+assert(restoreSlotGame.playerStats.def === 77, '恢复后勇士防御力还原为 77');
+assert(restoreSlotGame.playerStats.gold === 520, '恢复后勇士金币还原为 520');
+assert(restoreSlotGame.exploredFloors.has(7), '恢复后已探索楼层集合包含 7F');
+assert(restoreSlotGame.isGameOver === false, '读取存档后游戏失败标志重置为 false');
+
+// 测试删除槽位 2
+assert(slotTestGame.deleteSaveSlot(2) === true, '成功删除槽位 2 存档');
+assert(slotTestGame.getSaveSlot(2) === null, '删除后槽位 2 变为空槽位');
+assert(slotTestGame.getAllSaveSlots(6)[1] === null, '槽位列表中对应位置正确恢复为空');
+
+// 校验新增的存读盘双语标签
+assert(TRANSLATIONS.zh.saveModalTitle === '游戏存盘', '中文存盘弹窗标题正确');
+assert(TRANSLATIONS.zh.loadModalTitle === '读取存档', '中文读盘弹窗标题正确');
+assert(TRANSLATIONS.zh.confirmOverwriteTitle === '⚠️ 确认覆盖存档？', '中文覆盖存档确认标题正确');
+assert(TRANSLATIONS.zh.confirmLoadTitle === '⚠️ 确认读取存档？', '中文读取存档确认标题正确');
+assert(Boolean(TRANSLATIONS.en.saveModalTitle) && !chineseRegex.test(TRANSLATIONS.en.saveModalTitle), '英文存盘弹窗标题无汉字');
+assert(Boolean(TRANSLATIONS.en.loadModalTitle) && !chineseRegex.test(TRANSLATIONS.en.loadModalTitle), '英文读盘弹窗标题无汉字');
+assert(Boolean(TRANSLATIONS.en.confirmOverwriteTitle) && !chineseRegex.test(TRANSLATIONS.en.confirmOverwriteTitle), '英文覆盖确认标题无汉字');
+assert(Boolean(TRANSLATIONS.en.confirmLoadTitle) && !chineseRegex.test(TRANSLATIONS.en.confirmLoadTitle), '英文读取确认标题无汉字');
+
+// --- 29. 验证对话文本钥匙格式化与样式渲染 (Key Text Highlighting & Icons) ---
+console.log('\n--- 29. 验证对话文本钥匙格式化与样式渲染 (Key Text Highlighting & Icons) ---');
+function hasBracketedKeyEn(obj: any): boolean {
+  if (typeof obj === 'string') return /\[(?:Blue|Yellow|Red|Gold)\s+Keys?\]/i.test(obj);
+  if (Array.isArray(obj)) return obj.some(hasBracketedKeyEn);
+  if (typeof obj === 'object' && obj !== null) return Object.values(obj).some(hasBracketedKeyEn);
+  return false;
+}
+assert(!/【[^】]*钥匙[^】]*】/.test(JSON.stringify(TRADER_FLOOR_OFFERS)), '商人中文对话无中括号占位符钥匙名');
+assert(!hasBracketedKeyEn(TRADER_FLOOR_OFFERS), '商人英文对话无中括号占位符钥匙名');
+assert(!/【[^】]*钥匙[^】]*】/.test(JSON.stringify(ELDER_FLOOR_DIALOGUES)), '老人中文对话无中括号占位符钥匙名');
+assert(!hasBracketedKeyEn(ELDER_FLOOR_DIALOGUES), '老人英文对话无中括号占位符钥匙名');
+
+const testBlueZh: any = formatDialogueText('我这里有 1 把蓝钥匙，特惠只要 100 金币！');
+assert(Array.isArray(testBlueZh) && testBlueZh.length === 3, '蓝钥匙文本成功拆解为前缀、富文本节点与后缀');
+assert(testBlueZh[1].props.className.includes('text-sky-400 font-bold'), '蓝钥匙文字渲染为蓝色粗体');
+assert(testBlueZh[1].props.children[0].props.children === '蓝钥匙', '富文本节点文字为“蓝钥匙”');
+assert(testBlueZh[1].props.children[1].props.className.includes('text-sky-400'), '蓝钥匙文字后紧随蓝色钥匙图标');
+
+const testBlueEn: any = formatDialogueText('I have 1 Blue Key for only 100 Gold!');
+assert(Array.isArray(testBlueEn) && testBlueEn.length === 3, '英文 Blue Key 拆解为富文本节点');
+assert(testBlueEn[1].props.className.includes('text-sky-400 font-bold'), '英文 Blue Key 渲染为蓝色粗体');
+assert(testBlueEn[1].props.children[0].props.children === 'Blue Key', '英文 Blue Key 文字正确');
+assert(testBlueEn[1].props.children[1].props.className.includes('text-sky-400'), '英文 Blue Key 后紧随蓝色钥匙图标');
+
+const testYellowZh: any = formatDialogueText('年轻人，我这里有 5 把黄钥匙，只要 50 个金币！');
+assert(testYellowZh[1].props.className.includes('text-yellow-400 font-bold'), '黄钥匙文字渲染为黄色粗体');
+assert(testYellowZh[1].props.children[0].props.children === '黄钥匙', '黄钥匙文字正确');
+assert(testYellowZh[1].props.children[1].props.className.includes('text-yellow-400'), '黄钥匙文字后紧随黄色钥匙图标');
+
+const testRedZh: any = formatDialogueText('勇士，这把最后的红钥匙特惠 300 金币赠售！');
+assert(testRedZh[1].props.className.includes('text-rose-400 font-bold'), '红钥匙文字渲染为红色粗体');
+assert(testRedZh[1].props.children[0].props.children === '红钥匙', '红钥匙文字正确');
+assert(testRedZh[1].props.children[1].props.className.includes('text-rose-400'), '红钥匙文字后紧随红色钥匙图标');
+
+const testGoldZh: any = formatDialogueText('获得了金钥匙，全钥匙 +1！');
+assert(testGoldZh[1].props.className.includes('text-amber-300 font-bold'), '金钥匙文字渲染为金色粗体');
+assert(testGoldZh[1].props.children[0].props.children === '金钥匙', '金钥匙文字正确');
+assert(testGoldZh[1].props.children[1].props.className.includes('text-amber-300'), '金钥匙文字后紧随金色钥匙图标');
+
+const testArrowKeys: any = formatDialogueText('Use [Arrow Keys] to move your warrior.');
+assert(Array.isArray(testArrowKeys) && testArrowKeys.length === 1 && testArrowKeys[0] === 'Use [Arrow Keys] to move your warrior.', '键盘方向键 [Arrow Keys] 保持原样不被误匹配为钥匙道具');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

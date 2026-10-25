@@ -154,6 +154,7 @@ export interface SaveSlot {
   slotId: number;
   timestamp: string;
   floor: number;
+  floorName?: string;
   stats: PlayerStats;
   playerPos: { x: number; y: number; dir: Direction };
   floorStates: { [floorNum: number]: (Tile | null)[][] };
@@ -165,4 +166,5 @@ export interface SaveSlot {
   floor39Clock3Opened?: boolean;
   floor39Clock12Opened?: boolean;
   isFloor39PuzzleSolved?: boolean;
+  exploredFloors?: number[];
 }
