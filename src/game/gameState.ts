@@ -1550,7 +1550,7 @@ export class GameState {
       this.playerStats.blueKeys += 1;
       sound.playItem();
       this.addNotification(
-        this.language === 'zh' ? '智慧老人赠送蓝色钥匙 x1' : 'Wise Sage gifted Blue Key x1',
+        this.language === 'zh' ? '智慧老人赠送蓝钥匙 x1' : 'Wise Sage gifted Blue Key x1',
         '#3b82f6'
       );
     }
@@ -1819,10 +1819,12 @@ export class GameState {
         floorStates[fNum] = layout;
       });
 
+      const currentFloorData = this.getCurrentFloorData();
       const slot: SaveSlot = {
         slotId,
         timestamp: new Date().toLocaleString(),
         floor: this.currentFloor,
+        floorName: currentFloorData?.name,
         stats: JSON.parse(JSON.stringify(this.playerStats)),
         playerPos: { ...this.playerPos },
         floorStates,
@@ -1834,6 +1836,7 @@ export class GameState {
         floor39Clock3Opened: this.floor39Clock3Opened,
         floor39Clock12Opened: this.floor39Clock12Opened,
         isFloor39PuzzleSolved: this.isFloor39PuzzleSolved,
+        exploredFloors: Array.from(this.exploredFloors),
       };
 
       localStorage.setItem(`mota3d_save_${slotId}`, JSON.stringify(slot));
@@ -1868,13 +1871,55 @@ export class GameState {
       for (const fNum in slot.floorStates) {
         this.floorCache.set(Number(fNum), slot.floorStates[fNum]);
       }
-      this.exploredFloors.add(this.currentFloor);
+      if (slot.exploredFloors && Array.isArray(slot.exploredFloors)) {
+        this.exploredFloors = new Set(slot.exploredFloors);
+      } else {
+        this.exploredFloors.add(this.currentFloor);
+      }
+
+      this.isGameOver = false;
+      this.isVictory = false;
+      this.isDialogueOpen = false;
+      this.isShopOpen = false;
+      this.isMonsterManualOpen = false;
+      this.isFloorTeleportOpen = false;
 
       sound.playStairs();
       this.notify();
       return true;
     } catch (e) {
       console.error('Load failed', e);
+      return false;
+    }
+  }
+
+  // 查询指定槽位存档信息（只读预览，不影响当前游戏数据）
+  public getSaveSlot(slotId: number): SaveSlot | null {
+    try {
+      const data = localStorage.getItem(`mota3d_save_${slotId}`);
+      if (!data) return null;
+      return JSON.parse(data) as SaveSlot;
+    } catch {
+      return null;
+    }
+  }
+
+  // 获取所有槽位信息列表（默认 1~6 号槽位）
+  public getAllSaveSlots(maxSlots: number = 6): (SaveSlot | null)[] {
+    const list: (SaveSlot | null)[] = [];
+    for (let i = 1; i <= maxSlots; i++) {
+      list.push(this.getSaveSlot(i));
+    }
+    return list;
+  }
+
+  // 删除指定槽位的存档
+  public deleteSaveSlot(slotId: number): boolean {
+    try {
+      localStorage.removeItem(`mota3d_save_${slotId}`);
+      this.notify();
+      return true;
+    } catch {
       return false;
     }
   }

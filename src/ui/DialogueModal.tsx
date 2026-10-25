@@ -1,11 +1,99 @@
 import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
-import { ChevronRight, Check, Coins, X, AlertCircle } from 'lucide-react';
+import { ChevronRight, Check, Coins, X, AlertCircle, Key } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface DialogueModalProps {
   game: GameState;
   onClose: () => void;
+}
+
+const KEY_PATTERN =
+  /(?:【|\[)?((?:蓝色钥匙|蓝钥匙|\bBlue\s+Keys?\b|\bblue\s+keys?\b)|(?:黄色钥匙|黄钥匙|\bYellow\s+Keys?\b|\byellow\s+keys?\b)|(?:红色钥匙|红钥匙|\bRed\s+Keys?\b|\bred\s+keys?\b)|(?:金钥匙|\bGold\s+Keys?\b|\bgold\s+keys?\b))(?:】|\])?/g;
+
+interface KeyConfig {
+  label: string;
+  textColor: string;
+  iconColor: string;
+}
+
+function getKeyConfig(matchedStr: string): KeyConfig | null {
+  const lower = matchedStr.toLowerCase();
+  if (matchedStr.includes('蓝') || lower.includes('blue')) {
+    return {
+      label: matchedStr.includes('钥匙') ? '蓝钥匙' : lower.includes('keys') ? 'Blue Keys' : 'Blue Key',
+      textColor: 'text-sky-400',
+      iconColor: 'text-sky-400',
+    };
+  }
+  if (matchedStr.includes('黄') || lower.includes('yellow')) {
+    return {
+      label: matchedStr.includes('钥匙') ? '黄钥匙' : lower.includes('keys') ? 'Yellow Keys' : 'Yellow Key',
+      textColor: 'text-yellow-400',
+      iconColor: 'text-yellow-400',
+    };
+  }
+  if (matchedStr.includes('红') || lower.includes('red')) {
+    return {
+      label: matchedStr.includes('钥匙') ? '红钥匙' : lower.includes('keys') ? 'Red Keys' : 'Red Key',
+      textColor: 'text-rose-400',
+      iconColor: 'text-rose-400',
+    };
+  }
+  if (matchedStr.includes('金') || lower.includes('gold')) {
+    return {
+      label: matchedStr.includes('钥匙') ? '金钥匙' : lower.includes('keys') ? 'Gold Keys' : 'Gold Key',
+      textColor: 'text-amber-300',
+      iconColor: 'text-amber-300',
+    };
+  }
+  return null;
+}
+
+export function formatDialogueText(text: string | undefined): React.ReactNode {
+  if (!text) return '';
+
+  const sanitized = text
+    .replace(/当前楼层的中心对称位置\s*\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点')
+    .replace(/当前楼层与地图中心对称的位置/g, '关于中心对称的点')
+    .replace(/\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点');
+
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  KEY_PATTERN.lastIndex = 0;
+
+  while ((match = KEY_PATTERN.exec(sanitized)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(sanitized.slice(lastIndex, match.index));
+    }
+
+    const matchedKey = match[1];
+    const cfg = getKeyConfig(matchedKey);
+
+    if (cfg) {
+      nodes.push(
+        <span
+          key={`key-${match.index}`}
+          className={`${cfg.textColor} font-bold inline-flex items-center gap-1 mx-0.5 align-middle select-text`}
+        >
+          <span>{cfg.label}</span>
+          <Key className={`w-4 h-4 ${cfg.iconColor} inline shrink-0`} />
+        </span>
+      );
+    } else {
+      nodes.push(match[0]);
+    }
+
+    lastIndex = KEY_PATTERN.lastIndex;
+  }
+
+  if (lastIndex < sanitized.length) {
+    nodes.push(sanitized.slice(lastIndex));
+  }
+
+  return nodes;
 }
 
 export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) => {
@@ -49,10 +137,7 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
         {/* 对话文本 (字体增大 40%: 由 14px 增至 20px) */}
         <div className="p-7 min-h-[140px] flex items-center">
           <p className="text-slate-100 text-[20px] leading-[1.75] font-medium tracking-wide whitespace-pre-line">
-            {dialogue.lines[dialogue.currentIndex]
-              ?.replace(/当前楼层的中心对称位置\s*\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点')
-              ?.replace(/当前楼层与地图中心对称的位置/g, '关于中心对称的点')
-              ?.replace(/\(10\s*-\s*x,\s*10\s*-\s*y\)/g, '关于中心对称的点')}
+            {formatDialogueText(dialogue.lines[dialogue.currentIndex])}
           </p>
         </div>
 

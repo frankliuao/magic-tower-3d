@@ -17,6 +17,7 @@ import { DebugPanel } from './ui/DebugPanel';
 import { InspectCard } from './ui/InspectCard';
 import { ConfirmCenterFlyModal } from './ui/ConfirmCenterFlyModal';
 import { ConfirmUpFlyModal } from './ui/ConfirmUpFlyModal';
+import { SaveLoadModal } from './ui/SaveLoadModal';
 import { ZoomIn, ZoomOut, Target, Zap } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
 import { isDebugAllowed } from './utils/env';
@@ -90,6 +91,15 @@ export const App: React.FC = () => {
 
   // 向上飞行器确认弹窗
   const [isConfirmUpFlyOpen, setIsConfirmUpFlyOpen] = useState<boolean>(false);
+
+  // 存盘与读盘多槽位面板状态
+  const [saveLoadModalState, setSaveLoadModalState] = useState<{
+    isOpen: boolean;
+    mode: 'save' | 'load';
+  }>({
+    isOpen: false,
+    mode: 'save',
+  });
 
   const addFloating = useCallback((text: string, color: string, customDuration?: number) => {
     // 智能推断展示停留时长：保证玩家有充分时间阅读剧情与首领通报，绝不一闪而过
@@ -621,24 +631,32 @@ export const App: React.FC = () => {
     }
   }, [game, t.restartConfirm]);
 
-  // 快速存读档
-  const handleQuickSave = useCallback(() => {
-    game.saveGame(1);
-    addFloating(t.savedSuccess, '#22c55e');
-  }, [game, addFloating, t.savedSuccess]);
+  // 打开多槽位存盘与读盘管理面板
+  const handleOpenSaveModal = useCallback(() => {
+    setSaveLoadModalState({ isOpen: true, mode: 'save' });
+  }, []);
 
-  const handleQuickLoad = useCallback(() => {
-    const success = game.loadGame(1);
-    if (success) {
+  const handleOpenLoadModal = useCallback(() => {
+    setSaveLoadModalState({ isOpen: true, mode: 'load' });
+  }, []);
+
+  const handleSaveSuccess = useCallback(
+    (slotId: number) => {
+      addFloating(t.saveSlotSuccess.replace('{slot}', String(slotId)), '#22c55e');
+    },
+    [addFloating, t.saveSlotSuccess]
+  );
+
+  const handleLoadSuccess = useCallback(
+    (slotId: number) => {
       if (threeEngineRef.current) {
         threeEngineRef.current.setFloor(game.getCurrentFloorData());
         threeEngineRef.current.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir, true);
       }
-      addFloating(t.loadSuccess, '#38bdf8');
-    } else {
-      addFloating(t.noSaveFound, '#f87171');
-    }
-  }, [game, addFloating, t.loadSuccess, t.noSaveFound]);
+      addFloating(t.loadSlotSuccess.replace('{slot}', String(slotId)), '#38bdf8');
+    },
+    [game, addFloating, t.loadSlotSuccess]
+  );
 
   // 罗盘楼层传送
   const handleTeleport = useCallback(
@@ -720,8 +738,8 @@ export const App: React.FC = () => {
             game.notify();
           }}
           onRestart={handleRestart}
-          onQuickSave={handleQuickSave}
-          onQuickLoad={handleQuickLoad}
+          onQuickSave={handleOpenSaveModal}
+          onQuickLoad={handleOpenLoadModal}
         />
 
         {/* 3D WebGL Three.js 画布容器 */}
@@ -952,7 +970,7 @@ export const App: React.FC = () => {
               threeEngineRef.current.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir, true);
             }
           }}
-          onLoadLastSave={handleQuickLoad}
+          onLoadLastSave={handleOpenLoadModal}
         />
       )}
 
@@ -983,6 +1001,16 @@ export const App: React.FC = () => {
         currentFloor={game.currentFloor}
         onConfirm={handleConfirmUpFly}
         onCancel={() => setIsConfirmUpFlyOpen(false)}
+      />
+
+      {/* 弹窗层：多槽位存盘与读盘管理面板 */}
+      <SaveLoadModal
+        isOpen={saveLoadModalState.isOpen}
+        initialMode={saveLoadModalState.mode}
+        game={game}
+        onClose={() => setSaveLoadModalState((prev) => ({ ...prev, isOpen: false }))}
+        onSaveSuccess={handleSaveSuccess}
+        onLoadSuccess={handleLoadSuccess}
       />
     </div>
   );
