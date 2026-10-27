@@ -19,7 +19,17 @@ export interface Translations {
   bgmUnmuteTip: string;
   debugTip: string;
   restartTip: string;
+  coffeeTip: string;
   langToggleTip: string;
+
+  // Buy Me a Coffee & Honor Monument Modal
+  coffeeModalTitle: string;
+  coffeeModalLeavingWarning: string;
+  coffeeModalDesc: string;
+  coffeeModalProjectNote: string;
+  coffeeModalConfirmBtn: string;
+  coffeeModalCancelBtn: string;
+  monumentSupportBtn: string;
 
   // Sidebar
   towerSubtitle: string;
@@ -266,7 +276,17 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     bgmUnmuteTip: '开启背景音乐',
     debugTip: '开发者作弊与数值调试',
     restartTip: '重新开始游戏',
+    coffeeTip: '请作者喝杯咖啡 (Buy Me a Coffee)',
     langToggleTip: '切换为英文 (Switch to English)',
+
+    // Buy Me a Coffee & Honor Board Modal
+    coffeeModalTitle: '支持开发者',
+    coffeeModalLeavingWarning: '即将离开游戏并在新标签页中打开外部赞助页面',
+    coffeeModalDesc: '感谢您对魔塔 3D 的热爱，请考虑在 Buy Me a Coffee 上给我打赏。打赏后，如果你愿意，我会将你的名字同步在 0 层的英雄赞助榜上。请在打赏时留言表明意向。谢谢！',
+    coffeeModalProjectNote: '《魔塔 3D》为完全开源且免费体验的独立重制项目，你的每一份支持都是持续维护与优化游戏的最大动力！',
+    coffeeModalConfirmBtn: '前往支持 (Buy Me a Coffee)',
+    coffeeModalCancelBtn: '我谨慎考虑一下',
+    monumentSupportBtn: '前往支持 (Buy Me a Coffee)',
 
     // Sidebar
     towerSubtitle: 'MAGIC TOWER 3D',
@@ -511,7 +531,17 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     bgmUnmuteTip: 'Play Music',
     debugTip: 'Developer Debug & Cheats',
     restartTip: 'Restart Game',
+    coffeeTip: 'Buy Me a Coffee',
     langToggleTip: 'Switch to Chinese (切换为中文)',
+
+    // Buy Me a Coffee & Honor Board Modal
+    coffeeModalTitle: 'Support the Developer',
+    coffeeModalLeavingWarning: 'Leaving the game to open an external link in a new tab',
+    coffeeModalDesc: 'Thank you for your love for Magic Tower 3D! Please consider supporting me on Buy Me a Coffee. If you wish, your name will be synced onto the 0F Hero Supporters Board. Please leave a note with your intention when donating. Thank you!',
+    coffeeModalProjectNote: 'Magic Tower 3D is a completely open-source, free-to-play remake. Every cup of coffee fuels future updates and optimizations!',
+    coffeeModalConfirmBtn: 'Support on Buy Me a Coffee',
+    coffeeModalCancelBtn: 'I will consider carefully',
+    monumentSupportBtn: 'Support on Buy Me a Coffee',
 
     // Sidebar
     towerSubtitle: 'MAGIC TOWER 3D',
@@ -911,6 +941,18 @@ export const NPC_DIALOGUES: Record<
     lines: { zh: string[]; en: string[] };
   }
 > = {
+  honor_monument: {
+    name: { zh: '英雄赞助榜', en: 'Hero Supporters Board' },
+    avatar: '🏆',
+    lines: {
+      zh: [
+        '感谢您对魔塔 3D 的热爱，请考虑在 Buy Me a Coffee 上给我打赏。打赏后，如果你愿意，我会将你的名字同步在这个赞助榜上。请在打赏时留言表明意向。谢谢！',
+      ],
+      en: [
+        'Thank you for your love for Magic Tower 3D! Please consider supporting me on Buy Me a Coffee. If you wish, your name will be synced onto this supporters board. Please leave a note with your intention when donating. Thank you!',
+      ],
+    },
+  },
   fairy: {
     name: { zh: '仙人 (仙女)', en: 'Celestial Fairy' },
     avatar: '🧚‍♀️',

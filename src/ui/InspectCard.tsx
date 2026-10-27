@@ -277,6 +277,13 @@ export const InspectCard: React.FC<InspectCardProps> = ({
             ? '被魔王囚禁于塔顶的无辜公主，等待着勇士手刃魔王将其解救。'
             : 'The captured princess awaiting the hero to conquer the Demon Lord.';
         avatar = '👸';
+      } else if (npcId === 'honor_monument' || npcId === 'monument') {
+        npcName = lang === 'zh' ? '英雄赞助榜' : 'Hero Supporters Board';
+        npcDesc =
+          lang === 'zh'
+            ? '记录支持与赞助《魔塔 3D》勇者的专属展示榜。在 Buy Me a Coffee 支持后，你的名字与留言将同步在此！'
+            : 'A board honoring players who support Magic Tower 3D. Support on Buy Me a Coffee to display your name and message here!';
+        avatar = '🏆';
       }
 
       return (

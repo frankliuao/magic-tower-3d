@@ -681,6 +681,7 @@ export class ThreeCanvas {
       case 'shop':
         return ModelFactory.createShopMesh(true);
       case 'npc': {
+        if (tile.npcId === 'honor_monument' || tile.npcId === 'monument') return ModelFactory.createHonorMonumentMesh();
         if (tile.npcId === 'fairy') return ModelFactory.createFairyMesh();
         if (tile.npcId === 'elder_exp') return ModelFactory.createOldManMesh('exp');
         if (tile.npcId === 'old_man_manual' || tile.npcId === 'elder' || tile.npcId === 'old_man') return ModelFactory.createOldManMesh('normal');

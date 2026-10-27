@@ -36,7 +36,7 @@ function getFloor0(): FloorData {
     [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.doorI(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.item('lucky_coin'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.wall(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall()],
-    [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.wall()],
+    [T.wall(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.npc('honor_monument'), T.floor(), T.floor(), T.wall()],
     [T.wall(), T.item('potion_red'), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.floor(), T.item('potion_red'), T.wall()],
     [T.wall(), T.item('key_yellow'), T.floor(), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.item('key_blue'), T.wall()],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],

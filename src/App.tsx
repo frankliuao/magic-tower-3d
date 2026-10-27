@@ -17,6 +17,7 @@ import { DebugPanel } from './ui/DebugPanel';
 import { InspectCard } from './ui/InspectCard';
 import { ConfirmCenterFlyModal } from './ui/ConfirmCenterFlyModal';
 import { ConfirmUpFlyModal } from './ui/ConfirmUpFlyModal';
+import { ConfirmCoffeeModal } from './ui/ConfirmCoffeeModal';
 import { SaveLoadModal } from './ui/SaveLoadModal';
 import { ZoomIn, ZoomOut, Target, Zap } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
@@ -91,6 +92,9 @@ export const App: React.FC = () => {
 
   // 向上飞行器确认弹窗
   const [isConfirmUpFlyOpen, setIsConfirmUpFlyOpen] = useState<boolean>(false);
+
+  // Buy Me a Coffee 支持开发者弹窗
+  const [isCoffeeModalOpen, setIsCoffeeModalOpen] = useState<boolean>(false);
 
   // 存盘与读盘多槽位面板状态
   const [saveLoadModalState, setSaveLoadModalState] = useState<{
@@ -534,6 +538,7 @@ export const App: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 打开任意模态窗口时拦截普通方向移动
       const hasModal =
+        isCoffeeModalOpen ||
         isConfirmCenterFlyOpen ||
         isConfirmUpFlyOpen ||
         game.isMonsterManualOpen ||
@@ -546,6 +551,10 @@ export const App: React.FC = () => {
         game.isDebugOpen;
 
       if (e.code === 'Escape') {
+        if (isCoffeeModalOpen) {
+          setIsCoffeeModalOpen(false);
+          return;
+        }
         if (isConfirmUpFlyOpen) {
           setIsConfirmUpFlyOpen(false);
           return;
@@ -740,6 +749,7 @@ export const App: React.FC = () => {
           onRestart={handleRestart}
           onQuickSave={handleOpenSaveModal}
           onQuickLoad={handleOpenLoadModal}
+          onOpenCoffeeModal={() => setIsCoffeeModalOpen(true)}
         />
 
         {/* 3D WebGL Three.js 画布容器 */}
@@ -1001,6 +1011,12 @@ export const App: React.FC = () => {
         currentFloor={game.currentFloor}
         onConfirm={handleConfirmUpFly}
         onCancel={() => setIsConfirmUpFlyOpen(false)}
+      />
+
+      {/* 弹窗层：Buy Me a Coffee 支持开发者弹窗 */}
+      <ConfirmCoffeeModal
+        isOpen={isCoffeeModalOpen}
+        onClose={() => setIsCoffeeModalOpen(false)}
       />
 
       {/* 弹窗层：多槽位存盘与读盘管理面板 */}

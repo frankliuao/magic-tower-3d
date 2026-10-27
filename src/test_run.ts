@@ -22,6 +22,8 @@ import {
   ELDER_FLOOR_DIALOGUES,
 } from './i18n';
 import { formatDialogueText } from './ui/DialogueModal';
+import { BUY_ME_A_COFFEE_URL } from './ui/ConfirmCoffeeModal';
+import { SUPPORTERS } from './data/supporters';
 import { SpecialAbility, ItemType } from './types/game';
 import { ModelFactory } from './engine/ModelFactory';
 import { ThreeCanvas } from './engine/ThreeCanvas';
@@ -2313,6 +2315,51 @@ assert(testGoldZh[1].props.children[1].props.className.includes('text-amber-300'
 
 const testArrowKeys: any = formatDialogueText('Use [Arrow Keys] to move your warrior.');
 assert(Array.isArray(testArrowKeys) && testArrowKeys.length === 1 && testArrowKeys[0] === 'Use [Arrow Keys] to move your warrior.', '键盘方向键 [Arrow Keys] 保持原样不被误匹配为钥匙道具');
+
+// ==============================================
+// 30. 验证英雄赞助榜与 Buy Me a Coffee 支持系统 (Hero Supporters Board & BMC Integration)
+// ==============================================
+console.log('\n--- 30. 验证英雄赞助榜与 Buy Me a Coffee 支持系统 (Hero Supporters Board & BMC) ---');
+const floor0 = getFloor(0);
+assert(floor0.layout[7][7].type === 'npc' && floor0.layout[7][7].npcId === 'honor_monument', '0F (7, 7) 处成功放置英雄赞助榜 (Hero Supporters Board)');
+
+const monumentDlgZh = NPC_DIALOGUES.honor_monument.lines.zh;
+assert(monumentDlgZh.some((l) => l.includes('Buy Me a Coffee') && l.includes('赞助榜')), '英雄赞助榜中文台词包含 Buy Me a Coffee 与留言意向说明');
+const monumentDlgEn = NPC_DIALOGUES.honor_monument.lines.en;
+assert(monumentDlgEn.some((l) => l.includes('Buy Me a Coffee')), '英雄赞助榜英文台词包含 Buy Me a Coffee');
+assert(!monumentDlgEn.some((l) => /[\u4e00-\u9fa5]/.test(l)), '英雄赞助榜英文台词纯英无汉字');
+
+assert(SUPPORTERS.length >= 1 && SUPPORTERS[0].name === 'Someone', '赞助者名单成功记录 Someone');
+assert(SUPPORTERS[0].message === 'Like your Magic tower. Keep up the good work', '赞助者留言正确加载');
+assert(SUPPORTERS[0].date === '2026-10-26', '赞助者打赏日期正确记录为昨天 (2026-10-26)');
+
+assert(TRANSLATIONS.zh.coffeeTip && TRANSLATIONS.zh.coffeeTip.includes('咖啡'), '中文包含请喝咖啡提示文案');
+assert(TRANSLATIONS.en.coffeeTip && !/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeTip), '英文 coffeeTip 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalTitle), '英文 coffeeModalTitle 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalLeavingWarning), '英文 coffeeModalLeavingWarning 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalDesc), '英文 coffeeModalDesc 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalProjectNote), '英文 coffeeModalProjectNote 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalConfirmBtn), '英文 coffeeModalConfirmBtn 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.coffeeModalCancelBtn), '英文 coffeeModalCancelBtn 无汉字');
+assert(!/[\u4e00-\u9fa5]/.test(TRANSLATIONS.en.monumentSupportBtn), '英文 monumentSupportBtn 无汉字');
+
+assert(BUY_ME_A_COFFEE_URL === 'https://buymeacoffee.com/frankliuao', 'Buy Me a Coffee 链接精准指向作者主页 https://buymeacoffee.com/frankliuao');
+
+const monumentMesh = ModelFactory.createHonorMonumentMesh();
+assert(monumentMesh.name === 'npc_honor_monument', '荣誉碑 3D Mesh 标识名正确');
+let monumentMeshCount = 0;
+monumentMesh.traverse((c: any) => { if (c.isMesh) monumentMeshCount++; });
+assert(monumentMeshCount >= 8, `荣誉碑具备石基座、方尖碑柱、金字塔顶、铭牌浮雕、咖啡杯与圣晶等丰富三维组件 (实际部件数: ${monumentMeshCount})`);
+
+const monumentGame = new GameState();
+monumentGame.initGame();
+monumentGame.triggerNPC('honor_monument', 7, 7);
+assert(monumentGame.isDialogueOpen, '与荣誉碑交互成功触发对话框');
+assert(monumentGame.activeDialogue?.npcId === 'honor_monument', '当前激活对话为荣誉碑');
+assert(Boolean(monumentGame.activeDialogue?.lines[0].includes('Buy Me a Coffee')), '荣誉碑对话内容正确加载');
+monumentGame.closeDialogue();
+assert(!monumentGame.isDialogueOpen, '关闭对话框后正常恢复');
+assert(monumentGame.getCurrentFloorData().layout[7][7].npcId === 'honor_monument', '荣誉碑对话关闭后依然留存在地图上不消失');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
