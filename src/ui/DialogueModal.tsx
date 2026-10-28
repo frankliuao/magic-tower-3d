@@ -152,13 +152,15 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
             <span className="text-xs text-slate-400 font-mono">
               {dialogue.currentIndex + 1} / {dialogue.lines.length}
             </span>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-slate-700/80 rounded-lg text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
-              title={t.cancelBtn}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {isHonorMonument && (
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-slate-700/80 rounded-lg text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
+                title={t.cancelBtn}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 

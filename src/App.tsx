@@ -627,7 +627,19 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [game, handleMove, stopAutoWalk, addFloating, t.spaceResetFloating]);
+  }, [
+    game,
+    handleMove,
+    stopAutoWalk,
+    addFloating,
+    t.spaceResetFloating,
+    isCoffeeModalOpen,
+    isConfirmCenterFlyOpen,
+    isConfirmUpFlyOpen,
+    isTargetingFly,
+    handleCloseInspect,
+    lang,
+  ]);
 
   // 重新开始游戏
   const handleRestart = useCallback(() => {
