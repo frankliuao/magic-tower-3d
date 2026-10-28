@@ -130,14 +130,7 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 select-none"
-      onClick={() => {
-        if (isHonorMonument) {
-          onClose();
-        }
-      }}
-    >
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 select-none">
       <div
         className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden mb-6 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -152,15 +145,6 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
             <span className="text-xs text-slate-400 font-mono">
               {dialogue.currentIndex + 1} / {dialogue.lines.length}
             </span>
-            {isHonorMonument && (
-              <button
-                onClick={onClose}
-                className="p-1 hover:bg-slate-700/80 rounded-lg text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
-                title={t.cancelBtn}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
           </div>
         </div>
 

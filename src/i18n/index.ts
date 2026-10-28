@@ -285,7 +285,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     coffeeModalDesc: '感谢您对魔塔 3D 的热爱，请考虑在 Buy Me a Coffee 上给我打赏。打赏后，如果你愿意，我会将你的名字同步在 0 层的英雄赞助榜上。请在打赏时留言表明意向。谢谢！',
     coffeeModalProjectNote: '《魔塔 3D》为完全开源且免费体验的独立重制项目，你的每一份支持都是持续维护与优化游戏的最大动力！',
     coffeeModalConfirmBtn: '前往支持 (Buy Me a Coffee)',
-    coffeeModalCancelBtn: '我谨慎考虑一下',
+    coffeeModalCancelBtn: '我慎重考虑一下',
     monumentSupportBtn: '前往支持 (Buy Me a Coffee)',
 
     // Sidebar

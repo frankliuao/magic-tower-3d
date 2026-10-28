@@ -1,6 +1,6 @@
 // src/ui/ConfirmCoffeeModal.tsx
 import React from 'react';
-import { Coffee, ExternalLink, X, Heart } from 'lucide-react';
+import { Coffee, ExternalLink, Heart } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 interface ConfirmCoffeeModalProps {
@@ -21,10 +21,7 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
       <div
         className="bg-slate-900 border border-amber-500/60 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col transform transition-all"
         onClick={(e) => e.stopPropagation()}
@@ -39,12 +36,6 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
               {t.coffeeModalTitle}
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-slate-700/80 rounded-xl text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* 内容区 */}
