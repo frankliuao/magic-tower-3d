@@ -23,11 +23,11 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
       <div
-        className="bg-slate-900 border border-amber-500/60 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col transform transition-all"
+        className="bg-slate-900 border border-amber-500/60 rounded-2xl w-full max-w-lg max-h-[90vh] shadow-2xl overflow-hidden flex flex-col transform transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-4 flex items-center justify-between">
+        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-amber-500/30 to-amber-700/20 border border-amber-500/50 rounded-xl shadow-inner">
               <Coffee className="w-5 h-5 text-amber-400" />
@@ -39,7 +39,7 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
         </div>
 
         {/* 内容区 */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
           {/* 开源非营利说明与致谢 (放置在最上方) */}
           <div className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-center gap-2.5 text-xs sm:text-sm text-amber-200 font-medium">
             <Heart className="w-4 h-4 text-rose-400 shrink-0" />
@@ -55,7 +55,7 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
         </div>
 
         {/* 底部操作按钮 */}
-        <div className="bg-slate-950/70 border-t border-slate-800 px-6 py-3.5 flex items-center justify-end gap-3">
+        <div className="bg-slate-950/70 border-t border-slate-800 px-6 py-3.5 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}

@@ -761,7 +761,10 @@ export const App: React.FC = () => {
           onRestart={handleRestart}
           onQuickSave={handleOpenSaveModal}
           onQuickLoad={handleOpenLoadModal}
-          onOpenCoffeeModal={() => setIsCoffeeModalOpen(true)}
+          onOpenCoffeeModal={() => {
+            stopAutoWalk();
+            setIsCoffeeModalOpen(true);
+          }}
         />
 
         {/* 3D WebGL Three.js 画布容器 */}

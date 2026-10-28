@@ -2361,6 +2361,29 @@ monumentGame.closeDialogue();
 assert(!monumentGame.isDialogueOpen, '关闭对话框后正常恢复');
 assert(monumentGame.getCurrentFloorData().layout[7][7].npcId === 'honor_monument', '荣誉碑对话关闭后依然留存在地图上不消失');
 
+// 验证旧版本存档自动迁移补全 0F 荣誉榜
+const legacySaveGame = new GameState();
+legacySaveGame.initGame();
+const legacyFloor0 = JSON.parse(JSON.stringify(legacySaveGame.getCurrentFloorData().layout));
+legacyFloor0[7][7] = { type: 'floor' }; // 模拟更新前的旧存档：(7, 7) 还是普通地面
+const legacySlotData = {
+  slotId: 6,
+  timestamp: '2026-10-01 12:00:00',
+  floor: 3,
+  floorName: '3F',
+  stats: JSON.parse(JSON.stringify(legacySaveGame.playerStats)),
+  playerPos: { x: 5, y: 5, dir: 'up' },
+  floorStates: { 0: legacyFloor0 },
+  exploredFloors: [0, 1, 2, 3],
+};
+localStorage.setItem('mota3d_save_6', JSON.stringify(legacySlotData));
+const loadSuccess = legacySaveGame.loadGame(6);
+assert(loadSuccess, '成功加载模拟旧版本存档');
+legacySaveGame.changeFloor(0);
+const loadedFloor0 = legacySaveGame.getCurrentFloorData();
+assert(loadedFloor0.layout[7][7]?.type === 'npc' && loadedFloor0.layout[7][7]?.npcId === 'honor_monument', '旧版本存档加载后平滑热迁移成功：0F (7, 7) 正确补全英雄赞助榜');
+localStorage.removeItem('mota3d_save_6');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

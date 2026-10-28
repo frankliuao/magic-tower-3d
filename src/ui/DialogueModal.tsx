@@ -130,13 +130,13 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 select-none">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 select-none">
       <div
-        className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden mb-6 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] shadow-2xl overflow-hidden flex flex-col mb-4 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 对话框头部 */}
-        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-3.5 flex items-center justify-between">
+        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-3.5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="text-3xl">{dialogue.avatar}</span>
             <span className="font-bold text-amber-300 text-lg leading-tight">{dialogue.name}</span>
@@ -151,7 +151,7 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
         </div>
 
         {/* 对话文本 */}
-        <div className="p-7 min-h-[140px] flex flex-col justify-center gap-4">
+        <div className="p-5 sm:p-7 min-h-[120px] flex flex-col justify-start gap-4 overflow-y-auto min-h-0 flex-1">
           {isHonorMonument && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-center gap-2.5 text-xs sm:text-sm text-amber-200 font-medium">
               <Heart className="w-4 h-4 text-rose-400 shrink-0" />
@@ -211,7 +211,7 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
         </div>
 
         {/* 底部按钮 */}
-        <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex items-center justify-between gap-3">
+        <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex items-center justify-between gap-3 shrink-0">
           {canTrade ? (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
               {game.playerStats.gold >= trade.costGold ? (

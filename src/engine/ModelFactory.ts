@@ -1633,22 +1633,29 @@ export class ModelFactory {
     pyramidTop.position.y = 0.955;
 
     // 3. 正面金色铭刻荣誉牌匾 (Gold Plaque & Coffee Cup Emblem)
+    // 采用与方尖碑锥度贴合的牌匾装饰组，向前位移以确保金色牌匾、咖啡杯与铭文浮雕完整浮现于石碑外表面
+    const plaqueGroup = new THREE.Group();
+    plaqueGroup.position.set(0, 0.52, 0.208);
+    plaqueGroup.rotation.x = -0.081;
+
     const plaque = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 0.02), goldPlateMat);
-    plaque.position.set(0, 0.52, 0.175);
+    plaqueGroup.add(plaque);
 
     // 咖啡杯浮雕 (Coffee Cup Symbol on Plaque)
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.022, 0.04, 12), cupCeramicMat);
-    cup.position.set(0, 0.63, 0.19);
+    cup.position.set(0, 0.11, 0.02);
+    plaqueGroup.add(cup);
 
     const handle = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), goldMat);
-    handle.position.set(0.032, 0.63, 0.19);
+    handle.position.set(0.032, 0.11, 0.02);
     handle.rotation.y = Math.PI / 2;
+    plaqueGroup.add(handle);
 
     // 牌匾上铭刻横线 (Engraved Honor Lines)
     for (let i = 0; i < 3; i++) {
       const line = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.005), darkEngraveMat);
-      line.position.set(0, 0.55 - i * 0.05, 0.187);
-      group.add(line);
+      line.position.set(0, 0.03 - i * 0.05, 0.012);
+      plaqueGroup.add(line);
     }
 
     // 4. 碑顶悬浮闪耀神圣圣晶 (Glowing Honor Crystal)
@@ -1668,7 +1675,7 @@ export class ModelFactory {
       group.add(corner);
     }
 
-    group.add(base1, base2, baseTrim, pillar, pyramidTop, plaque, cup, handle, crystal);
+    group.add(base1, base2, baseTrim, pillar, pyramidTop, plaqueGroup, crystal);
     group.scale.multiplyScalar(0.85);
 
     return group;
