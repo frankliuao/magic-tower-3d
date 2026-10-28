@@ -141,11 +141,13 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
             <span className="text-3xl">{dialogue.avatar}</span>
             <span className="font-bold text-amber-300 text-lg leading-tight">{dialogue.name}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 font-mono">
-              {dialogue.currentIndex + 1} / {dialogue.lines.length}
-            </span>
-          </div>
+          {dialogue.lines.length > 1 && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 font-mono">
+                {dialogue.currentIndex + 1} / {dialogue.lines.length}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 对话文本 */}
