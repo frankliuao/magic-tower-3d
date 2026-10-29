@@ -2663,6 +2663,60 @@ assert(!disabledResult.isPressed && disabledResult.activeDir === null, 'VirtualJ
 assert(disabledResult.knobPos.x === 0 && disabledResult.knobPos.y === 0, 'VirtualJoystick disabled 时摇杆自动复位中心 (0, 0)');
 assert(!disabledResult.timerActive, 'VirtualJoystick disabled 时行走定时器立即销毁停止');
 
+// 4. 验证 Bugbot 修复：模态框支持键盘无障碍触发 (event.detail === 0)
+console.log('\n--- 4. 验证 Bugbot 审查修复：模态框按键无障碍与双语提示 ---');
+const isAuthorizedModalClick = (
+  canInteract: boolean,
+  pointerDownButton: string | null,
+  buttonKey: string,
+  eventDetail?: number
+): boolean => {
+  if (!canInteract) return false;
+  if (eventDetail === 0) return true;
+  return pointerDownButton === buttonKey;
+};
+
+// 键盘激活场景 (Enter / Space)：浏览器产生 detail === 0 的 click 事件
+assert(
+  isAuthorizedModalClick(true, null, 'support', 0),
+  '可交互状态下，键盘 Space/Enter 激活 (detail === 0) 即使无 pointerdown 也正常授权响应'
+);
+assert(
+  isAuthorizedModalClick(true, null, 'proceed', 0),
+  '可交互状态下，对话框 Next/Proceed 支持键盘 Enter 推进'
+);
+assert(
+  !isAuthorizedModalClick(false, null, 'support', 0),
+  '冷却期间 (canInteract=false) 键盘激活被安全拦截'
+);
+// 触摸/鼠标场景 (detail > 0)：必须匹配 pointerDownButton 防止穿透
+assert(
+  !isAuthorizedModalClick(true, null, 'support', 1),
+  '触摸穿透 (detail > 0 无 pointerdown) 被安全拒绝'
+);
+assert(
+  isAuthorizedModalClick(true, 'support', 'support', 1),
+  '正常触摸/鼠标点击 (detail > 0 且命中 pointerdown) 正常授权'
+);
+
+// 5. 验证 Bugbot 修复：抽屉与侧边栏音效文案双语隔离
+assert(TRANSLATIONS.en.sfxOn === 'SFX: On', '英文 SFX 开启文案正确');
+assert(TRANSLATIONS.en.sfxOff === 'SFX: Off', '英文 SFX 关闭文案正确');
+assert(TRANSLATIONS.en.bgmOn === 'BGM: On', '英文 BGM 开启文案正确');
+assert(TRANSLATIONS.en.bgmOff === 'BGM: Off', '英文 BGM 关闭文案正确');
+assert(TRANSLATIONS.zh.sfxOn === '音效: 开', '中文音效开启文案正确');
+assert(TRANSLATIONS.zh.sfxOff === '音效: 关', '中文音效关闭文案正确');
+assert(TRANSLATIONS.zh.bgmOn === 'BGM: 开', '中文 BGM 开启文案正确');
+assert(TRANSLATIONS.zh.bgmOff === 'BGM: 关', '中文 BGM 关闭文案正确');
+
+assert(
+  !chineseRegex.test(TRANSLATIONS.en.sfxOn) &&
+    !chineseRegex.test(TRANSLATIONS.en.sfxOff) &&
+    !chineseRegex.test(TRANSLATIONS.en.bgmOn) &&
+    !chineseRegex.test(TRANSLATIONS.en.bgmOff),
+  '英文音效与 BGM 开关文案绝对不含任何中文字符'
+);
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

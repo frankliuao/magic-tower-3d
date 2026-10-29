@@ -130,6 +130,14 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
   const isHonorMonument =
     dialogue.npcId === 'honor_monument' || dialogue.npcId === 'monument';
 
+  const isAuthorizedClick = (buttonKey: string, e?: React.MouseEvent) => {
+    if (!canInteract) return false;
+    // 键盘回车或空格激活时，原生 Click 事件的 detail 为 0，允许正常响应
+    if (e && e.detail === 0) return true;
+    // 指针/触控点击：必须在弹窗打开后且处于可交互状态时，在该按钮上产生过 pointerdown
+    return pointerDownButtonRef.current === buttonKey;
+  };
+
   const handleNext = () => {
     if (!canInteract) return;
     pointerDownButtonRef.current = null;
@@ -147,8 +155,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
     game.buyTraderItem(trade.tradeId);
   };
 
-  const handleSupportClick = () => {
-    if (!canInteract || pointerDownButtonRef.current !== 'support') return;
+  const handleSupportClick = (e?: React.MouseEvent) => {
+    if (!isAuthorizedClick('support', e)) return;
     pointerDownButtonRef.current = null;
     window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
   };
@@ -246,8 +254,9 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                       onPointerDown={() => {
                         if (canInteract) pointerDownButtonRef.current = 'confirm_trade';
                       }}
-                      onClick={() => {
-                        if (!canInteract || pointerDownButtonRef.current !== 'confirm_trade') return;
+                      onClick={(e) => {
+                        if (!isAuthorizedClick('confirm_trade', e)) return;
+                        pointerDownButtonRef.current = null;
                         handleTrade();
                       }}
                       className={`flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-95 text-white rounded-xl text-sm font-bold shadow ring-1 ring-emerald-300/50 transition-all ${
@@ -262,8 +271,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                       onPointerDown={() => {
                         if (canInteract) pointerDownButtonRef.current = 'cancel_confirm_trade';
                       }}
-                      onClick={() => {
-                        if (!canInteract || pointerDownButtonRef.current !== 'cancel_confirm_trade') return;
+                      onClick={(e) => {
+                        if (!isAuthorizedClick('cancel_confirm_trade', e)) return;
                         pointerDownButtonRef.current = null;
                         setIsConfirmingTrade(false);
                       }}
@@ -281,8 +290,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                     onPointerDown={() => {
                       if (canInteract) pointerDownButtonRef.current = 'ask_trade';
                     }}
-                    onClick={() => {
-                      if (!canInteract || pointerDownButtonRef.current !== 'ask_trade') return;
+                    onClick={(e) => {
+                      if (!isAuthorizedClick('ask_trade', e)) return;
                       pointerDownButtonRef.current = null;
                       setIsConfirmingTrade(true);
                     }}
@@ -316,8 +325,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                 onPointerDown={() => {
                   if (canInteract) pointerDownButtonRef.current = 'decline_trade';
                 }}
-                onClick={() => {
-                  if (!canInteract || pointerDownButtonRef.current !== 'decline_trade') return;
+                onClick={(e) => {
+                  if (!isAuthorizedClick('decline_trade', e)) return;
                   pointerDownButtonRef.current = null;
                   setIsConfirmingTrade(false);
                   onClose();
@@ -336,7 +345,7 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                 onPointerDown={() => {
                   if (canInteract) pointerDownButtonRef.current = 'support';
                 }}
-                onClick={handleSupportClick}
+                onClick={(e) => handleSupportClick(e)}
                 className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all ring-1 ring-amber-300/50 ${
                   !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
                 }`}
@@ -351,8 +360,9 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                 onPointerDown={() => {
                   if (canInteract) pointerDownButtonRef.current = 'cancel';
                 }}
-                onClick={() => {
-                  if (!canInteract || pointerDownButtonRef.current !== 'cancel') return;
+                onClick={(e) => {
+                  if (!isAuthorizedClick('cancel', e)) return;
+                  pointerDownButtonRef.current = null;
                   handleNext();
                 }}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 ${
@@ -369,8 +379,9 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                 onPointerDown={() => {
                   if (canInteract) pointerDownButtonRef.current = 'proceed';
                 }}
-                onClick={() => {
-                  if (!canInteract || pointerDownButtonRef.current !== 'proceed') return;
+                onClick={(e) => {
+                  if (!isAuthorizedClick('proceed', e)) return;
+                  pointerDownButtonRef.current = null;
                   handleNext();
                 }}
                 className={`flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 ${

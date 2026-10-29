@@ -28,8 +28,16 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
 
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
-    if (!canInteract || pointerDownButtonRef.current !== 'confirm') return;
+  const isAuthorizedClick = (buttonKey: string, e?: React.MouseEvent) => {
+    if (!canInteract) return false;
+    // 键盘回车或空格激活时，原生 Click 事件的 detail 为 0，允许正常响应
+    if (e && e.detail === 0) return true;
+    // 指针/触控点击：必须在弹窗打开后且处于可交互状态时，在该按钮上产生过 pointerdown
+    return pointerDownButtonRef.current === buttonKey;
+  };
+
+  const handleConfirm = (e?: React.MouseEvent) => {
+    if (!isAuthorizedClick('confirm', e)) return;
     pointerDownButtonRef.current = null;
     window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
     onClose();
@@ -76,8 +84,8 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
             onPointerDown={() => {
               if (canInteract) pointerDownButtonRef.current = 'cancel';
             }}
-            onClick={() => {
-              if (!canInteract || pointerDownButtonRef.current !== 'cancel') return;
+            onClick={(e) => {
+              if (!isAuthorizedClick('cancel', e)) return;
               pointerDownButtonRef.current = null;
               onClose();
             }}

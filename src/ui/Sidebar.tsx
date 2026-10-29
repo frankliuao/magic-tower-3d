@@ -347,7 +347,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 ) : (
                   <VolumeX className="w-4 h-4 text-rose-400" />
                 )}
-                <span className="text-[10px]">{soundEnabled ? '音效:开' : '音效:关'}</span>
+                <span className="text-[10px]">{soundEnabled ? t.sfxOn : t.sfxOff}</span>
               </button>
 
               {/* 音乐开关 */}
@@ -358,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title={bgmEnabled ? t.bgmMuteTip : t.bgmUnmuteTip}
               >
                 <Music2 className={`w-4 h-4 ${bgmEnabled ? 'text-green-400' : 'text-slate-500'}`} />
-                <span className="text-[10px]">{bgmEnabled ? 'BGM:开' : 'BGM:关'}</span>
+                <span className="text-[10px]">{bgmEnabled ? t.bgmOn : t.bgmOff}</span>
               </button>
 
               {/* 语言切换 */}

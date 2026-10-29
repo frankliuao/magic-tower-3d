@@ -17,6 +17,10 @@ export interface Translations {
   unmuteTip: string;
   bgmMuteTip: string;
   bgmUnmuteTip: string;
+  sfxOn: string;
+  sfxOff: string;
+  bgmOn: string;
+  bgmOff: string;
   debugTip: string;
   restartTip: string;
   coffeeTip: string;
@@ -274,6 +278,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     unmuteTip: '开启音效',
     bgmMuteTip: '关闭背景音乐',
     bgmUnmuteTip: '开启背景音乐',
+    sfxOn: '音效: 开',
+    sfxOff: '音效: 关',
+    bgmOn: 'BGM: 开',
+    bgmOff: 'BGM: 关',
     debugTip: '开发者作弊与数值调试',
     restartTip: '重新开始游戏',
     coffeeTip: '请作者喝杯咖啡 (Buy Me a Coffee)',
@@ -529,6 +537,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     unmuteTip: 'Unmute Audio',
     bgmMuteTip: 'Mute Music',
     bgmUnmuteTip: 'Play Music',
+    sfxOn: 'SFX: On',
+    sfxOff: 'SFX: Off',
+    bgmOn: 'BGM: On',
+    bgmOff: 'BGM: Off',
     debugTip: 'Developer Debug & Cheats',
     restartTip: 'Restart Game',
     coffeeTip: 'Buy Me a Coffee',

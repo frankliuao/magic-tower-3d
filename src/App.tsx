@@ -635,14 +635,25 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.code === 'Space' && !hasModal) {
+      const isBlocked =
+        hasModal ||
+        game.isDialogueOpen ||
+        game.isShopOpen ||
+        game.isExpShopOpen ||
+        game.isMonsterManualOpen ||
+        game.isFloorTeleportOpen ||
+        game.isGameOver ||
+        game.isVictory ||
+        game.isDebugOpen;
+
+      if (e.code === 'Space' && !isBlocked) {
         e.preventDefault();
         threeEngineRef.current?.resetCameraView();
         addFloating(t.spaceResetFloating, '#38bdf8');
         return;
       }
 
-      if (hasModal) return;
+      if (isBlocked) return;
 
       const getDir = (screenDir: 'up' | 'down' | 'left' | 'right'): Direction => {
         const yaw = threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0;
@@ -676,6 +687,7 @@ export const App: React.FC = () => {
     stopAutoWalk,
     addFloating,
     t.spaceResetFloating,
+    hasModal,
     isCoffeeModalOpen,
     isConfirmCenterFlyOpen,
     isConfirmUpFlyOpen,
@@ -761,45 +773,47 @@ export const App: React.FC = () => {
   return (
     <div className="flex fixed inset-0 w-full h-[100dvh] bg-slate-950 overflow-hidden select-none font-sans">
       {/* 桌面端经典复古状态栏 (宽屏显示，窄屏/手机端隐匿) */}
-      <Sidebar
-        className="hidden md:flex shrink-0"
-        game={game}
-        onMove={handleMove}
-        onOpenManual={() => {
-          game.isMonsterManualOpen = true;
-          game.notify();
-        }}
-        onOpenTeleport={() => {
-          game.isFloorTeleportOpen = true;
-          game.notify();
-        }}
-        onUseCenterFly={() => {
-          if (game.playerStats.inventory.center_fly) {
-            setSelectedTile(null);
-            threeEngineRef.current?.setSelectedTile(null, null);
-            setIsTargetingFly(true);
-            addFloating(
-              lang === 'zh'
-                ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
-                : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
-              '#c084fc',
-              4500
-            );
-          }
-        }}
-        onUseUpFly={() => {
-          if (game.playerStats.inventory.up_fly) {
-            setIsConfirmUpFlyOpen(true);
-          }
-        }}
-        onQuickSave={handleOpenSaveModal}
-        onQuickLoad={handleOpenLoadModal}
-        onRestart={handleRestart}
-      />
+      {!isMobile && (
+        <Sidebar
+          className="flex shrink-0"
+          game={game}
+          onMove={handleMove}
+          onOpenManual={() => {
+            game.isMonsterManualOpen = true;
+            game.notify();
+          }}
+          onOpenTeleport={() => {
+            game.isFloorTeleportOpen = true;
+            game.notify();
+          }}
+          onUseCenterFly={() => {
+            if (game.playerStats.inventory.center_fly) {
+              setSelectedTile(null);
+              threeEngineRef.current?.setSelectedTile(null, null);
+              setIsTargetingFly(true);
+              addFloating(
+                lang === 'zh'
+                  ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
+                  : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
+                '#c084fc',
+                4500
+              );
+            }
+          }}
+          onUseUpFly={() => {
+            if (game.playerStats.inventory.up_fly) {
+              setIsConfirmUpFlyOpen(true);
+            }
+          }}
+          onQuickSave={handleOpenSaveModal}
+          onQuickLoad={handleOpenLoadModal}
+          onRestart={handleRestart}
+        />
+      )}
 
-      {/* 手机端全功能滑出抽屉侧边栏 (点击顶部菜单触发) */}
-      {isSidebarDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex select-none md:hidden animate-in fade-in duration-200">
+      {/* 手机端全功能滑出抽屉侧边栏 (点击底部菜单触发) */}
+      {isSidebarDrawerOpen && isMobile && (
+        <div className="fixed inset-0 z-50 flex select-none animate-in fade-in duration-200">
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-xs"
             onClick={() => setIsSidebarDrawerOpen(false)}
