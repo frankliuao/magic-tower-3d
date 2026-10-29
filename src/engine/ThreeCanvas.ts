@@ -1390,8 +1390,8 @@ export class ThreeCanvas {
     this.isPanMoved = false;
 
     if (e.button === 0) {
-      if (e.shiftKey) {
-        // Shift + 左键拖动 -> 旋转视角
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        // Shift 或 Ctrl/Cmd + 左键拖动 -> 统一旋转视角 (Yaw & Pitch)
         this.isDragging = true;
         this.dragMode = 'rotate';
         this.container.style.cursor = 'crosshair';
@@ -1423,7 +1423,7 @@ export class ThreeCanvas {
     this.lastPointerPos = { x: e.clientX, y: e.clientY };
 
     if (this.dragMode === 'rotate') {
-      // Shift + 左键拖动：自由旋转视角 (Yaw & Pitch) - 水平旋转方向反转，符合直觉操作
+      // Shift 或 Ctrl/Cmd + 左键拖动：自由旋转视角 (Yaw & Pitch) - 水平旋转方向反转，符合直觉操作
       this.targetCameraYaw -= dx * 0.008;
       this.targetCameraPitch = THREE.MathUtils.clamp(
         this.targetCameraPitch + dy * 0.006,
@@ -1482,7 +1482,7 @@ export class ThreeCanvas {
     const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
 
     // 1. 左键/触屏单击与双击判定 (位移 < 10px 判定为点击，若位移 >= 10px 则为拖拽平移地图)
-    if (e.button === 0 && dist < 10 && !e.shiftKey) {
+    if (e.button === 0 && dist < 10 && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       // 纯净点击：若微位移在 6~9px 之间，无缝复位初始平移位置确保完全零漂移
       if (this.isPanMoved) {
         this.targetPanOffset.x = this.initialPanOffset.x;

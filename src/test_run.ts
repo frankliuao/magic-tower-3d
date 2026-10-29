@@ -649,7 +649,7 @@ assert(!fairyZh.includes('A*'), '仙女对话不含突兀的【A* 算法】技�
 assert(fairyZh.includes('右键双击'), '仙女对话包含通俗的【右键双击】说明');
 assert(fairyZh.includes('最优路径'), '仙女对话包含【选择最优路径】到达目标说明');
 assert(fairyZh.includes('单击'), '仙女对话包含左键【单击】查看信息教学');
-assert(fairyZh.includes('Ctrl') && fairyZh.includes('拖拽'), '仙女对话包含【Ctrl】拖拽平移视角教学');
+assert(fairyZh.includes('Ctrl') && fairyZh.includes('拖拽'), '仙女对话包含【Ctrl】拖拽旋转视角教学');
 assert(fairyZh.includes('Shift') && fairyZh.includes('拖拽'), '仙女对话包含【Shift】拖拽旋转视角教学');
 assert(fairyZh.includes('空格') || fairyZh.includes('Space'), '仙女对话包含【空格键】复位视角教学');
 assert(fairyZh.includes('身后') && fairyZh.includes('1F'), '仙女对话包含身后传送门前往 1F 指引');
@@ -2489,33 +2489,44 @@ const desktopConfig = simulateMobileLayout(false);
 assert(desktopConfig.renderTopBar, '桌面端保留标准 Topbar 顶栏');
 assert(!desktopConfig.renderBottomDock, '桌面端完全不渲染底部摇杆底栏');
 
-console.log('\n--- 33. 验证全平台地图直接拖拽平移交互 (Direct Drag & Pan Navigation) ---');
+console.log('\n--- 33. 验证全平台地图直接拖拽平移与旋转交互 (Direct Pan & Shift/Ctrl Rotate) ---');
 // 模拟指针与手势拖拽模式判定
-const evaluateDragMode = (button: number, shiftKey: boolean) => {
+const evaluateDragMode = (
+  button: number,
+  modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+) => {
   if (button === 0) {
-    if (shiftKey) return 'rotate';
+    if (modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey) return 'rotate';
     return 'pan'; // 电脑版单击直接拖拽，手机版单指直接拖拽，均进入 pan 模式
   }
   if (button === 1) return 'pan';
   return 'none';
 };
 
-assert(evaluateDragMode(0, false) === 'pan', '电脑端普通鼠标左键拖动 -> 默认激活地图平移 (无需 Ctrl)');
-assert(evaluateDragMode(0, true) === 'rotate', '电脑端按住 Shift 键拖动 -> 保留旋转 3D 视角');
-assert(evaluateDragMode(1, false) === 'pan', '电脑端鼠标滚轮中键拖动 -> 支持平移');
+assert(evaluateDragMode(0, {}) === 'pan', '电脑端普通鼠标左键拖动 -> 默认激活地图平移 (无需按键)');
+assert(evaluateDragMode(0, { shiftKey: true }) === 'rotate', '电脑端按住 Shift 键拖动 -> 旋转 3D 视角');
+assert(evaluateDragMode(0, { ctrlKey: true }) === 'rotate', '电脑端按住 Ctrl 键拖动 -> 旋转 3D 视角 (满足 Ctrl/Shift 统一旋转)');
+assert(evaluateDragMode(0, { metaKey: true }) === 'rotate', '电脑端按住 Meta/Cmd 键拖动 -> 旋转 3D 视角 (Mac 友好统一)');
+assert(evaluateDragMode(1, {}) === 'pan', '电脑端鼠标滚轮中键拖动 -> 支持平移');
 
 // 模拟单击与拖拽判定阈值
-const evaluatePointerGesture = (displacement: number, isShift: boolean) => {
-  if (displacement < 10 && !isShift) {
+const evaluatePointerGesture = (
+  displacement: number,
+  modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+) => {
+  const isModifier = !!(modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey);
+  if (displacement < 10 && !isModifier) {
     return 'click'; // 纯粹点击/双击
   }
-  return 'drag'; // 地图拖拽
+  return 'drag'; // 地图拖拽或旋转
 };
 
-assert(evaluatePointerGesture(3, false) === 'click', '位移 3px (手抖轻触) -> 精确判定为点击，地图零偏移');
-assert(evaluatePointerGesture(8, false) === 'click', '位移 8px (快速轻点) -> 仍判定为点击，触发检视/双击');
-assert(evaluatePointerGesture(15, false) === 'drag', '位移 15px (有意拖动) -> 判定为地图拖拽，不触发误点');
-assert(evaluatePointerGesture(60, false) === 'drag', '位移 60px (大幅平移) -> 畅快平移地图视角');
+assert(evaluatePointerGesture(3) === 'click', '位移 3px (手抖轻触) -> 精确判定为点击，地图零偏移');
+assert(evaluatePointerGesture(8) === 'click', '位移 8px (快速轻点) -> 仍判定为点击，触发检视/双击');
+assert(evaluatePointerGesture(15) === 'drag', '位移 15px (有意拖动) -> 判定为地图拖拽，不触发误点');
+assert(evaluatePointerGesture(60) === 'drag', '位移 60px (大幅平移) -> 畅快平移地图视角');
+assert(evaluatePointerGesture(5, { ctrlKey: true }) === 'drag', '按住 Ctrl 时哪怕轻微位移也作为旋转操作响应，不误触检视点击');
+assert(evaluatePointerGesture(5, { shiftKey: true }) === 'drag', '按住 Shift 时哪怕轻微位移也作为旋转操作响应，不误触检视点击');
 
 console.log('\n--- 34. 验证电脑端/手机端双击自动寻路边界规则 (Right-Double-Click Auto-Path Only on PC) ---');
 // 模拟双击与寻路路由逻辑
