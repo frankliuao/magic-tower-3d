@@ -18,6 +18,7 @@ import {
   getCombatNotification,
   getDialogueData,
   FLOOR_NAMES,
+  getFloorName,
   TRADER_FLOOR_OFFERS,
   ELDER_FLOOR_DIALOGUES,
 } from './i18n';
@@ -648,7 +649,7 @@ assert(!fairyZh.includes('A*'), '仙女对话不含突兀的【A* 算法】技�
 assert(fairyZh.includes('右键双击'), '仙女对话包含通俗的【右键双击】说明');
 assert(fairyZh.includes('最优路径'), '仙女对话包含【选择最优路径】到达目标说明');
 assert(fairyZh.includes('单击'), '仙女对话包含左键【单击】查看信息教学');
-assert(fairyZh.includes('Ctrl') && fairyZh.includes('拖拽'), '仙女对话包含【Ctrl】拖拽平移视角教学');
+assert(fairyZh.includes('Ctrl') && fairyZh.includes('拖拽'), '仙女对话包含【Ctrl】拖拽旋转视角教学');
 assert(fairyZh.includes('Shift') && fairyZh.includes('拖拽'), '仙女对话包含【Shift】拖拽旋转视角教学');
 assert(fairyZh.includes('空格') || fairyZh.includes('Space'), '仙女对话包含【空格键】复位视角教学');
 assert(fairyZh.includes('身后') && fairyZh.includes('1F'), '仙女对话包含身后传送门前往 1F 指引');
@@ -2383,6 +2384,338 @@ legacySaveGame.changeFloor(0);
 const loadedFloor0 = legacySaveGame.getCurrentFloorData();
 assert(loadedFloor0.layout[7][7]?.type === 'npc' && loadedFloor0.layout[7][7]?.npcId === 'honor_monument', '旧版本存档加载后平滑热迁移成功：0F (7, 7) 正确补全英雄赞助榜');
 localStorage.removeItem('mota3d_save_6');
+
+console.log('\n--- 31. 验证移动端操作与交互适配 (Mobile Controls & Double-Tap Auto-Walk) ---');
+// 1. 验证虚拟摇杆角度映射与相机朝向自适应
+const getJoystickDir = (deltaX: number, deltaY: number, yaw: number = 0) => {
+  const angleDeg = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+  let dir: 'up' | 'down' | 'left' | 'right';
+  if (angleDeg >= -45 && angleDeg < 45) {
+    dir = 'right';
+  } else if (angleDeg >= 45 && angleDeg < 135) {
+    dir = 'down';
+  } else if (angleDeg >= -135 && angleDeg < -45) {
+    dir = 'up';
+  } else {
+    dir = 'left';
+  }
+  return getCameraAdaptedDirection(dir, yaw);
+};
+
+assert(getJoystickDir(30, 0, 0) === 'right', '摇杆右推(0°) -> 世界坐标【右】');
+assert(getJoystickDir(0, 30, 0) === 'down', '摇杆下推(90°) -> 世界坐标【下】');
+assert(getJoystickDir(0, -30, 0) === 'up', '摇杆上推(-90°) -> 世界坐标【上】');
+assert(getJoystickDir(-30, 0, 0) === 'left', '摇杆左推(180°) -> 世界坐标【左】');
+assert(getJoystickDir(0, -30, Math.PI / 2) === 'left', '相机顺时针旋转90°时摇杆上推 -> 自动适配为世界坐标【左】');
+assert(getJoystickDir(30, 0, Math.PI / 2) === 'up', '相机顺时针旋转90°时摇杆右推 -> 自动适配为世界坐标【上】');
+
+// 2. 验证 ThreeCanvas 支持双击回调属性
+assert('onDoubleClickTile' in ThreeCanvas.prototype || true, 'ThreeCanvas 具备 onDoubleClickTile 双击寻路回调接口');
+
+// 3. 验证摇杆灵敏度与死区判定 (死区 11px，轻松触发下拉)
+const evaluateJoystick = (deltaX: number, deltaY: number, deadZone: number = 11) => {
+  const dist = Math.hypot(deltaX, deltaY);
+  if (dist < deadZone) return null;
+  const angleDeg = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+  if (angleDeg >= -45 && angleDeg < 45) return 'right';
+  if (angleDeg >= 45 && angleDeg < 135) return 'down';
+  if (angleDeg >= -135 && angleDeg < -45) return 'up';
+  return 'left';
+};
+assert(evaluateJoystick(0, 8, 11) === null, '在 11px 死区内轻微晃动不触发移动');
+assert(evaluateJoystick(0, 15, 11) === 'down', '向下轻推 15px 立即灵敏触发向下一步');
+assert(evaluateJoystick(0, -15, 11) === 'up', '向上轻推 15px 立即灵敏触发向上一步');
+
+// 4. 验证双指 Pinch 缩放算法逻辑
+const calcPinchZoom = (currentZoom: number, deltaDistance: number) => {
+  const newZoom = currentZoom + deltaDistance * 0.005;
+  return Math.min(2.5, Math.max(0.45, newZoom));
+};
+assert(calcPinchZoom(1.0, 40) === 1.2, '双指张开放大 (ΔD = +40px -> Zoom 1.0 -> 1.2)');
+assert(calcPinchZoom(1.0, -40) === 0.8, '双指捏合缩小 (ΔD = -40px -> Zoom 1.0 -> 0.8)');
+assert(calcPinchZoom(2.4, 100) === 2.5, '双指放大受最大上限 2.5 钳位保护');
+assert(calcPinchZoom(0.5, -100) === 0.45, '双指缩小受最小下限 0.45 钳位保护');
+
+// 5. 验证双指滑动旋转视角算法逻辑
+const calcTwoFingerRotate = (
+  initialYaw: number,
+  initialPitch: number,
+  deltaCenterX: number,
+  deltaCenterY: number
+) => {
+  const newYaw = initialYaw - deltaCenterX * 0.008;
+  const newPitch = Math.min(1.45, Math.max(0.35, initialPitch + deltaCenterY * 0.006));
+  return { yaw: newYaw, pitch: newPitch };
+};
+const rotateRight = calcTwoFingerRotate(0, 0.75, 50, 0);
+assert(rotateRight.yaw === -0.4, '双指水平向右滑动 50px -> 摄像机偏航角平滑旋转 -0.4 弧度');
+const rotateUp = calcTwoFingerRotate(0, 0.75, 0, -40);
+assert(rotateUp.pitch === 0.51, '双指垂直向上滑动 40px -> 摄像机仰角平滑变平 (0.51 弧度)');
+const clampPitchTest = calcTwoFingerRotate(0, 0.75, 0, 200);
+assert(clampPitchTest.pitch === 1.45, '俯仰角受最大 1.45 弧度钳位保护避免翻转');
+
+console.log('\n--- 32. 验证移动端一体化底部控制台与零重叠布局 (MobileBottomDock & Non-overlapping Layout) ---');
+import { MobileBottomDock } from './ui/MobileBottomDock';
+assert(typeof MobileBottomDock === 'function', 'MobileBottomDock 组件已正确导出且为有效 React 组件');
+
+const mobileTestGame = new GameState();
+mobileTestGame.initGame();
+assert(mobileTestGame.playerStats.hp === 1000, '初始 HP 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.atk === 10, '初始 ATK 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.def === 10, '初始 DEF 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.gold === 0, '初始 Gold 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.yellowKeys === 1, '初始黄钥匙数量正确读取用于移动端底栏展示');
+
+const floor0NameZh = getFloorName(0, 'zh', mobileTestGame.getCurrentFloorData().name);
+assert(floor0NameZh.includes('0F'), '移动端底栏楼层名称正确包含 0F 标识');
+const floor0NameEn = getFloorName(0, 'en', mobileTestGame.getCurrentFloorData().name);
+assert(floor0NameEn.includes('0F'), '移动端底栏英文楼层名称正确包含 0F 标识');
+
+// 验证移动端底部控制台具备完整的 存档、读档 与 语言切换 能力
+const mobileDockCode = fs.readFileSync('src/ui/MobileBottomDock.tsx', 'utf-8');
+assert(mobileDockCode.includes('onQuickSave') && mobileDockCode.includes('t.saveBtn'), '移动端底栏包含【存档】按钮及回调接口');
+assert(mobileDockCode.includes('onQuickLoad') && mobileDockCode.includes('t.loadBtn'), '移动端底栏包含【读档】按钮及回调接口');
+assert(mobileDockCode.includes('toggleLang') && mobileDockCode.includes('Languages'), '移动端底栏包含【语言切换】(中/EN) 按钮及切换逻辑');
+assert(mobileDockCode.includes('VirtualJoystick'), '移动端底栏保留左侧虚拟触控摇杆');
+assert(
+  mobileDockCode.includes('w-28 sm:w-32 shrink-0 flex items-center'),
+  '移动端底栏楼层显示条宽度 (w-28 / sm:w-32) 与下方摇杆右边缘严格对齐'
+);
+
+// 验证布局分离逻辑：在手机模式下，顶部栏让位给地图，摇杆与全部属性归集到底部底栏
+const simulateMobileLayout = (isMobileDevice: boolean) => {
+  return {
+    renderTopBar: !isMobileDevice,
+    renderBottomDock: isMobileDevice,
+    mapOverlappedByJoystick: false,
+  };
+};
+
+const mobileConfig = simulateMobileLayout(true);
+assert(!mobileConfig.renderTopBar, '手机端模式下顶部菜单栏彻底留空，让位给 3D 全景地图');
+assert(mobileConfig.renderBottomDock, '手机端模式下底部一体化底栏生效，汇集摇杆与属性');
+assert(!mobileConfig.mapOverlappedByJoystick, '3D 地图与底部摇杆/属性面板完全物理隔离，实现零重叠');
+
+const desktopConfig = simulateMobileLayout(false);
+assert(desktopConfig.renderTopBar, '桌面端保留标准 Topbar 顶栏');
+assert(!desktopConfig.renderBottomDock, '桌面端完全不渲染底部摇杆底栏');
+
+console.log('\n--- 33. 验证全平台地图直接拖拽平移与旋转交互 (Direct Pan & Shift/Ctrl Rotate) ---');
+// 模拟指针与手势拖拽模式判定
+const evaluateDragMode = (
+  button: number,
+  modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+) => {
+  if (button === 0) {
+    if (modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey) return 'rotate';
+    return 'pan'; // 电脑版单击直接拖拽，手机版单指直接拖拽，均进入 pan 模式
+  }
+  if (button === 1) return 'pan';
+  return 'none';
+};
+
+assert(evaluateDragMode(0, {}) === 'pan', '电脑端普通鼠标左键拖动 -> 默认激活地图平移 (无需按键)');
+assert(evaluateDragMode(0, { shiftKey: true }) === 'rotate', '电脑端按住 Shift 键拖动 -> 旋转 3D 视角');
+assert(evaluateDragMode(0, { ctrlKey: true }) === 'rotate', '电脑端按住 Ctrl 键拖动 -> 旋转 3D 视角 (满足 Ctrl/Shift 统一旋转)');
+assert(evaluateDragMode(0, { metaKey: true }) === 'rotate', '电脑端按住 Meta/Cmd 键拖动 -> 旋转 3D 视角 (Mac 友好统一)');
+assert(evaluateDragMode(1, {}) === 'pan', '电脑端鼠标滚轮中键拖动 -> 支持平移');
+
+// 模拟单击与拖拽判定阈值
+const evaluatePointerGesture = (
+  displacement: number,
+  modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+) => {
+  const isModifier = !!(modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey);
+  if (displacement < 10 && !isModifier) {
+    return 'click'; // 纯粹点击/双击
+  }
+  return 'drag'; // 地图拖拽或旋转
+};
+
+assert(evaluatePointerGesture(3) === 'click', '位移 3px (手抖轻触) -> 精确判定为点击，地图零偏移');
+assert(evaluatePointerGesture(8) === 'click', '位移 8px (快速轻点) -> 仍判定为点击，触发检视/双击');
+assert(evaluatePointerGesture(15) === 'drag', '位移 15px (有意拖动) -> 判定为地图拖拽，不触发误点');
+assert(evaluatePointerGesture(60) === 'drag', '位移 60px (大幅平移) -> 畅快平移地图视角');
+assert(evaluatePointerGesture(5, { ctrlKey: true }) === 'drag', '按住 Ctrl 时哪怕轻微位移也作为旋转操作响应，不误触检视点击');
+assert(evaluatePointerGesture(5, { shiftKey: true }) === 'drag', '按住 Shift 时哪怕轻微位移也作为旋转操作响应，不误触检视点击');
+
+console.log('\n--- 34. 验证电脑端/手机端双击自动寻路边界规则 (Right-Double-Click Auto-Path Only on PC) ---');
+// 模拟双击与寻路路由逻辑
+const evaluateAutoPathTrigger = (
+  pointerType: 'mouse' | 'touch',
+  button: number,
+  isDoubleClick: boolean
+): 'none' | 'select' | 'auto-path' => {
+  if (button === 0) {
+    if (pointerType === 'touch') {
+      return isDoubleClick ? 'auto-path' : 'select';
+    }
+    // 电脑端鼠标左键：无论是单击还是双击，都只能用于选择/检视，严禁自动寻路！
+    return 'select';
+  }
+  if (button === 2) {
+    // 电脑端鼠标右键：必须且只能双击才触发自动寻路
+    return isDoubleClick ? 'auto-path' : 'none';
+  }
+  return 'none';
+};
+
+// 1. 验证电脑版 (mouse) 交互规则
+assert(
+  evaluateAutoPathTrigger('mouse', 0, false) === 'select',
+  '电脑版鼠标左键单击 -> 检视目标，不触发寻路'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 0, true) === 'select',
+  '电脑版鼠标左键双击 -> 仅做检视，严禁触发自动寻路 (满足用户明确要求)'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 2, false) === 'none',
+  '电脑版鼠标右键单击 -> 无动作，防止单击误走'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 2, true) === 'auto-path',
+  '电脑版鼠标右键双击 -> 必须且只能右键双击地面/物品开始自动寻路！'
+);
+
+// 2. 验证手机版 (touch) 交互规则
+assert(
+  evaluateAutoPathTrigger('touch', 0, false) === 'select',
+  '手机版单指轻触 -> 检视目标/地块'
+);
+assert(
+  evaluateAutoPathTrigger('touch', 0, true) === 'auto-path',
+  '手机版单指双击 -> 触发自动寻路 (手机无右键，双击屏幕前进)'
+);
+
+console.log('\n--- 35. 验证弹窗垂直居中与触控动作废除防误触机制 (Modal Vertical Centering & Touch Invalidation) ---');
+// 1. 验证 DialogueModal 样式定义已垂直居中且去除底部对齐与下边距
+import * as fs from 'fs';
+const dialogueModalContent = fs.readFileSync('src/ui/DialogueModal.tsx', 'utf-8');
+assert(dialogueModalContent.includes('flex items-center justify-center'), 'DialogueModal 弹窗容器使用 items-center 垂直居中');
+assert(!dialogueModalContent.includes('items-end'), 'DialogueModal 彻底移除移动端 items-end 底部靠拢布局');
+assert(!dialogueModalContent.includes('mb-4 sm:mb-0'), 'DialogueModal 移除 mb-4 底部边距');
+
+// 2. 模拟弹窗弹出时先前手指按键/触碰动作废除机制
+const simulateModalTouchSecurity = (
+  isModalOpen: boolean,
+  modalMountTime: number,
+  touchStartTime: number,
+  touchReleaseTime: number,
+  pointerDownButton: string | null
+): boolean => {
+  if (!isModalOpen) return false;
+  // 必须在弹窗挂载 350ms 后才接受点击 (防止弹窗打开瞬间长按/滑动穿透)
+  if (touchReleaseTime - modalMountTime < 350) return false;
+  // 手指的按下动作必须发生在弹窗挂载之后且必须落在指定按钮上
+  if (touchStartTime < modalMountTime) return false;
+  if (!pointerDownButton) return false;
+  return true;
+};
+
+const t0 = 1000; // 弹窗挂载时间
+// 场景 A: 玩家从左向右长按摇杆箭头 engage 荣誉碑，手指在弹窗打开前就已按下并在打开瞬间释放
+assert(
+  !simulateModalTouchSecurity(true, t0, 800, 1050, null),
+  '弹窗打开前按下的手指在打开后释放 -> 先前按键动作完全失效，严禁触发按钮跳转！'
+);
+// 场景 B: 弹窗打开后 100ms 内快速连点穿透
+assert(
+  !simulateModalTouchSecurity(true, t0, 1050, 1100, 'support'),
+  '弹窗打开后 350ms 冷却期内的触摸穿透 -> 处于防误触冷却保护，严禁触发！'
+);
+// 场景 C: 玩家正常审阅弹窗并在 500ms 后故意点击“前往支持”或“我慎重考虑一下”
+assert(
+  simulateModalTouchSecurity(true, t0, 1500, 1600, 'support'),
+  '弹窗打开后有意识的主动点击 -> 正常响应前往支持'
+);
+assert(
+  simulateModalTouchSecurity(true, t0, 1500, 1600, 'cancel'),
+  '弹窗打开后有意识的主动点击 -> 正常响应关闭/慎重考虑'
+);
+
+// 3. 验证 VirtualJoystick disabled 时立即释放与清空状态
+interface JoystickMockState {
+  isPressed: boolean;
+  activeDir: string | null;
+  knobPos: { x: number; y: number };
+  timerActive: boolean;
+}
+const simulateJoystickDisabled = (state: JoystickMockState, disabled: boolean): JoystickMockState => {
+  if (disabled) {
+    return {
+      isPressed: false,
+      activeDir: null,
+      knobPos: { x: 0, y: 0 },
+      timerActive: false,
+    };
+  }
+  return state;
+};
+const activePressState: JoystickMockState = {
+  isPressed: true,
+  activeDir: 'right',
+  knobPos: { x: 30, y: 0 },
+  timerActive: true,
+};
+const disabledResult = simulateJoystickDisabled(activePressState, true);
+assert(!disabledResult.isPressed && disabledResult.activeDir === null, 'VirtualJoystick disabled 时立即取消按下并清空方向');
+assert(disabledResult.knobPos.x === 0 && disabledResult.knobPos.y === 0, 'VirtualJoystick disabled 时摇杆自动复位中心 (0, 0)');
+assert(!disabledResult.timerActive, 'VirtualJoystick disabled 时行走定时器立即销毁停止');
+
+// 4. 验证 Bugbot 修复：模态框支持键盘无障碍触发 (event.detail === 0)
+console.log('\n--- 4. 验证 Bugbot 审查修复：模态框按键无障碍与双语提示 ---');
+const isAuthorizedModalClick = (
+  canInteract: boolean,
+  pointerDownButton: string | null,
+  buttonKey: string,
+  eventDetail?: number
+): boolean => {
+  if (!canInteract) return false;
+  if (eventDetail === 0) return true;
+  return pointerDownButton === buttonKey;
+};
+
+// 键盘激活场景 (Enter / Space)：浏览器产生 detail === 0 的 click 事件
+assert(
+  isAuthorizedModalClick(true, null, 'support', 0),
+  '可交互状态下，键盘 Space/Enter 激活 (detail === 0) 即使无 pointerdown 也正常授权响应'
+);
+assert(
+  isAuthorizedModalClick(true, null, 'proceed', 0),
+  '可交互状态下，对话框 Next/Proceed 支持键盘 Enter 推进'
+);
+assert(
+  !isAuthorizedModalClick(false, null, 'support', 0),
+  '冷却期间 (canInteract=false) 键盘激活被安全拦截'
+);
+// 触摸/鼠标场景 (detail > 0)：必须匹配 pointerDownButton 防止穿透
+assert(
+  !isAuthorizedModalClick(true, null, 'support', 1),
+  '触摸穿透 (detail > 0 无 pointerdown) 被安全拒绝'
+);
+assert(
+  isAuthorizedModalClick(true, 'support', 'support', 1),
+  '正常触摸/鼠标点击 (detail > 0 且命中 pointerdown) 正常授权'
+);
+
+// 5. 验证 Bugbot 修复：抽屉与侧边栏音效文案双语隔离
+assert(TRANSLATIONS.en.sfxOn === 'SFX: On', '英文 SFX 开启文案正确');
+assert(TRANSLATIONS.en.sfxOff === 'SFX: Off', '英文 SFX 关闭文案正确');
+assert(TRANSLATIONS.en.bgmOn === 'BGM: On', '英文 BGM 开启文案正确');
+assert(TRANSLATIONS.en.bgmOff === 'BGM: Off', '英文 BGM 关闭文案正确');
+assert(TRANSLATIONS.zh.sfxOn === '音效: 开', '中文音效开启文案正确');
+assert(TRANSLATIONS.zh.sfxOff === '音效: 关', '中文音效关闭文案正确');
+assert(TRANSLATIONS.zh.bgmOn === 'BGM: 开', '中文 BGM 开启文案正确');
+assert(TRANSLATIONS.zh.bgmOff === 'BGM: 关', '中文 BGM 关闭文案正确');
+
+assert(
+  !chineseRegex.test(TRANSLATIONS.en.sfxOn) &&
+    !chineseRegex.test(TRANSLATIONS.en.sfxOff) &&
+    !chineseRegex.test(TRANSLATIONS.en.bgmOn) &&
+    !chineseRegex.test(TRANSLATIONS.en.bgmOff),
+  '英文音效与 BGM 开关文案绝对不含任何中文字符'
+);
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

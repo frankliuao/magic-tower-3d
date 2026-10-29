@@ -19,6 +19,7 @@ import { ConfirmCenterFlyModal } from './ui/ConfirmCenterFlyModal';
 import { ConfirmUpFlyModal } from './ui/ConfirmUpFlyModal';
 import { ConfirmCoffeeModal } from './ui/ConfirmCoffeeModal';
 import { SaveLoadModal } from './ui/SaveLoadModal';
+import { MobileBottomDock } from './ui/MobileBottomDock';
 import { ZoomIn, ZoomOut, Target, Zap } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
 import { isDebugAllowed } from './utils/env';
@@ -104,6 +105,31 @@ export const App: React.FC = () => {
     isOpen: false,
     mode: 'save',
   });
+
+  // 移动端/窄屏与触屏设备检测 (仅移动端生效，桌面端完全不显示摇杆)
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.innerWidth < 768 ||
+      (('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+        window.innerWidth < 1024)
+    );
+  });
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(
+        window.innerWidth < 768 ||
+          (('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+            window.innerWidth < 1024)
+      );
+    };
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 手机端全属性滑出抽屉开关
+  const [isSidebarDrawerOpen, setIsSidebarDrawerOpen] = useState<boolean>(false);
 
   const addFloating = useCallback((text: string, color: string, customDuration?: number) => {
     // 智能推断展示停留时长：保证玩家有充分时间阅读剧情与首领通报，绝不一闪而过
@@ -440,16 +466,18 @@ export const App: React.FC = () => {
       setIsPanned(panned);
     };
 
-    // 绑定单击检视与右键双击自动寻路/交互事件
+    // 绑定单击检视与双击/右键自动寻路/交互事件
     engine.onSelectTile = (gx, gy) => {
       handleSelectTile(gx, gy);
     };
 
-    engine.onRightDoubleClickTile = (gx, gy) => {
+    // 移动端触屏双击自动寻路 (手机无右键，双击地块/物品触发寻路)
+    engine.onDoubleClickTile = (gx, gy) => {
       handleEngageOrPath(gx, gy);
     };
 
-    engine.onRightClickTile = (gx, gy) => {
+    // 电脑端专属：只能右键双击物品或地面开始自动寻路 (左键双击严禁自动寻路)
+    engine.onRightDoubleClickTile = (gx, gy) => {
       handleEngageOrPath(gx, gy);
     };
 
@@ -533,24 +561,39 @@ export const App: React.FC = () => {
     }
   }, [game]);
 
+  // 是否打开了任意模态窗口 / 对话 / 抽屉
+  const hasModal =
+    isCoffeeModalOpen ||
+    isConfirmCenterFlyOpen ||
+    isConfirmUpFlyOpen ||
+    isSidebarDrawerOpen ||
+    saveLoadModalState.isOpen ||
+    game.isMonsterManualOpen ||
+    game.isFloorTeleportOpen ||
+    game.isShopOpen ||
+    game.isExpShopOpen ||
+    game.isDialogueOpen ||
+    game.isGameOver ||
+    game.isVictory ||
+    game.isDebugOpen;
+
+  // 当任意模态窗口打开时，废除 3D 画布与底层可能残留的指针拖拽与手势状态，停止可能正在进行的自动寻路
+  useEffect(() => {
+    if (hasModal) {
+      stopAutoWalk();
+      threeEngineRef.current?.resetPointerState();
+    }
+  }, [hasModal, stopAutoWalk]);
+
   // 全局键盘事件监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 打开任意模态窗口时拦截普通方向移动
-      const hasModal =
-        isCoffeeModalOpen ||
-        isConfirmCenterFlyOpen ||
-        isConfirmUpFlyOpen ||
-        game.isMonsterManualOpen ||
-        game.isFloorTeleportOpen ||
-        game.isShopOpen ||
-        game.isExpShopOpen ||
-        game.isDialogueOpen ||
-        game.isGameOver ||
-        game.isVictory ||
-        game.isDebugOpen;
 
       if (e.code === 'Escape') {
+        if (isSidebarDrawerOpen) {
+          setIsSidebarDrawerOpen(false);
+          return;
+        }
         if (isCoffeeModalOpen) {
           setIsCoffeeModalOpen(false);
           return;
@@ -592,14 +635,25 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.code === 'Space' && !hasModal) {
+      const isBlocked =
+        hasModal ||
+        game.isDialogueOpen ||
+        game.isShopOpen ||
+        game.isExpShopOpen ||
+        game.isMonsterManualOpen ||
+        game.isFloorTeleportOpen ||
+        game.isGameOver ||
+        game.isVictory ||
+        game.isDebugOpen;
+
+      if (e.code === 'Space' && !isBlocked) {
         e.preventDefault();
         threeEngineRef.current?.resetCameraView();
         addFloating(t.spaceResetFloating, '#38bdf8');
         return;
       }
 
-      if (hasModal) return;
+      if (isBlocked) return;
 
       const getDir = (screenDir: 'up' | 'down' | 'left' | 'right'): Direction => {
         const yaw = threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0;
@@ -633,9 +687,12 @@ export const App: React.FC = () => {
     stopAutoWalk,
     addFloating,
     t.spaceResetFloating,
+    hasModal,
     isCoffeeModalOpen,
     isConfirmCenterFlyOpen,
     isConfirmUpFlyOpen,
+    isSidebarDrawerOpen,
+    saveLoadModalState.isOpen,
     isTargetingFly,
     handleCloseInspect,
     lang,
@@ -714,68 +771,124 @@ export const App: React.FC = () => {
   }, [game, addFloating, t.clearedMonstersFloating]);
 
   return (
-    <div className="flex h-screen w-screen bg-slate-950 overflow-hidden select-none font-sans">
-      {/* 左侧经典复古状态栏 */}
-      <Sidebar
-        game={game}
-        onMove={handleMove}
-        onOpenManual={() => {
-          game.isMonsterManualOpen = true;
-          game.notify();
-        }}
-        onOpenTeleport={() => {
-          game.isFloorTeleportOpen = true;
-          game.notify();
-        }}
-        onUseCenterFly={() => {
-          if (game.playerStats.inventory.center_fly) {
-            setSelectedTile(null);
-            threeEngineRef.current?.setSelectedTile(null, null);
-            setIsTargetingFly(true);
-            addFloating(
-              lang === 'zh'
-                ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
-                : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
-              '#c084fc',
-              4500
-            );
-          }
-        }}
-        onUseUpFly={() => {
-          if (game.playerStats.inventory.up_fly) {
-            setIsConfirmUpFlyOpen(true);
-          }
-        }}
-      />
-
-      {/* 主游戏展示区 */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        {/* 顶部工具栏 */}
-        <Topbar
+    <div className="flex fixed inset-0 w-full h-[100dvh] bg-slate-950 overflow-hidden select-none font-sans">
+      {/* 桌面端经典复古状态栏 (宽屏显示，窄屏/手机端隐匿) */}
+      {!isMobile && (
+        <Sidebar
+          className="flex shrink-0"
           game={game}
-          onOpenDebug={() => {
-            if (!isDebugAllowed()) return;
-            game.isDebugOpen = true;
+          onMove={handleMove}
+          onOpenManual={() => {
+            game.isMonsterManualOpen = true;
             game.notify();
           }}
-          onRestart={handleRestart}
+          onOpenTeleport={() => {
+            game.isFloorTeleportOpen = true;
+            game.notify();
+          }}
+          onUseCenterFly={() => {
+            if (game.playerStats.inventory.center_fly) {
+              setSelectedTile(null);
+              threeEngineRef.current?.setSelectedTile(null, null);
+              setIsTargetingFly(true);
+              addFloating(
+                lang === 'zh'
+                  ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
+                  : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
+                '#c084fc',
+                4500
+              );
+            }
+          }}
+          onUseUpFly={() => {
+            if (game.playerStats.inventory.up_fly) {
+              setIsConfirmUpFlyOpen(true);
+            }
+          }}
           onQuickSave={handleOpenSaveModal}
           onQuickLoad={handleOpenLoadModal}
-          onOpenCoffeeModal={() => {
-            stopAutoWalk();
-            setIsCoffeeModalOpen(true);
-          }}
+          onRestart={handleRestart}
         />
+      )}
+
+      {/* 手机端全功能滑出抽屉侧边栏 (点击底部菜单触发) */}
+      {isSidebarDrawerOpen && isMobile && (
+        <div className="fixed inset-0 z-50 flex select-none animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            onClick={() => setIsSidebarDrawerOpen(false)}
+          />
+          <div className="relative w-80 max-w-[85vw] h-full z-10 animate-in slide-in-from-left duration-200 shadow-2xl">
+            <Sidebar
+              isDrawer={true}
+              onCloseDrawer={() => setIsSidebarDrawerOpen(false)}
+              game={game}
+              onMove={handleMove}
+              onOpenManual={() => {
+                game.isMonsterManualOpen = true;
+                game.notify();
+              }}
+              onOpenTeleport={() => {
+                game.isFloorTeleportOpen = true;
+                game.notify();
+              }}
+              onUseCenterFly={() => {
+                if (game.playerStats.inventory.center_fly) {
+                  setSelectedTile(null);
+                  threeEngineRef.current?.setSelectedTile(null, null);
+                  setIsTargetingFly(true);
+                  addFloating(
+                    lang === 'zh'
+                      ? '【时空飞行器】：请点击地图上任意通畅地面进行传送（按 ESC 取消）'
+                      : '[Chrono Flyer]: Click any open floor tile on the map to teleport (Press ESC to cancel)',
+                    '#c084fc',
+                    4500
+                  );
+                }
+              }}
+              onUseUpFly={() => {
+                if (game.playerStats.inventory.up_fly) {
+                  setIsConfirmUpFlyOpen(true);
+                }
+              }}
+              onQuickSave={handleOpenSaveModal}
+              onQuickLoad={handleOpenLoadModal}
+              onRestart={handleRestart}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 主游戏展示区 */}
+      <div className="flex-1 flex flex-col relative w-full h-full min-h-0 overflow-hidden">
+        {/* 顶部工具栏：移动端完全留空以展示完整 3D 地图，桌面端显示标准 Topbar */}
+        {!isMobile && (
+          <Topbar
+            game={game}
+            onOpenDebug={() => {
+              if (!isDebugAllowed()) return;
+              game.isDebugOpen = true;
+              game.notify();
+            }}
+            onRestart={handleRestart}
+            onQuickSave={handleOpenSaveModal}
+            onQuickLoad={handleOpenLoadModal}
+            onOpenCoffeeModal={() => {
+              stopAutoWalk();
+              setIsCoffeeModalOpen(true);
+            }}
+          />
+        )}
 
         {/* 3D WebGL Three.js 画布容器 */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing select-none"
+          className="flex-1 w-full min-h-0 relative cursor-grab active:cursor-grabbing select-none overflow-hidden"
           style={{ touchAction: 'none' }}
         >
           {/* 时空飞行器任意瞬移选点模式横幅指示 */}
           {isTargetingFly && (
-            <div className="absolute top-4 inset-x-0 flex justify-center z-50 pointer-events-auto">
+            <div className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] inset-x-0 flex justify-center z-50 pointer-events-auto">
               <div className="bg-purple-950/95 border-2 border-purple-400/80 rounded-2xl px-5 py-2.5 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-pulse">
                 <Zap className="w-5 h-5 text-yellow-300 animate-bounce" />
                 <span className="text-sm font-bold text-purple-100">
@@ -797,7 +910,7 @@ export const App: React.FC = () => {
             </div>
           )}
           {/* 屏幕顶部浮动消息通知栈 (垂直自然流排列，错峰登场，杜绝字体重叠与过快消失) */}
-          <div className="absolute top-16 inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
+          <div className="absolute top-[calc(2.5rem+env(safe-area-inset-top,0px))] inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
             {floatingTexts.map((item) => (
               <div
                 key={item.id}
@@ -836,77 +949,111 @@ export const App: React.FC = () => {
             />
           )}
 
-          {/* 底部左侧：操作快捷键提示与空格复位提示 */}
-          <div className="absolute bottom-3 left-4 flex flex-col gap-2 select-none z-10">
-            {/* 闪烁的空格复位勇士提示 (在图像下方，在控制提示上方) */}
-            <button
-              onClick={() => {
-                threeEngineRef.current?.resetCameraView();
-                addFloating(t.spaceResetFloating, '#38bdf8');
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/60 rounded-xl text-amber-300 text-xs font-semibold backdrop-blur-md shadow-lg animate-pulse w-fit pointer-events-auto cursor-pointer transition-all active:scale-95"
-              title={t.spaceResetBtnTitle}
-            >
-              <Target className="w-3.5 h-3.5 text-amber-400" />
-              <span>
-                {t.pressKey}
-                <strong className="font-mono bg-amber-400/30 text-amber-200 px-1.5 py-0.5 rounded">
-                  {t.spaceResetKey}
-                </strong>{' '}
-                {t.spaceResetText}
-              </span>
-            </button>
 
-            {/* 控制提示栏 */}
-            <div className="bg-slate-900/80 border border-slate-700/70 rounded-xl px-3.5 py-1.5 backdrop-blur-sm text-[11px] text-slate-300 flex items-center gap-2.5 shadow-lg pointer-events-none">
-              <span>{t.hintMove}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintInspect}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintPath}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintPan}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintRotate}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintZoom}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintManual}</span>
-              <span className="text-slate-600">|</span>
-              <span>{t.hintCompass}</span>
-            </div>
-          </div>
-
-          {/* 底部右侧：缩放控制栏 */}
-          <div className="absolute bottom-3 right-4 flex items-center gap-2 z-10 select-none">
-            <div className="flex items-center bg-slate-900/85 border border-slate-700/80 rounded-xl px-1.5 py-1 backdrop-blur-md shadow-lg text-slate-300 gap-0.5">
-              <button
-                onClick={() => threeEngineRef.current?.zoomOut()}
-                className="p-1.5 hover:bg-slate-800 active:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all ml-1"
-                title={t.zoomOutTip}
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
+          {/* 桌面端专属：底部左侧快捷键提示与空格复位提示 */}
+          {!isMobile && (
+            <div className="absolute bottom-3 left-4 flex flex-col gap-2 select-none z-10">
+              {/* 闪烁的空格复位勇士提示 */}
               <button
                 onClick={() => {
                   threeEngineRef.current?.resetCameraView();
-                  addFloating(t.zoomResetFloating, '#38bdf8');
+                  addFloating(t.spaceResetFloating, '#38bdf8');
                 }}
-                className="px-2 py-1 text-xs font-mono font-bold text-amber-300 hover:text-amber-200 transition-all hover:bg-slate-800/60 rounded"
-                title={t.zoomResetTip}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/60 rounded-xl text-amber-300 text-xs font-semibold backdrop-blur-md shadow-lg animate-pulse w-fit pointer-events-auto cursor-pointer transition-all active:scale-95"
+                title={t.spaceResetBtnTitle}
               >
-                {Math.round(zoomLevel * 100)}%
+                <Target className="w-3.5 h-3.5 text-amber-400" />
+                <span>
+                  {t.pressKey}
+                  <strong className="font-mono bg-amber-400/30 text-amber-200 px-1.5 py-0.5 rounded">
+                    {t.spaceResetKey}
+                  </strong>{' '}
+                  {t.spaceResetText}
+                </span>
               </button>
-              <button
-                onClick={() => threeEngineRef.current?.zoomIn()}
-                className="p-1.5 hover:bg-slate-800 active:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all"
-                title={t.zoomInTip}
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
+
+              {/* 控制提示栏 */}
+              <div className="bg-slate-900/80 border border-slate-700/70 rounded-xl px-3.5 py-1.5 backdrop-blur-sm text-[11px] text-slate-300 flex items-center gap-2.5 shadow-lg pointer-events-none">
+                <span>{t.hintMove}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintInspect}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintPath}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintPan}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintRotate}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintZoom}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintManual}</span>
+                <span className="text-slate-600">|</span>
+                <span>{t.hintCompass}</span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* 桌面端专属：底部右侧缩放控制栏 */}
+          {!isMobile && (
+            <div className="absolute bottom-3 right-4 flex items-center gap-2 z-10 select-none">
+              <div className="flex items-center bg-slate-900/85 border border-slate-700/80 rounded-xl px-1.5 py-1 backdrop-blur-md shadow-lg text-slate-300 gap-0.5">
+                <button
+                  onClick={() => threeEngineRef.current?.zoomOut()}
+                  className="p-1.5 hover:bg-slate-800 active:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all ml-1"
+                  title={t.zoomOutTip}
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    threeEngineRef.current?.resetCameraView();
+                    addFloating(t.zoomResetFloating, '#38bdf8');
+                  }}
+                  className="px-2 py-1 text-xs font-mono font-bold text-amber-300 hover:text-amber-200 transition-all hover:bg-slate-800/60 rounded"
+                  title={t.zoomResetTip}
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button
+                  onClick={() => threeEngineRef.current?.zoomIn()}
+                  className="p-1.5 hover:bg-slate-800 active:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all"
+                  title={t.zoomInTip}
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* 手机端专属：底部一体化操作与状态面板 (与 3D 地图零重叠) */}
+        {isMobile && (
+          <MobileBottomDock
+            game={game}
+            onMove={handleMove}
+            getYaw={() => (threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0)}
+            onResetCamera={() => {
+              threeEngineRef.current?.resetCameraView();
+              addFloating(t.spaceResetFloating, '#38bdf8');
+            }}
+            onOpenDrawer={() => setIsSidebarDrawerOpen(true)}
+            onOpenCoffeeModal={() => {
+              stopAutoWalk();
+              setIsCoffeeModalOpen(true);
+            }}
+            onOpenManual={() => {
+              game.isMonsterManualOpen = true;
+              game.notify();
+            }}
+            onOpenTeleport={() => {
+              game.isFloorTeleportOpen = true;
+              game.notify();
+            }}
+            onQuickSave={handleOpenSaveModal}
+            onQuickLoad={handleOpenLoadModal}
+            disabled={hasModal}
+          />
+        )}
       </div>
 
       {/* 弹窗层：怪物手册 */}

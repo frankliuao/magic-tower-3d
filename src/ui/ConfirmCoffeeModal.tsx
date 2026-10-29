@@ -1,5 +1,5 @@
 // src/ui/ConfirmCoffeeModal.tsx
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Coffee, ExternalLink, Heart } from 'lucide-react';
 import { useI18n } from '../i18n';
 
@@ -12,10 +12,33 @@ export const BUY_ME_A_COFFEE_URL = 'https://buymeacoffee.com/frankliuao';
 
 export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, onClose }) => {
   const { t } = useI18n();
+  const [canInteract, setCanInteract] = useState(false);
+  const pointerDownButtonRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCanInteract(false);
+      pointerDownButtonRef.current = null;
+      const timer = setTimeout(() => {
+        setCanInteract(true);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
+  const isAuthorizedClick = (buttonKey: string, e?: React.MouseEvent) => {
+    if (!canInteract) return false;
+    // 键盘回车或空格激活时，原生 Click 事件的 detail 为 0，允许正常响应
+    if (e && e.detail === 0) return true;
+    // 指针/触控点击：必须在弹窗打开后且处于可交互状态时，在该按钮上产生过 pointerdown
+    return pointerDownButtonRef.current === buttonKey;
+  };
+
+  const handleConfirm = (e?: React.MouseEvent) => {
+    if (!isAuthorizedClick('confirm', e)) return;
+    pointerDownButtonRef.current = null;
     window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
     onClose();
   };
@@ -58,15 +81,29 @@ export const ConfirmCoffeeModal: React.FC<ConfirmCoffeeModalProps> = ({ isOpen, 
         <div className="bg-slate-950/70 border-t border-slate-800 px-6 py-3.5 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer border border-slate-700"
+            onPointerDown={() => {
+              if (canInteract) pointerDownButtonRef.current = 'cancel';
+            }}
+            onClick={(e) => {
+              if (!isAuthorizedClick('cancel', e)) return;
+              pointerDownButtonRef.current = null;
+              onClose();
+            }}
+            className={`px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all border border-slate-700 ${
+              !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+            }`}
           >
             {t.coffeeModalCancelBtn}
           </button>
           <button
             type="button"
+            onPointerDown={() => {
+              if (canInteract) pointerDownButtonRef.current = 'confirm';
+            }}
             onClick={handleConfirm}
-            className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+            className={`flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all ${
+              !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+            }`}
           >
             <Coffee className="w-3.5 h-3.5 text-slate-950" />
             <span>{t.coffeeModalConfirmBtn}</span>

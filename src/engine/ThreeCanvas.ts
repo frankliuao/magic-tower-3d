@@ -67,15 +67,28 @@ export class ThreeCanvas {
   private pointerDownOnCanvas: boolean = false;
   public onRightClickTile?: (gridX: number, gridY: number) => void;
   public onRightDoubleClickTile?: (gridX: number, gridY: number) => void;
+  public onDoubleClickTile?: (gridX: number, gridY: number) => void;
   public onSelectTile?: (gridX: number, gridY: number) => void;
   private pathMarker: THREE.Mesh | null = null;
   private selectionMarker: THREE.Group | null = null;
   private selectedTilePos: { x: number; y: number } | null = null;
 
   // 双击与拖拽手势状态
+  private lastLeftClickTime: number = 0;
+  private lastLeftClickPos: { x: number; y: number } = { x: 0, y: 0 };
+  private lastLeftClickCoords: { gridX: number; gridY: number } | null = null;
   private lastRightClickTime: number = 0;
   private lastRightClickPos: { x: number; y: number } = { x: 0, y: 0 };
   private dragMode: 'none' | 'pan' | 'rotate' = 'none';
+  private initialPanOffset: { x: number; y: number } = { x: 0, y: 0 };
+  private isPanMoved: boolean = false;
+
+  // 移动端双指触控手势状态 (双指 Pinch 缩放与双指同向滑动旋转视角)
+  private isTwoFingerGesture: boolean = false;
+  private hasTwoFingerMoved: boolean = false;
+  private lastTouchDistance: number = 0;
+  private lastTouchCenter: { x: number; y: number } = { x: 0, y: 0 };
+  private resizeObserver?: ResizeObserver;
 
   // 动画与插值状态
   private playerGridPos = { x: 5, y: 5 };
@@ -135,6 +148,12 @@ export class ThreeCanvas {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.localClippingEnabled = true; // 启用逐材质裁剪面 (用于门扇滑入墙体裁剪)
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
     container.appendChild(this.renderer.domElement);
 
     // 4. 灯光系统
@@ -174,13 +193,23 @@ export class ThreeCanvas {
     });
     this.scene.add(this.heroGroup);
 
-    // 6. 绑定窗口尺寸与交互事件（拖拽平移、滚轮缩放、双击复位）
+    // 6. 绑定窗口尺寸与交互事件（拖拽平移、滚轮缩放、双击复位、移动端双指手势）
     window.addEventListener('resize', this.onResize);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
     this.container.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
     this.container.addEventListener('wheel', this.onWheel, { passive: false });
     this.container.addEventListener('contextmenu', this.onContextMenu);
+    this.container.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    this.container.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    this.container.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    this.container.addEventListener('touchcancel', this.onTouchEnd, { passive: false });
 
     // 7. 启动渲染循环
     this.startLoop();
@@ -1266,8 +1295,9 @@ export class ThreeCanvas {
   // 窗口重置
   private onResize = () => {
     if (!this.container) return;
-    const w = this.container.clientWidth;
-    const h = this.container.clientHeight || 1;
+    const rect = this.container.getBoundingClientRect();
+    const w = rect.width || this.container.clientWidth;
+    const h = rect.height || this.container.clientHeight || 1;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
@@ -1278,7 +1308,74 @@ export class ThreeCanvas {
     e.preventDefault();
   };
 
+  // 移动端双指触控手势处理 (双指 Pinch 缩放与双指滑动旋转视角)
+  private onTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      this.isTwoFingerGesture = true;
+      this.hasTwoFingerMoved = false;
+      this.isDragging = false;
+      this.dragMode = 'none';
+      this.pointerDownOnCanvas = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      this.lastTouchDistance = Math.hypot(dx, dy);
+      this.lastTouchCenter = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+      if (e.cancelable) e.preventDefault();
+    }
+  };
+
+  private onTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      if (e.cancelable) e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDistance = Math.hypot(dx, dy);
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      const deltaDist = newDistance - this.lastTouchDistance;
+      const deltaCenterX = centerX - this.lastTouchCenter.x;
+      const deltaCenterY = centerY - this.lastTouchCenter.y;
+
+      if (Math.abs(deltaDist) > 2 || Math.hypot(deltaCenterX, deltaCenterY) > 2) {
+        this.hasTwoFingerMoved = true;
+      }
+
+      // 双指 Pinch 缩放 (两指聚拢缩小、张开放大)
+      if (Math.abs(deltaDist) > 0.5) {
+        this.setZoom(this.targetZoom + deltaDist * 0.005);
+      }
+
+      // 双指同向滑动旋转视角 (水平 Yaw 偏航角与垂直 Pitch 俯仰角)
+      if (Math.hypot(deltaCenterX, deltaCenterY) > 0.5) {
+        this.targetCameraYaw -= deltaCenterX * 0.008;
+        this.targetCameraPitch = THREE.MathUtils.clamp(
+          this.targetCameraPitch + deltaCenterY * 0.006,
+          0.35,
+          1.45
+        );
+        this.notifyCameraStateChange();
+      }
+
+      this.lastTouchDistance = newDistance;
+      this.lastTouchCenter = { x: centerX, y: centerY };
+    }
+  };
+
+  private onTouchEnd = (e: TouchEvent) => {
+    if (e.touches.length < 2) {
+      this.isTwoFingerGesture = false;
+    }
+  };
+
   private onPointerDown = (e: PointerEvent) => {
+    if (this.isTwoFingerGesture) {
+      this.pointerDownOnCanvas = false;
+      return;
+    }
     if (e.button !== 0 && e.button !== 1 && e.button !== 2) return;
     // 若点击目标不是 3D 画布（如卡片、按钮等 DOM UI），交由 DOM 元素自身响应，不捕获指针也不干扰
     if (e.target !== this.renderer.domElement) {
@@ -1289,23 +1386,20 @@ export class ThreeCanvas {
 
     this.lastPointerPos = { x: e.clientX, y: e.clientY };
     this.pointerDownPos = { x: e.clientX, y: e.clientY };
+    this.initialPanOffset = { x: this.targetPanOffset.x, y: this.targetPanOffset.y };
+    this.isPanMoved = false;
 
     if (e.button === 0) {
-      if (e.shiftKey) {
-        // Shift + 左键拖动 -> 旋转视角
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        // Shift 或 Ctrl/Cmd + 左键拖动 -> 统一旋转视角 (Yaw & Pitch)
         this.isDragging = true;
         this.dragMode = 'rotate';
         this.container.style.cursor = 'crosshair';
-      } else if (e.ctrlKey || e.metaKey) {
-        // Ctrl/Cmd + 左键拖动 -> 平移地图（角度不变）
+      } else {
+        // 电脑版常规左键拖拽 / 手机版单指拖拽 -> 平移地图
         this.isDragging = true;
         this.dragMode = 'pan';
         this.container.style.cursor = 'grabbing';
-      } else {
-        // 普通左键单击 / 拖动：按住左键拖拽不会发生任何事情
-        this.isDragging = true;
-        this.dragMode = 'none';
-        this.container.style.cursor = 'default';
       }
     } else if (e.button === 1) {
       // 中键拖动平移
@@ -1329,7 +1423,7 @@ export class ThreeCanvas {
     this.lastPointerPos = { x: e.clientX, y: e.clientY };
 
     if (this.dragMode === 'rotate') {
-      // Shift + 左键拖动：自由旋转视角 (Yaw & Pitch) - 水平旋转方向反转，符合直觉操作
+      // Shift 或 Ctrl/Cmd + 左键拖动：自由旋转视角 (Yaw & Pitch) - 水平旋转方向反转，符合直觉操作
       this.targetCameraYaw -= dx * 0.008;
       this.targetCameraPitch = THREE.MathUtils.clamp(
         this.targetCameraPitch + dy * 0.006,
@@ -1338,7 +1432,14 @@ export class ThreeCanvas {
       );
       this.notifyCameraStateChange();
     } else if (this.dragMode === 'pan') {
-      // Ctrl + 左键拖动：平移视角和地图，保持摄像机角度绝对不变
+      // 电脑端左键拖拽 / 手机端单指拖拽：平移视角和地图，保持摄像机角度绝对不变
+      const totalDist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+      if (totalDist < 6 && !this.isPanMoved) {
+        // 6px 防抖死区，避免轻触或单击目标时发生微晃
+        return;
+      }
+      this.isPanMoved = true;
+
       const panFactor = (1.0 / this.currentZoom) * 0.016;
       const cosY = Math.cos(this.cameraYaw);
       const sinY = Math.sin(this.cameraYaw);
@@ -1356,6 +1457,17 @@ export class ThreeCanvas {
   };
 
   private onPointerUp = (e: PointerEvent) => {
+    if (this.hasTwoFingerMoved || this.isTwoFingerGesture) {
+      this.hasTwoFingerMoved = false;
+      this.pointerDownOnCanvas = false;
+      this.isDragging = false;
+      this.dragMode = 'none';
+      try {
+        this.container.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+      return;
+    }
+
     if (!this.pointerDownOnCanvas) return;
     this.pointerDownOnCanvas = false;
 
@@ -1369,9 +1481,44 @@ export class ThreeCanvas {
 
     const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
 
-    // 1. 左键单击：(位移 < 6px 且未按住 Ctrl/Shift 拖拽)
-    if (e.button === 0 && dist < 6 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    // 1. 左键/触屏单击与双击判定 (位移 < 10px 判定为点击，若位移 >= 10px 则为拖拽平移地图)
+    if (e.button === 0 && dist < 10 && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      // 纯净点击：若微位移在 6~9px 之间，无缝复位初始平移位置确保完全零漂移
+      if (this.isPanMoved) {
+        this.targetPanOffset.x = this.initialPanOffset.x;
+        this.targetPanOffset.y = this.initialPanOffset.y;
+        this.notifyCameraStateChange();
+      }
       const coords = this.raycastToGrid(e.clientX, e.clientY);
+      const now = performance.now();
+      const timeSinceLast = now - this.lastLeftClickTime;
+      const posDist = Math.hypot(
+        e.clientX - this.lastLeftClickPos.x,
+        e.clientY - this.lastLeftClickPos.y
+      );
+
+      // 触屏双击自动寻路判定 (仅在手机触屏 touch 下支持双击寻路；电脑端鼠标左键双击严禁自动寻路，必须且只能右键双击寻路)
+      if (
+        e.pointerType === 'touch' &&
+        timeSinceLast < 380 &&
+        posDist < 35 &&
+        coords &&
+        this.lastLeftClickCoords &&
+        coords.gridX === this.lastLeftClickCoords.gridX &&
+        coords.gridY === this.lastLeftClickCoords.gridY
+      ) {
+        this.lastLeftClickTime = 0;
+        this.lastLeftClickCoords = null;
+        if (this.onDoubleClickTile) {
+          this.onDoubleClickTile(coords.gridX, coords.gridY);
+        }
+        return;
+      }
+
+      this.lastLeftClickTime = now;
+      this.lastLeftClickPos = { x: e.clientX, y: e.clientY };
+      this.lastLeftClickCoords = coords;
+
       if (coords) {
         if (this.onSelectTile) {
           this.onSelectTile(coords.gridX, coords.gridY);
@@ -1384,7 +1531,7 @@ export class ThreeCanvas {
       return;
     }
 
-    // 2. 右键点击：双击判定 (位移 < 8px)
+    // 2. 电脑端右键点击：双击自动寻路判定 (位移 < 8px，仅右键双击生效)
     if (e.button === 2 && dist < 8) {
       const now = performance.now();
       const timeSinceLast = now - this.lastRightClickTime;
@@ -1394,14 +1541,12 @@ export class ThreeCanvas {
       );
 
       if (timeSinceLast < 380 && posDist < 20) {
-        // 右键双击！
+        // 电脑端右键双击自动寻路！
         this.lastRightClickTime = 0;
         const coords = this.raycastToGrid(e.clientX, e.clientY);
         if (coords) {
           if (this.onRightDoubleClickTile) {
             this.onRightDoubleClickTile(coords.gridX, coords.gridY);
-          } else if (this.onRightClickTile) {
-            this.onRightClickTile(coords.gridX, coords.gridY);
           }
         }
       } else {
@@ -1514,6 +1659,19 @@ export class ThreeCanvas {
     this.notifyCameraStateChange();
   }
 
+  // 重置并废除指针手势状态 (当模态窗口/对话弹出时调用，防止拖拽或点击残留)
+  public resetPointerState() {
+    this.pointerDownOnCanvas = false;
+    this.isDragging = false;
+    this.dragMode = 'none';
+    this.isTwoFingerGesture = false;
+    this.hasTwoFingerMoved = false;
+    this.isPanMoved = false;
+    if (this.container) {
+      this.container.style.cursor = 'grab';
+    }
+  }
+
   public getZoom(): number {
     return this.targetZoom;
   }
@@ -1525,11 +1683,18 @@ export class ThreeCanvas {
   // 销毁引擎
   public dispose() {
     window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
     this.container.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     this.container.removeEventListener('wheel', this.onWheel);
     this.container.removeEventListener('contextmenu', this.onContextMenu);
+    this.container.removeEventListener('touchstart', this.onTouchStart);
+    this.container.removeEventListener('touchmove', this.onTouchMove);
+    this.container.removeEventListener('touchend', this.onTouchEnd);
+    this.container.removeEventListener('touchcancel', this.onTouchEnd);
     if (this.reqId) cancelAnimationFrame(this.reqId);
     if (this.selectionMarker) {
       this.scene.remove(this.selectionMarker);

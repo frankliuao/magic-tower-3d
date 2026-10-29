@@ -17,6 +17,10 @@ export interface Translations {
   unmuteTip: string;
   bgmMuteTip: string;
   bgmUnmuteTip: string;
+  sfxOn: string;
+  sfxOff: string;
+  bgmOn: string;
+  bgmOff: string;
   debugTip: string;
   restartTip: string;
   coffeeTip: string;
@@ -274,6 +278,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     unmuteTip: '开启音效',
     bgmMuteTip: '关闭背景音乐',
     bgmUnmuteTip: '开启背景音乐',
+    sfxOn: '音效: 开',
+    sfxOff: '音效: 关',
+    bgmOn: 'BGM: 开',
+    bgmOff: 'BGM: 关',
     debugTip: '开发者作弊与数值调试',
     restartTip: '重新开始游戏',
     coffeeTip: '请作者喝杯咖啡 (Buy Me a Coffee)',
@@ -320,8 +328,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     hintMove: '行走: 方向键',
     hintInspect: '检视: 单击目标',
     hintPath: '寻路/交互: 右键双击',
-    hintPan: '平移: Ctrl+拖动',
-    hintRotate: '旋转: Shift+拖动',
+    hintPan: '平移: 单击拖拽',
+    hintRotate: '旋转: Shift/Ctrl+拖动',
     hintZoom: '缩放: Ctrl+滚轮',
     hintManual: '手册: L',
     hintCompass: '罗盘: G',
@@ -529,6 +537,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     unmuteTip: 'Unmute Audio',
     bgmMuteTip: 'Mute Music',
     bgmUnmuteTip: 'Play Music',
+    sfxOn: 'SFX: On',
+    sfxOff: 'SFX: Off',
+    bgmOn: 'BGM: On',
+    bgmOff: 'BGM: Off',
     debugTip: 'Developer Debug & Cheats',
     restartTip: 'Restart Game',
     coffeeTip: 'Buy Me a Coffee',
@@ -575,8 +587,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     hintMove: 'Move: Arrow Keys',
     hintInspect: 'Inspect: Left Click',
     hintPath: 'Engage/Path: Right Dbl-Click',
-    hintPan: 'Pan: Ctrl+Drag',
-    hintRotate: 'Rotate: Shift+Drag',
+    hintPan: 'Pan: Drag',
+    hintRotate: 'Rotate: Shift/Ctrl+Drag',
     hintZoom: 'Zoom: Ctrl+Wheel',
     hintManual: 'Manual: L',
     hintCompass: 'Compass: G',
@@ -961,14 +973,14 @@ export const NPC_DIALOGUES: Record<
         '年轻的勇士，你终于苏醒了！整座魔塔已被大魔王杰诺霸占，公主也被囚禁在第50层塔顶。我以仙灵之力为你破除束缚，助你踏上登塔征程！',
         '【基础操作 · 洞悉万物】：\n• 鼠标左键【单击】任意目标（怪物、物品、大门或机关），可在右下角卡片查看详细信息、战前推演损血与属性。\n• 顶部【怪物手册】(快捷键 L) 随时为你洞察全层妖魔战损与加点临界点！',
         '【行动探索 · 智能寻路】：\n• 使用键盘【方向键】控制勇士前后左右移动。\n• 鼠标【右键双击】任意空地或目标，勇士将自动选择最优路径避开怪物并前往！',
-        '【3D 视角 · 自由掌控】：\n• 按住【Ctrl + 鼠标左键拖拽】可平移视角查看整张地图。\n• 按住【Shift + 鼠标左键拖拽】可 360° 自由旋转三维视角。\n• 按住【Ctrl + 滚轮】缩放视野远近，按【空格键 (Space)】可随时一键将镜头复位！',
+        '【3D 视角 · 自由掌控】：\n• 鼠标【直接左键拖拽】（电脑支持直接左键拖拽，手机支持单指拖拽）即可平移视角查看整张地图。\n• 按住【Shift 或 Ctrl + 鼠标左键拖拽】（或手机双指同向滑动）可 360° 自由旋转三维视角。\n• 按住【Ctrl + 滚轮】（或手机双指捏合）缩放视野远近，按【空格键 (Space)】可随时一键将镜头复位！',
         '【启程指引】：\n我身后的光柱正是通往魔塔 1F 的传送门！大殿四周 4 处神台已为你备好红蓝宝石、血瓶与钥匙。中央圣殿密藏着能使战利金币翻倍的【幸运金币】，由红门紧锁守护。待你在塔中寻得红钥匙后，便可回来解开封印！善用顶部【楼层罗盘】(快捷键 G) 在已探索楼层间瞬间穿梭，去拯救王国吧！',
       ],
       en: [
         'Brave warrior, you are finally awake! The Magic Tower has been seized by Demon Lord Zeno, and the princess is held at the 50F summit. With my fairy magic, I have broken your shackles to aid your ascent!',
         '【Basic Controls · Observation】:\n• [Left-click] any monster, item, or door to inspect detailed stats and exact combat damage predictions in the bottom-right card.\n• Open the [Monster Manual] at the top (Hotkey: L) anytime to consult deterministic damage and critical breakpoints!',
         '【Movement & Navigation】:\n• Use [Arrow Keys] to move your warrior.\n• [Double-right-click] any reachable tile or object to automatically take the optimal path avoiding monsters!',
-        '【3D Camera Controls】:\n• Hold [Ctrl + Left-click Drag] to pan across the floor map.\n• Hold [Shift + Left-click Drag] to rotate the 3D camera 360° freely.\n• Hold [Ctrl + Scroll Wheel] to zoom in/out, and press [Spacebar] anytime to instantly reset the camera view!',
+        '【3D Camera Controls】:\n• [Left-click Drag] (direct drag on PC, single-finger drag on mobile) to pan across the floor map.\n• Hold [Shift or Ctrl + Left-click Drag] (or slide two fingers on mobile) to rotate the 3D camera 360° freely.\n• Hold [Ctrl + Scroll Wheel] (or two-finger pinch on mobile) to zoom in/out, and press [Spacebar] anytime to instantly reset the camera view!',
         '【Ascension Guide】:\nThe light portal directly behind me leads up to 1F! The 4 shrines around the hall provide you with gems, potions, and keys. The central sanctuary enshrines the [Lucky Coin] (which doubles gold from battles), safely locked behind a Red Door. Once you discover a Red Key higher in the tower, return here to break the seal! Use your [Floor Compass] (G) anytime, and go save the kingdom!',
       ],
     },
