@@ -80,6 +80,8 @@ export class ThreeCanvas {
   private lastRightClickTime: number = 0;
   private lastRightClickPos: { x: number; y: number } = { x: 0, y: 0 };
   private dragMode: 'none' | 'pan' | 'rotate' = 'none';
+  private initialPanOffset: { x: number; y: number } = { x: 0, y: 0 };
+  private isPanMoved: boolean = false;
 
   // 移动端双指触控手势状态 (双指 Pinch 缩放与双指同向滑动旋转视角)
   private isTwoFingerGesture: boolean = false;
@@ -1384,6 +1386,8 @@ export class ThreeCanvas {
 
     this.lastPointerPos = { x: e.clientX, y: e.clientY };
     this.pointerDownPos = { x: e.clientX, y: e.clientY };
+    this.initialPanOffset = { x: this.targetPanOffset.x, y: this.targetPanOffset.y };
+    this.isPanMoved = false;
 
     if (e.button === 0) {
       if (e.shiftKey) {
@@ -1391,16 +1395,11 @@ export class ThreeCanvas {
         this.isDragging = true;
         this.dragMode = 'rotate';
         this.container.style.cursor = 'crosshair';
-      } else if (e.ctrlKey || e.metaKey) {
-        // Ctrl/Cmd + 左键拖动 -> 平移地图（角度不变）
+      } else {
+        // 电脑版常规左键拖拽 / 手机版单指拖拽 -> 平移地图
         this.isDragging = true;
         this.dragMode = 'pan';
         this.container.style.cursor = 'grabbing';
-      } else {
-        // 普通左键单击 / 拖动：按住左键拖拽不会发生任何事情
-        this.isDragging = true;
-        this.dragMode = 'none';
-        this.container.style.cursor = 'default';
       }
     } else if (e.button === 1) {
       // 中键拖动平移
@@ -1433,7 +1432,14 @@ export class ThreeCanvas {
       );
       this.notifyCameraStateChange();
     } else if (this.dragMode === 'pan') {
-      // Ctrl + 左键拖动：平移视角和地图，保持摄像机角度绝对不变
+      // 电脑端左键拖拽 / 手机端单指拖拽：平移视角和地图，保持摄像机角度绝对不变
+      const totalDist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+      if (totalDist < 6 && !this.isPanMoved) {
+        // 6px 防抖死区，避免轻触或单击目标时发生微晃
+        return;
+      }
+      this.isPanMoved = true;
+
       const panFactor = (1.0 / this.currentZoom) * 0.016;
       const cosY = Math.cos(this.cameraYaw);
       const sinY = Math.sin(this.cameraYaw);
@@ -1475,8 +1481,14 @@ export class ThreeCanvas {
 
     const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
 
-    // 1. 左键/触屏单击与双击判定 (位移 < 12px 且未按住 Ctrl/Shift 拖拽)
-    if (e.button === 0 && dist < 12 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    // 1. 左键/触屏单击与双击判定 (位移 < 10px 判定为点击，若位移 >= 10px 则为拖拽平移地图)
+    if (e.button === 0 && dist < 10 && !e.shiftKey) {
+      // 纯净点击：若微位移在 6~9px 之间，无缝复位初始平移位置确保完全零漂移
+      if (this.isPanMoved) {
+        this.targetPanOffset.x = this.initialPanOffset.x;
+        this.targetPanOffset.y = this.initialPanOffset.y;
+        this.notifyCameraStateChange();
+      }
       const coords = this.raycastToGrid(e.clientX, e.clientY);
       const now = performance.now();
       const timeSinceLast = now - this.lastLeftClickTime;

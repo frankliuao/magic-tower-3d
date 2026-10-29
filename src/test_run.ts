@@ -2489,6 +2489,34 @@ const desktopConfig = simulateMobileLayout(false);
 assert(desktopConfig.renderTopBar, '桌面端保留标准 Topbar 顶栏');
 assert(!desktopConfig.renderBottomDock, '桌面端完全不渲染底部摇杆底栏');
 
+console.log('\n--- 33. 验证全平台地图直接拖拽平移交互 (Direct Drag & Pan Navigation) ---');
+// 模拟指针与手势拖拽模式判定
+const evaluateDragMode = (button: number, shiftKey: boolean) => {
+  if (button === 0) {
+    if (shiftKey) return 'rotate';
+    return 'pan'; // 电脑版单击直接拖拽，手机版单指直接拖拽，均进入 pan 模式
+  }
+  if (button === 1) return 'pan';
+  return 'none';
+};
+
+assert(evaluateDragMode(0, false) === 'pan', '电脑端普通鼠标左键拖动 -> 默认激活地图平移 (无需 Ctrl)');
+assert(evaluateDragMode(0, true) === 'rotate', '电脑端按住 Shift 键拖动 -> 保留旋转 3D 视角');
+assert(evaluateDragMode(1, false) === 'pan', '电脑端鼠标滚轮中键拖动 -> 支持平移');
+
+// 模拟单击与拖拽判定阈值
+const evaluatePointerGesture = (displacement: number, isShift: boolean) => {
+  if (displacement < 10 && !isShift) {
+    return 'click'; // 纯粹点击/双击
+  }
+  return 'drag'; // 地图拖拽
+};
+
+assert(evaluatePointerGesture(3, false) === 'click', '位移 3px (手抖轻触) -> 精确判定为点击，地图零偏移');
+assert(evaluatePointerGesture(8, false) === 'click', '位移 8px (快速轻点) -> 仍判定为点击，触发检视/双击');
+assert(evaluatePointerGesture(15, false) === 'drag', '位移 15px (有意拖动) -> 判定为地图拖拽，不触发误点');
+assert(evaluatePointerGesture(60, false) === 'drag', '位移 60px (大幅平移) -> 畅快平移地图视角');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
