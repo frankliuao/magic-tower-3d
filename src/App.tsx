@@ -792,6 +792,9 @@ export const App: React.FC = () => {
             setIsConfirmUpFlyOpen(true);
           }
         }}
+        onQuickSave={handleOpenSaveModal}
+        onQuickLoad={handleOpenLoadModal}
+        onRestart={handleRestart}
       />
 
       {/* 手机端全功能滑出抽屉侧边栏 (点击顶部菜单触发) */}
@@ -1032,6 +1035,8 @@ export const App: React.FC = () => {
               game.isFloorTeleportOpen = true;
               game.notify();
             }}
+            onQuickSave={handleOpenSaveModal}
+            onQuickLoad={handleOpenLoadModal}
             disabled={hasModal}
           />
         )}

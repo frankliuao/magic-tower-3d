@@ -2471,6 +2471,13 @@ assert(floor0NameZh.includes('0F'), '移动端底栏楼层名称正确包含 0F 
 const floor0NameEn = getFloorName(0, 'en', mobileTestGame.getCurrentFloorData().name);
 assert(floor0NameEn.includes('0F'), '移动端底栏英文楼层名称正确包含 0F 标识');
 
+// 验证移动端底部控制台具备完整的 存档、读档 与 语言切换 能力
+const mobileDockCode = fs.readFileSync('src/ui/MobileBottomDock.tsx', 'utf-8');
+assert(mobileDockCode.includes('onQuickSave') && mobileDockCode.includes('t.saveBtn'), '移动端底栏包含【存档】按钮及回调接口');
+assert(mobileDockCode.includes('onQuickLoad') && mobileDockCode.includes('t.loadBtn'), '移动端底栏包含【读档】按钮及回调接口');
+assert(mobileDockCode.includes('toggleLang') && mobileDockCode.includes('Languages'), '移动端底栏包含【语言切换】(中/EN) 按钮及切换逻辑');
+assert(mobileDockCode.includes('VirtualJoystick'), '移动端底栏保留左侧虚拟触控摇杆');
+
 // 验证布局分离逻辑：在手机模式下，顶部栏让位给地图，摇杆与全部属性归集到底部底栏
 const simulateMobileLayout = (isMobileDevice: boolean) => {
   return {
