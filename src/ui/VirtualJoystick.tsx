@@ -82,8 +82,8 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     const deltaY = e.clientY - centerY;
     const dist = Math.hypot(deltaX, deltaY);
 
-    const maxRadius = 38;
-    const deadZone = 14;
+    const maxRadius = 36;
+    const deadZone = 11;
 
     // 限制摇杆旋钮在底盘圆周内
     let kx = deltaX;

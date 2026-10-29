@@ -81,6 +81,12 @@ export class ThreeCanvas {
   private lastRightClickPos: { x: number; y: number } = { x: 0, y: 0 };
   private dragMode: 'none' | 'pan' | 'rotate' = 'none';
 
+  // 移动端双指触控手势状态 (双指 Pinch 缩放与双指同向滑动旋转视角)
+  private isTwoFingerGesture: boolean = false;
+  private hasTwoFingerMoved: boolean = false;
+  private lastTouchDistance: number = 0;
+  private lastTouchCenter: { x: number; y: number } = { x: 0, y: 0 };
+
   // 动画与插值状态
   private playerGridPos = { x: 5, y: 5 };
   private playerFacing: Direction = 'down';
@@ -178,13 +184,17 @@ export class ThreeCanvas {
     });
     this.scene.add(this.heroGroup);
 
-    // 6. 绑定窗口尺寸与交互事件（拖拽平移、滚轮缩放、双击复位）
+    // 6. 绑定窗口尺寸与交互事件（拖拽平移、滚轮缩放、双击复位、移动端双指手势）
     window.addEventListener('resize', this.onResize);
     this.container.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
     this.container.addEventListener('wheel', this.onWheel, { passive: false });
     this.container.addEventListener('contextmenu', this.onContextMenu);
+    this.container.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    this.container.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    this.container.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    this.container.addEventListener('touchcancel', this.onTouchEnd, { passive: false });
 
     // 7. 启动渲染循环
     this.startLoop();
@@ -1282,7 +1292,74 @@ export class ThreeCanvas {
     e.preventDefault();
   };
 
+  // 移动端双指触控手势处理 (双指 Pinch 缩放与双指滑动旋转视角)
+  private onTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      this.isTwoFingerGesture = true;
+      this.hasTwoFingerMoved = false;
+      this.isDragging = false;
+      this.dragMode = 'none';
+      this.pointerDownOnCanvas = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      this.lastTouchDistance = Math.hypot(dx, dy);
+      this.lastTouchCenter = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+      if (e.cancelable) e.preventDefault();
+    }
+  };
+
+  private onTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      if (e.cancelable) e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDistance = Math.hypot(dx, dy);
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      const deltaDist = newDistance - this.lastTouchDistance;
+      const deltaCenterX = centerX - this.lastTouchCenter.x;
+      const deltaCenterY = centerY - this.lastTouchCenter.y;
+
+      if (Math.abs(deltaDist) > 2 || Math.hypot(deltaCenterX, deltaCenterY) > 2) {
+        this.hasTwoFingerMoved = true;
+      }
+
+      // 双指 Pinch 缩放 (两指聚拢缩小、张开放大)
+      if (Math.abs(deltaDist) > 0.5) {
+        this.setZoom(this.targetZoom + deltaDist * 0.005);
+      }
+
+      // 双指同向滑动旋转视角 (水平 Yaw 偏航角与垂直 Pitch 俯仰角)
+      if (Math.hypot(deltaCenterX, deltaCenterY) > 0.5) {
+        this.targetCameraYaw -= deltaCenterX * 0.008;
+        this.targetCameraPitch = THREE.MathUtils.clamp(
+          this.targetCameraPitch + deltaCenterY * 0.006,
+          0.35,
+          1.45
+        );
+        this.notifyCameraStateChange();
+      }
+
+      this.lastTouchDistance = newDistance;
+      this.lastTouchCenter = { x: centerX, y: centerY };
+    }
+  };
+
+  private onTouchEnd = (e: TouchEvent) => {
+    if (e.touches.length < 2) {
+      this.isTwoFingerGesture = false;
+    }
+  };
+
   private onPointerDown = (e: PointerEvent) => {
+    if (this.isTwoFingerGesture) {
+      this.pointerDownOnCanvas = false;
+      return;
+    }
     if (e.button !== 0 && e.button !== 1 && e.button !== 2) return;
     // 若点击目标不是 3D 画布（如卡片、按钮等 DOM UI），交由 DOM 元素自身响应，不捕获指针也不干扰
     if (e.target !== this.renderer.domElement) {
@@ -1360,6 +1437,17 @@ export class ThreeCanvas {
   };
 
   private onPointerUp = (e: PointerEvent) => {
+    if (this.hasTwoFingerMoved || this.isTwoFingerGesture) {
+      this.hasTwoFingerMoved = false;
+      this.pointerDownOnCanvas = false;
+      this.isDragging = false;
+      this.dragMode = 'none';
+      try {
+        this.container.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+      return;
+    }
+
     if (!this.pointerDownOnCanvas) return;
     this.pointerDownOnCanvas = false;
 
@@ -1566,6 +1654,10 @@ export class ThreeCanvas {
     window.removeEventListener('pointerup', this.onPointerUp);
     this.container.removeEventListener('wheel', this.onWheel);
     this.container.removeEventListener('contextmenu', this.onContextMenu);
+    this.container.removeEventListener('touchstart', this.onTouchStart);
+    this.container.removeEventListener('touchmove', this.onTouchMove);
+    this.container.removeEventListener('touchend', this.onTouchEnd);
+    this.container.removeEventListener('touchcancel', this.onTouchEnd);
     if (this.reqId) cancelAnimationFrame(this.reqId);
     if (this.selectionMarker) {
       this.scene.remove(this.selectionMarker);

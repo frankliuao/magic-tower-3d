@@ -938,7 +938,7 @@ export const App: React.FC = () => {
 
           {/* 手机端专属：浮动滑动摇杆 (仅在移动端/小屏渲染，桌面端完全不显示) */}
           {isMobile && !hasModal && (
-            <div className="absolute bottom-6 left-6 z-20 pointer-events-auto">
+            <div className="absolute bottom-20 sm:bottom-24 left-6 z-20 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
               <VirtualJoystick
                 onMove={handleMove}
                 getYaw={() => (threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0)}
@@ -954,7 +954,7 @@ export const App: React.FC = () => {
                 threeEngineRef.current?.resetCameraView();
                 addFloating(t.spaceResetFloating, '#38bdf8');
               }}
-              className="absolute bottom-7 right-6 p-3 bg-slate-900/85 hover:bg-slate-800 active:scale-90 border-2 border-amber-500/60 rounded-full text-amber-300 shadow-2xl backdrop-blur-md pointer-events-auto z-20 cursor-pointer transition-all"
+              className="absolute bottom-20 sm:bottom-24 right-6 p-3 bg-slate-900/85 hover:bg-slate-800 active:scale-90 border-2 border-amber-500/60 rounded-full text-amber-300 shadow-2xl backdrop-blur-md pointer-events-auto z-20 cursor-pointer transition-all pb-[env(safe-area-inset-bottom,0px)]"
               title={t.spaceResetBtnTitle}
             >
               <Target className="w-5 h-5 text-amber-400" />

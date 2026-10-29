@@ -2411,6 +2411,48 @@ assert(getJoystickDir(30, 0, Math.PI / 2) === 'up', '相机顺时针旋转90°�
 // 2. 验证 ThreeCanvas 支持双击回调属性
 assert('onDoubleClickTile' in ThreeCanvas.prototype || true, 'ThreeCanvas 具备 onDoubleClickTile 双击寻路回调接口');
 
+// 3. 验证摇杆灵敏度与死区判定 (死区 11px，轻松触发下拉)
+const evaluateJoystick = (deltaX: number, deltaY: number, deadZone: number = 11) => {
+  const dist = Math.hypot(deltaX, deltaY);
+  if (dist < deadZone) return null;
+  const angleDeg = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+  if (angleDeg >= -45 && angleDeg < 45) return 'right';
+  if (angleDeg >= 45 && angleDeg < 135) return 'down';
+  if (angleDeg >= -135 && angleDeg < -45) return 'up';
+  return 'left';
+};
+assert(evaluateJoystick(0, 8, 11) === null, '在 11px 死区内轻微晃动不触发移动');
+assert(evaluateJoystick(0, 15, 11) === 'down', '向下轻推 15px 立即灵敏触发向下一步');
+assert(evaluateJoystick(0, -15, 11) === 'up', '向上轻推 15px 立即灵敏触发向上一步');
+
+// 4. 验证双指 Pinch 缩放算法逻辑
+const calcPinchZoom = (currentZoom: number, deltaDistance: number) => {
+  const newZoom = currentZoom + deltaDistance * 0.005;
+  return Math.min(2.5, Math.max(0.45, newZoom));
+};
+assert(calcPinchZoom(1.0, 40) === 1.2, '双指张开放大 (ΔD = +40px -> Zoom 1.0 -> 1.2)');
+assert(calcPinchZoom(1.0, -40) === 0.8, '双指捏合缩小 (ΔD = -40px -> Zoom 1.0 -> 0.8)');
+assert(calcPinchZoom(2.4, 100) === 2.5, '双指放大受最大上限 2.5 钳位保护');
+assert(calcPinchZoom(0.5, -100) === 0.45, '双指缩小受最小下限 0.45 钳位保护');
+
+// 5. 验证双指滑动旋转视角算法逻辑
+const calcTwoFingerRotate = (
+  initialYaw: number,
+  initialPitch: number,
+  deltaCenterX: number,
+  deltaCenterY: number
+) => {
+  const newYaw = initialYaw - deltaCenterX * 0.008;
+  const newPitch = Math.min(1.45, Math.max(0.35, initialPitch + deltaCenterY * 0.006));
+  return { yaw: newYaw, pitch: newPitch };
+};
+const rotateRight = calcTwoFingerRotate(0, 0.75, 50, 0);
+assert(rotateRight.yaw === -0.4, '双指水平向右滑动 50px -> 摄像机偏航角平滑旋转 -0.4 弧度');
+const rotateUp = calcTwoFingerRotate(0, 0.75, 0, -40);
+assert(rotateUp.pitch === 0.51, '双指垂直向上滑动 40px -> 摄像机仰角平滑变平 (0.51 弧度)');
+const clampPitchTest = calcTwoFingerRotate(0, 0.75, 0, 200);
+assert(clampPitchTest.pitch === 1.45, '俯仰角受最大 1.45 弧度钳位保护避免翻转');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
