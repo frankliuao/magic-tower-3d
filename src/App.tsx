@@ -19,8 +19,7 @@ import { ConfirmCenterFlyModal } from './ui/ConfirmCenterFlyModal';
 import { ConfirmUpFlyModal } from './ui/ConfirmUpFlyModal';
 import { ConfirmCoffeeModal } from './ui/ConfirmCoffeeModal';
 import { SaveLoadModal } from './ui/SaveLoadModal';
-import { VirtualJoystick } from './ui/VirtualJoystick';
-import { MobileHeader } from './ui/MobileHeader';
+import { MobileBottomDock } from './ui/MobileBottomDock';
 import { ZoomIn, ZoomOut, Target, Zap } from 'lucide-react';
 import { useI18n, getFloorName } from './i18n';
 import { isDebugAllowed } from './utils/env';
@@ -831,25 +830,8 @@ export const App: React.FC = () => {
 
       {/* 主游戏展示区 */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        {/* 顶部工具栏：移动端显示紧凑 HUD，桌面端显示标准 Topbar */}
-        {isMobile ? (
-          <MobileHeader
-            game={game}
-            onOpenDrawer={() => setIsSidebarDrawerOpen(true)}
-            onOpenCoffeeModal={() => {
-              stopAutoWalk();
-              setIsCoffeeModalOpen(true);
-            }}
-            onOpenManual={() => {
-              game.isMonsterManualOpen = true;
-              game.notify();
-            }}
-            onOpenTeleport={() => {
-              game.isFloorTeleportOpen = true;
-              game.notify();
-            }}
-          />
-        ) : (
+        {/* 顶部工具栏：移动端完全留空以展示完整 3D 地图，桌面端显示标准 Topbar */}
+        {!isMobile && (
           <Topbar
             game={game}
             onOpenDebug={() => {
@@ -870,12 +852,12 @@ export const App: React.FC = () => {
         {/* 3D WebGL Three.js 画布容器 */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing select-none"
+          className="flex-1 w-full min-h-0 relative cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: 'none' }}
         >
           {/* 时空飞行器任意瞬移选点模式横幅指示 */}
           {isTargetingFly && (
-            <div className="absolute top-4 inset-x-0 flex justify-center z-50 pointer-events-auto">
+            <div className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] inset-x-0 flex justify-center z-50 pointer-events-auto">
               <div className="bg-purple-950/95 border-2 border-purple-400/80 rounded-2xl px-5 py-2.5 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-pulse">
                 <Zap className="w-5 h-5 text-yellow-300 animate-bounce" />
                 <span className="text-sm font-bold text-purple-100">
@@ -897,7 +879,7 @@ export const App: React.FC = () => {
             </div>
           )}
           {/* 屏幕顶部浮动消息通知栈 (垂直自然流排列，错峰登场，杜绝字体重叠与过快消失) */}
-          <div className="absolute top-16 inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
+          <div className="absolute top-[calc(2.5rem+env(safe-area-inset-top,0px))] inset-x-0 pointer-events-none flex flex-col items-center gap-2.5 z-40 px-4">
             {floatingTexts.map((item) => (
               <div
                 key={item.id}
@@ -936,30 +918,6 @@ export const App: React.FC = () => {
             />
           )}
 
-          {/* 手机端专属：浮动滑动摇杆 (仅在移动端/小屏渲染，桌面端完全不显示) */}
-          {isMobile && !hasModal && (
-            <div className="absolute bottom-20 sm:bottom-24 left-6 z-20 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
-              <VirtualJoystick
-                onMove={handleMove}
-                getYaw={() => (threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0)}
-              />
-            </div>
-          )}
-
-          {/* 手机端专属：右下角视角复位浮钮 */}
-          {isMobile && (
-            <button
-              type="button"
-              onClick={() => {
-                threeEngineRef.current?.resetCameraView();
-                addFloating(t.spaceResetFloating, '#38bdf8');
-              }}
-              className="absolute bottom-20 sm:bottom-24 right-6 p-3 bg-slate-900/85 hover:bg-slate-800 active:scale-90 border-2 border-amber-500/60 rounded-full text-amber-300 shadow-2xl backdrop-blur-md pointer-events-auto z-20 cursor-pointer transition-all pb-[env(safe-area-inset-bottom,0px)]"
-              title={t.spaceResetBtnTitle}
-            >
-              <Target className="w-5 h-5 text-amber-400" />
-            </button>
-          )}
 
           {/* 桌面端专属：底部左侧快捷键提示与空格复位提示 */}
           {!isMobile && (
@@ -1036,6 +994,33 @@ export const App: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* 手机端专属：底部一体化操作与状态面板 (与 3D 地图零重叠) */}
+        {isMobile && (
+          <MobileBottomDock
+            game={game}
+            onMove={handleMove}
+            getYaw={() => (threeEngineRef.current ? threeEngineRef.current.getCameraYaw() : 0)}
+            onResetCamera={() => {
+              threeEngineRef.current?.resetCameraView();
+              addFloating(t.spaceResetFloating, '#38bdf8');
+            }}
+            onOpenDrawer={() => setIsSidebarDrawerOpen(true)}
+            onOpenCoffeeModal={() => {
+              stopAutoWalk();
+              setIsCoffeeModalOpen(true);
+            }}
+            onOpenManual={() => {
+              game.isMonsterManualOpen = true;
+              game.notify();
+            }}
+            onOpenTeleport={() => {
+              game.isFloorTeleportOpen = true;
+              game.notify();
+            }}
+            disabled={hasModal}
+          />
+        )}
       </div>
 
       {/* 弹窗层：怪物手册 */}

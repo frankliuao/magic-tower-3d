@@ -571,7 +571,7 @@ export const InspectCard: React.FC<InspectCardProps> = ({
       onPointerDown={(e) => e.stopPropagation()}
       onPointerUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      className="absolute top-4 left-4 z-20 w-80 max-w-[calc(100vw-2rem)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-3.5 text-slate-100 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 select-none pointer-events-auto"
+      className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] left-4 z-20 w-80 max-w-[calc(100vw-2rem)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-3.5 text-slate-100 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 select-none pointer-events-auto"
     >
       {/* 顶部标题与关闭 */}
       <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">

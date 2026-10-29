@@ -7,12 +7,14 @@ interface VirtualJoystickProps {
   onMove: (dir: Direction) => void;
   getYaw?: () => number;
   disabled?: boolean;
+  className?: string;
 }
 
 export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
   onMove,
   getYaw,
   disabled = false,
+  className = '',
 }) => {
   const baseRef = useRef<HTMLDivElement>(null);
   const [knobPos, setKnobPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -145,7 +147,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-32 h-32 select-none touch-none rounded-full bg-slate-950/70 border-2 border-slate-700/80 backdrop-blur-md shadow-2xl flex items-center justify-center pointer-events-auto"
+      className={`relative w-28 h-28 sm:w-32 sm:h-32 select-none touch-none rounded-full bg-slate-950/80 border-2 border-slate-700/80 backdrop-blur-md shadow-2xl flex items-center justify-center pointer-events-auto shrink-0 ${className}`}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* 4 方向指示图标 */}

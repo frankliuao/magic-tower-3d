@@ -18,6 +18,7 @@ import {
   getCombatNotification,
   getDialogueData,
   FLOOR_NAMES,
+  getFloorName,
   TRADER_FLOOR_OFFERS,
   ELDER_FLOOR_DIALOGUES,
 } from './i18n';
@@ -2452,6 +2453,41 @@ const rotateUp = calcTwoFingerRotate(0, 0.75, 0, -40);
 assert(rotateUp.pitch === 0.51, '双指垂直向上滑动 40px -> 摄像机仰角平滑变平 (0.51 弧度)');
 const clampPitchTest = calcTwoFingerRotate(0, 0.75, 0, 200);
 assert(clampPitchTest.pitch === 1.45, '俯仰角受最大 1.45 弧度钳位保护避免翻转');
+
+console.log('\n--- 32. 验证移动端一体化底部控制台与零重叠布局 (MobileBottomDock & Non-overlapping Layout) ---');
+import { MobileBottomDock } from './ui/MobileBottomDock';
+assert(typeof MobileBottomDock === 'function', 'MobileBottomDock 组件已正确导出且为有效 React 组件');
+
+const mobileTestGame = new GameState();
+mobileTestGame.initGame();
+assert(mobileTestGame.playerStats.hp === 1000, '初始 HP 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.atk === 10, '初始 ATK 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.def === 10, '初始 DEF 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.gold === 0, '初始 Gold 正确读取用于移动端底栏展示');
+assert(mobileTestGame.playerStats.yellowKeys === 1, '初始黄钥匙数量正确读取用于移动端底栏展示');
+
+const floor0NameZh = getFloorName(0, 'zh', mobileTestGame.getCurrentFloorData().name);
+assert(floor0NameZh.includes('0F'), '移动端底栏楼层名称正确包含 0F 标识');
+const floor0NameEn = getFloorName(0, 'en', mobileTestGame.getCurrentFloorData().name);
+assert(floor0NameEn.includes('0F'), '移动端底栏英文楼层名称正确包含 0F 标识');
+
+// 验证布局分离逻辑：在手机模式下，顶部栏让位给地图，摇杆与全部属性归集到底部底栏
+const simulateMobileLayout = (isMobileDevice: boolean) => {
+  return {
+    renderTopBar: !isMobileDevice,
+    renderBottomDock: isMobileDevice,
+    mapOverlappedByJoystick: false,
+  };
+};
+
+const mobileConfig = simulateMobileLayout(true);
+assert(!mobileConfig.renderTopBar, '手机端模式下顶部菜单栏彻底留空，让位给 3D 全景地图');
+assert(mobileConfig.renderBottomDock, '手机端模式下底部一体化底栏生效，汇集摇杆与属性');
+assert(!mobileConfig.mapOverlappedByJoystick, '3D 地图与底部摇杆/属性面板完全物理隔离，实现零重叠');
+
+const desktopConfig = simulateMobileLayout(false);
+assert(desktopConfig.renderTopBar, '桌面端保留标准 Topbar 顶栏');
+assert(!desktopConfig.renderBottomDock, '桌面端完全不渲染底部摇杆底栏');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);

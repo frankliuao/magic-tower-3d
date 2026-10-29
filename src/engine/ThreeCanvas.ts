@@ -86,6 +86,7 @@ export class ThreeCanvas {
   private hasTwoFingerMoved: boolean = false;
   private lastTouchDistance: number = 0;
   private lastTouchCenter: { x: number; y: number } = { x: 0, y: 0 };
+  private resizeObserver?: ResizeObserver;
 
   // 动画与插值状态
   private playerGridPos = { x: 5, y: 5 };
@@ -186,6 +187,12 @@ export class ThreeCanvas {
 
     // 6. 绑定窗口尺寸与交互事件（拖拽平移、滚轮缩放、双击复位、移动端双指手势）
     window.addEventListener('resize', this.onResize);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
     this.container.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
@@ -1649,6 +1656,9 @@ export class ThreeCanvas {
   // 销毁引擎
   public dispose() {
     window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
     this.container.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
