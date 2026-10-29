@@ -1871,6 +1871,15 @@ export class GameState {
       for (const fNum in slot.floorStates) {
         this.floorCache.set(Number(fNum), slot.floorStates[fNum]);
       }
+
+      // 针对旧版本存档的平滑热迁移：若 0F 已存在缓存且 (7, 7) 仍为空地面，补全英雄赞助榜 (honor_monument)
+      const floor0 = this.floorCache.get(0);
+      if (floor0 && floor0[7] && floor0[7][7] && floor0[7][7].type === 'floor') {
+        const isPlayerOnTile = this.currentFloor === 0 && this.playerPos.x === 7 && this.playerPos.y === 7;
+        if (!isPlayerOnTile) {
+          floor0[7][7] = { type: 'npc', npcId: 'honor_monument' };
+        }
+      }
       if (slot.exploredFloors && Array.isArray(slot.exploredFloors)) {
         this.exploredFloors = new Set(slot.exploredFloors);
       } else {

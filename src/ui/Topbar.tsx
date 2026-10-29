@@ -12,6 +12,7 @@ import {
   Music2,
   Wrench,
   Languages,
+  Coffee,
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -20,6 +21,7 @@ interface TopbarProps {
   onRestart: () => void;
   onQuickSave: () => void;
   onQuickLoad: () => void;
+  onOpenCoffeeModal: () => void;
 }
 
 /**
@@ -56,6 +58,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onRestart,
   onQuickSave,
   onQuickLoad,
+  onOpenCoffeeModal,
 }) => {
   const { lang, toggleLang, t } = useI18n();
   const [soundEnabled, setSoundEnabled] = React.useState(sound.enabled);
@@ -146,6 +149,16 @@ export const Topbar: React.FC<TopbarProps> = ({
           title={t.restartTip}
         >
           <RotateCcw className="w-4 h-4" />
+        </button>
+
+        {/* Buy Me a Coffee 支持作者 */}
+        <button
+          onClick={onOpenCoffeeModal}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-600/90 to-yellow-600/90 hover:from-amber-500 hover:to-yellow-500 border border-amber-400/80 rounded-lg text-xs font-bold text-amber-100 shadow transition-all hover:scale-105 active:scale-95 cursor-pointer ml-0.5"
+          title={t.coffeeTip}
+        >
+          <Coffee className="w-3.5 h-3.5 text-amber-200" />
+          <span className="hidden sm:inline">{lang === 'zh' ? '请喝咖啡' : 'Coffee'}</span>
         </button>
 
         {/* 语言切换按钮 (Top-Right Language Switcher: 默认中文，可切换英文) */}

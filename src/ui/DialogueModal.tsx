@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
-import { ChevronRight, Check, Coins, X, AlertCircle, Key } from 'lucide-react';
+import { ChevronRight, Check, Coins, X, AlertCircle, Key, Coffee, ExternalLink, Heart, Sparkles } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { BUY_ME_A_COFFEE_URL } from './ConfirmCoffeeModal';
+import { SUPPORTERS } from '../data/supporters';
 
 interface DialogueModalProps {
   game: GameState;
   onClose: () => void;
+  onOpenCoffeeModal?: () => void;
 }
 
 const KEY_PATTERN =
@@ -96,7 +99,11 @@ export function formatDialogueText(text: string | undefined): React.ReactNode {
   return nodes;
 }
 
-export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) => {
+export const DialogueModal: React.FC<DialogueModalProps> = ({
+  game,
+  onClose,
+  onOpenCoffeeModal,
+}) => {
   const { t } = useI18n();
   const [isConfirmingTrade, setIsConfirmingTrade] = useState(false);
   const dialogue = game.activeDialogue;
@@ -105,6 +112,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
   const isLast = dialogue.currentIndex >= dialogue.lines.length - 1;
   const trade = dialogue.trade;
   const canTrade = trade && !trade.isBought && isLast;
+  const isHonorMonument =
+    dialogue.npcId === 'honor_monument' || dialogue.npcId === 'monument';
 
   const handleNext = () => {
     if (isLast) {
@@ -121,28 +130,88 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 select-none">
-      <div className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden mb-6 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 select-none">
+      <div
+        className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] shadow-2xl overflow-hidden flex flex-col mb-4 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 对话框头部 */}
-        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-3.5 flex items-center justify-between">
+        <div className="bg-slate-800/90 border-b border-slate-700/80 px-6 py-3.5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="text-3xl">{dialogue.avatar}</span>
-            <span className="font-bold text-amber-300 text-lg">{dialogue.name}</span>
+            <span className="font-bold text-amber-300 text-lg leading-tight">{dialogue.name}</span>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
-            {dialogue.currentIndex + 1} / {dialogue.lines.length}
-          </span>
+          {dialogue.lines.length > 1 && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 font-mono">
+                {dialogue.currentIndex + 1} / {dialogue.lines.length}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* 对话文本 (字体增大 40%: 由 14px 增至 20px) */}
-        <div className="p-7 min-h-[140px] flex items-center">
-          <p className="text-slate-100 text-[20px] leading-[1.75] font-medium tracking-wide whitespace-pre-line">
+        {/* 对话文本 */}
+        <div className="p-5 sm:p-7 min-h-[120px] flex flex-col justify-start gap-4 overflow-y-auto min-h-0 flex-1">
+          {isHonorMonument && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-center gap-2.5 text-xs sm:text-sm text-amber-200 font-medium">
+              <Heart className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{t.coffeeModalProjectNote}</span>
+            </div>
+          )}
+          <p className="text-slate-100 text-[18px] sm:text-[20px] leading-[1.75] font-medium tracking-wide whitespace-pre-line">
             {formatDialogueText(dialogue.lines[dialogue.currentIndex])}
           </p>
+          {isHonorMonument && (
+            <div className="mt-1">
+              {SUPPORTERS.length > 0 ? (
+                <div className="bg-slate-950/60 border border-amber-500/40 rounded-xl p-3.5 max-h-48 overflow-y-auto space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-300 pb-2 border-b border-slate-800">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{game.language === 'zh' ? '🏆 英雄赞助榜' : '🏆 Hero Supporters Board'}</span>
+                    </span>
+                    <span className="text-[10px] text-amber-400/80 font-mono bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      {SUPPORTERS.length} {game.language === 'zh' ? '位支持者' : 'Supporters'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {SUPPORTERS.map((s, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-col p-2.5 rounded-lg bg-slate-900/90 border border-amber-500/20 text-xs shadow-sm"
+                      >
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="font-bold text-amber-200 truncate flex items-center gap-1.5">
+                            <span className="text-amber-400">⭐</span>
+                            <span>{s.name}</span>
+                          </span>
+                          {s.date && <span className="text-[10px] text-slate-400 font-mono">{s.date}</span>}
+                        </div>
+                        {s.message && (
+                          <p className="text-[11px] text-slate-300 italic mt-1 line-clamp-2">
+                            "{s.message}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-950/40 border border-dashed border-amber-500/30 text-center text-xs text-amber-400/70 font-medium flex items-center justify-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  <span>
+                    {game.language === 'zh'
+                      ? '赞助榜虚位以待，期待第一位支持的勇者！'
+                      : 'The board awaits its first patron!'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 底部按钮 */}
-        <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex items-center justify-between gap-3">
+        <div className="bg-slate-800/80 border-t border-slate-700/80 px-6 py-3.5 flex items-center justify-between gap-3 shrink-0">
           {canTrade ? (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
               {game.playerStats.gold >= trade.costGold ? (
@@ -197,6 +266,27 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({ game, onClose }) =
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all cursor-pointer"
               >
                 {game.language === 'zh' ? '暂不购买' : 'Decline'}
+              </button>
+            </div>
+          ) : isHonorMonument ? (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
+                }}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all cursor-pointer ring-1 ring-amber-300/50"
+              >
+                <Coffee className="w-4 h-4 text-slate-950" />
+                <span>{t.monumentSupportBtn}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+              </button>
+
+              <button
+                onClick={handleNext}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                {t.coffeeModalCancelBtn}
               </button>
             </div>
           ) : (

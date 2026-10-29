@@ -1560,6 +1560,128 @@ export class ModelFactory {
   }
 
   // =========================================================================
+  // 5.5 英雄荣誉碑 (Honor Monument / Buy Me a Coffee Monument)
+  // 气派庄严的英雄丰碑：深黑花岗岩台阶、黄金镶边、方尖石碑与金色赞助者铭牌、顶部悬浮光辉圣晶
+  // =========================================================================
+  static createHonorMonumentMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'npc_honor_monument';
+
+    const graniteMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.6,
+      metalness: 0.2,
+    });
+    const stonePillarMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.4,
+      metalness: 0.3,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.88,
+      roughness: 0.22,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.2,
+    });
+    const goldPlateMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const darkEngraveMat = new THREE.MeshStandardMaterial({
+      color: 0x451a03,
+      roughness: 0.8,
+    });
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 0.85,
+      metalness: 0.4,
+      roughness: 0.1,
+    });
+    const cupCeramicMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.1,
+    });
+
+    // 1. 双层基座台阶 (Stepped Granite Plinth)
+    const base1 = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.08, 0.72), graniteMat);
+    base1.position.y = 0.04;
+
+    const base2 = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.08, 0.60), graniteMat);
+    base2.position.y = 0.12;
+
+    const baseTrim = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.03, 0.52), goldMat);
+    baseTrim.position.y = 0.175;
+
+    // 2. 主方尖石碑主体 (Tapered Square Pillar / Stele)
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.32, 0.70, 4),
+      stonePillarMat
+    );
+    pillar.rotation.y = Math.PI / 4;
+    pillar.position.y = 0.535;
+
+    // 顶端方尖金字塔顶盖 (Obelisk Pyramidal Apex)
+    const pyramidTop = new THREE.Mesh(
+      new THREE.ConeGeometry(0.24, 0.14, 4),
+      goldMat
+    );
+    pyramidTop.rotation.y = Math.PI / 4;
+    pyramidTop.position.y = 0.955;
+
+    // 3. 正面金色铭刻荣誉牌匾 (Gold Plaque & Coffee Cup Emblem)
+    // 采用与方尖碑锥度贴合的牌匾装饰组，向前位移以确保金色牌匾、咖啡杯与铭文浮雕完整浮现于石碑外表面
+    const plaqueGroup = new THREE.Group();
+    plaqueGroup.position.set(0, 0.52, 0.208);
+    plaqueGroup.rotation.x = -0.081;
+
+    const plaque = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 0.02), goldPlateMat);
+    plaqueGroup.add(plaque);
+
+    // 咖啡杯浮雕 (Coffee Cup Symbol on Plaque)
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.022, 0.04, 12), cupCeramicMat);
+    cup.position.set(0, 0.11, 0.02);
+    plaqueGroup.add(cup);
+
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), goldMat);
+    handle.position.set(0.032, 0.11, 0.02);
+    handle.rotation.y = Math.PI / 2;
+    plaqueGroup.add(handle);
+
+    // 牌匾上铭刻横线 (Engraved Honor Lines)
+    for (let i = 0; i < 3; i++) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.005), darkEngraveMat);
+      line.position.set(0, 0.03 - i * 0.05, 0.012);
+      plaqueGroup.add(line);
+    }
+
+    // 4. 碑顶悬浮闪耀神圣圣晶 (Glowing Honor Crystal)
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), gemMat);
+    crystal.position.set(0, 1.12, 0);
+
+    // 5. 基座四角黄金包角装饰 (Corner Gold Accents)
+    const cornerOffsets = [
+      [-0.26, 0.13, -0.26],
+      [0.26, 0.13, -0.26],
+      [-0.26, 0.13, 0.26],
+      [0.26, 0.13, 0.26],
+    ];
+    for (const [cx, cy, cz] of cornerOffsets) {
+      const corner = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.05), goldMat);
+      corner.position.set(cx, cy, cz);
+      group.add(corner);
+    }
+
+    group.add(base1, base2, baseTrim, pillar, pyramidTop, plaqueGroup, crystal);
+    group.scale.multiplyScalar(0.85);
+
+    return group;
+  }
+
+  // =========================================================================
   // 6. 门 (Door) - 极简纯粹门体设计：无门框石梁，纯色金属门扇与钥匙色彩严格match
   // 尺寸精准填满单格网格 (宽 1.0，高 1.20 与墙壁严丝合缝平齐)
   // =========================================================================
