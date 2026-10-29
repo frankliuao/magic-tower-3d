@@ -67,12 +67,16 @@ export class ThreeCanvas {
   private pointerDownOnCanvas: boolean = false;
   public onRightClickTile?: (gridX: number, gridY: number) => void;
   public onRightDoubleClickTile?: (gridX: number, gridY: number) => void;
+  public onDoubleClickTile?: (gridX: number, gridY: number) => void;
   public onSelectTile?: (gridX: number, gridY: number) => void;
   private pathMarker: THREE.Mesh | null = null;
   private selectionMarker: THREE.Group | null = null;
   private selectedTilePos: { x: number; y: number } | null = null;
 
   // 双击与拖拽手势状态
+  private lastLeftClickTime: number = 0;
+  private lastLeftClickPos: { x: number; y: number } = { x: 0, y: 0 };
+  private lastLeftClickCoords: { gridX: number; gridY: number } | null = null;
   private lastRightClickTime: number = 0;
   private lastRightClickPos: { x: number; y: number } = { x: 0, y: 0 };
   private dragMode: 'none' | 'pan' | 'rotate' = 'none';
@@ -1369,9 +1373,41 @@ export class ThreeCanvas {
 
     const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
 
-    // 1. 左键单击：(位移 < 6px 且未按住 Ctrl/Shift 拖拽)
-    if (e.button === 0 && dist < 6 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    // 1. 左键/触屏单击与双击判定 (位移 < 12px 且未按住 Ctrl/Shift 拖拽)
+    if (e.button === 0 && dist < 12 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
       const coords = this.raycastToGrid(e.clientX, e.clientY);
+      const now = performance.now();
+      const timeSinceLast = now - this.lastLeftClickTime;
+      const posDist = Math.hypot(
+        e.clientX - this.lastLeftClickPos.x,
+        e.clientY - this.lastLeftClickPos.y
+      );
+
+      // 双击判定：380ms 内连续两次点击相同或极近网格坐标
+      if (
+        timeSinceLast < 380 &&
+        posDist < 35 &&
+        coords &&
+        this.lastLeftClickCoords &&
+        coords.gridX === this.lastLeftClickCoords.gridX &&
+        coords.gridY === this.lastLeftClickCoords.gridY
+      ) {
+        this.lastLeftClickTime = 0;
+        this.lastLeftClickCoords = null;
+        if (this.onDoubleClickTile) {
+          this.onDoubleClickTile(coords.gridX, coords.gridY);
+        } else if (this.onRightDoubleClickTile) {
+          this.onRightDoubleClickTile(coords.gridX, coords.gridY);
+        } else if (this.onRightClickTile) {
+          this.onRightClickTile(coords.gridX, coords.gridY);
+        }
+        return;
+      }
+
+      this.lastLeftClickTime = now;
+      this.lastLeftClickPos = { x: e.clientX, y: e.clientY };
+      this.lastLeftClickCoords = coords;
+
       if (coords) {
         if (this.onSelectTile) {
           this.onSelectTile(coords.gridX, coords.gridY);

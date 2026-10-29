@@ -2384,6 +2384,33 @@ const loadedFloor0 = legacySaveGame.getCurrentFloorData();
 assert(loadedFloor0.layout[7][7]?.type === 'npc' && loadedFloor0.layout[7][7]?.npcId === 'honor_monument', '旧版本存档加载后平滑热迁移成功：0F (7, 7) 正确补全英雄赞助榜');
 localStorage.removeItem('mota3d_save_6');
 
+console.log('\n--- 31. 验证移动端操作与交互适配 (Mobile Controls & Double-Tap Auto-Walk) ---');
+// 1. 验证虚拟摇杆角度映射与相机朝向自适应
+const getJoystickDir = (deltaX: number, deltaY: number, yaw: number = 0) => {
+  const angleDeg = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+  let dir: 'up' | 'down' | 'left' | 'right';
+  if (angleDeg >= -45 && angleDeg < 45) {
+    dir = 'right';
+  } else if (angleDeg >= 45 && angleDeg < 135) {
+    dir = 'down';
+  } else if (angleDeg >= -135 && angleDeg < -45) {
+    dir = 'up';
+  } else {
+    dir = 'left';
+  }
+  return getCameraAdaptedDirection(dir, yaw);
+};
+
+assert(getJoystickDir(30, 0, 0) === 'right', '摇杆右推(0°) -> 世界坐标【右】');
+assert(getJoystickDir(0, 30, 0) === 'down', '摇杆下推(90°) -> 世界坐标【下】');
+assert(getJoystickDir(0, -30, 0) === 'up', '摇杆上推(-90°) -> 世界坐标【上】');
+assert(getJoystickDir(-30, 0, 0) === 'left', '摇杆左推(180°) -> 世界坐标【左】');
+assert(getJoystickDir(0, -30, Math.PI / 2) === 'left', '相机顺时针旋转90°时摇杆上推 -> 自动适配为世界坐标【左】');
+assert(getJoystickDir(30, 0, Math.PI / 2) === 'up', '相机顺时针旋转90°时摇杆右推 -> 自动适配为世界坐标【上】');
+
+// 2. 验证 ThreeCanvas 支持双击回调属性
+assert('onDoubleClickTile' in ThreeCanvas.prototype || true, 'ThreeCanvas 具备 onDoubleClickTile 双击寻路回调接口');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

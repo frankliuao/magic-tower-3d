@@ -1,8 +1,9 @@
 // src/ui/Sidebar.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { GameState } from '../game/gameState';
 import { MoveCommand } from '../types/game';
 import { useI18n, getFloorName, getEquipName } from '../i18n';
+import { sound } from '../audio/sound';
 import {
   Heart,
   Shield,
@@ -19,6 +20,13 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  X,
+  Save,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  Music2,
+  Languages,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +36,12 @@ interface SidebarProps {
   onOpenTeleport?: () => void;
   onUseCenterFly?: () => void;
   onUseUpFly?: () => void;
+  isDrawer?: boolean;
+  onCloseDrawer?: () => void;
+  onQuickSave?: () => void;
+  onQuickLoad?: () => void;
+  onRestart?: () => void;
+  className?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,14 +51,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenTeleport,
   onUseCenterFly,
   onUseUpFly,
+  isDrawer = false,
+  onCloseDrawer,
+  onQuickSave,
+  onQuickLoad,
+  onRestart,
+  className = '',
 }) => {
-  const { lang, t } = useI18n();
+  const { lang, toggleLang, t } = useI18n();
   const { playerStats, currentFloor } = game;
   const floorData = game.getCurrentFloorData();
   const displayedFloorName = getFloorName(currentFloor, lang, floorData.name);
 
+  const [soundEnabled, setSoundEnabled] = useState(sound.enabled);
+  const [bgmEnabled, setBgmEnabled] = useState(sound.bgmEnabled);
+
+  const toggleSound = () => {
+    sound.enabled = !sound.enabled;
+    setSoundEnabled(sound.enabled);
+  };
+
+  const toggleBgm = () => {
+    const on = sound.toggleBGM();
+    setBgmEnabled(on);
+  };
+
   return (
-    <aside className="w-72 bg-slate-900/95 text-slate-100 border-r border-slate-700/80 p-4 flex flex-col justify-between select-none shadow-2xl backdrop-blur-md z-20">
+    <aside
+      className={`bg-slate-900/95 text-slate-100 p-4 flex flex-col justify-between select-none shadow-2xl backdrop-blur-md z-20 ${
+        isDrawer
+          ? 'w-full h-full overflow-y-auto'
+          : 'w-72 border-r border-slate-700/80'
+      } ${className}`}
+    >
+      {/* 抽屉模式顶部标题与关闭按钮 */}
+      {isDrawer && (
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏰</span>
+            <span className="font-extrabold text-amber-400 text-sm tracking-wide">
+              {t.gameTitle}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onCloseDrawer}
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="关闭 (Close)"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* 楼层标识 */}
       <div>
         <div className="bg-gradient-to-r from-amber-600/30 to-amber-900/40 border border-amber-500/50 rounded-lg p-3 mb-4 text-center shadow-inner">
@@ -174,7 +233,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* 怪物手册 */}
               <button
                 type="button"
-                onClick={onOpenManual}
+                onClick={() => {
+                  onOpenManual?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
                 className="py-1.5 px-2 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 rounded-lg text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 shadow transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
                 title={`${t.monsterManualBtn} (L)`}
               >
@@ -185,7 +247,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* 楼层跳跃 */}
               <button
                 type="button"
-                onClick={onOpenTeleport}
+                onClick={() => {
+                  onOpenTeleport?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
                 className="py-1.5 px-2 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/60 rounded-lg text-xs font-bold text-cyan-300 flex items-center justify-center gap-1.5 shadow transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
                 title={`${t.floorJumpBtn} (G)`}
               >
@@ -198,7 +263,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {playerStats.inventory.center_fly ? (
               <button
                 type="button"
-                onClick={() => onUseCenterFly?.()}
+                onClick={() => {
+                  onUseCenterFly?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
                 title={lang === 'zh' ? '点击使用【时空飞行器】(一次性消耗品，点击后可瞬移至当前楼层任意通畅地面)' : 'Click to use [Chrono Flyer] (One-time consumable, teleport to any open floor tile on current level)'}
                 className="w-full py-2 px-3 bg-gradient-to-r from-purple-900/90 via-fuchsia-950/80 to-purple-900/90 hover:from-purple-800 hover:to-fuchsia-900 border border-purple-400/80 rounded-lg text-xs text-purple-200 font-bold flex items-center justify-between shadow-md hover:shadow-purple-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-purple-400/40"
               >
@@ -206,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Zap className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
                   <span className="tracking-wide">{lang === 'zh' ? '使用时空飞行器' : 'Use Chrono Flyer'}</span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-normal">
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal">
                   {lang === 'zh' ? '一次性' : '1x Use'}
                 </span>
               </button>
@@ -216,7 +284,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {playerStats.inventory.up_fly ? (
               <button
                 type="button"
-                onClick={() => onUseUpFly?.()}
+                onClick={() => {
+                  onUseUpFly?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
                 title={lang === 'zh' ? '点击使用【向上飞行器】(一次性消耗品，使勇士瞬间上升一层)' : 'Click to use [Up Flyer] (One-time consumable, elevates hero up one floor)'}
                 className="w-full py-2 px-3 bg-gradient-to-r from-indigo-900/90 via-violet-950/80 to-indigo-900/90 hover:from-indigo-800 hover:to-violet-900 border border-indigo-400/80 rounded-lg text-xs text-indigo-200 font-bold flex items-center justify-between shadow-md hover:shadow-indigo-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-indigo-400/40"
               >
@@ -224,60 +295,148 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ArrowUpCircle className="w-4 h-4 text-indigo-300 animate-pulse shrink-0" />
                   <span className="tracking-wide">{lang === 'zh' ? '使用向上飞行器' : 'Use Up Flyer'}</span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-normal">
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal">
                   {lang === 'zh' ? '一次性' : '1x Use'}
                 </span>
               </button>
             ) : null}
           </div>
         </div>
+
+        {/* 抽屉模式下补充快捷菜单控制栏：存读档、音效音乐、语言、重开 */}
+        {isDrawer && (
+          <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              {lang === 'zh' ? '游戏管理与系统设置' : 'Settings & Controls'}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onQuickSave?.();
+                  onCloseDrawer?.();
+                }}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 rounded-xl text-xs font-bold text-indigo-300 transition-all cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5 text-indigo-400" />
+                <span>{t.saveBtn}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onQuickLoad?.();
+                  onCloseDrawer?.();
+                }}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 rounded-xl text-xs font-bold text-sky-300 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-sky-400" />
+                <span>{t.loadBtn}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {/* 音效开关 */}
+              <button
+                type="button"
+                onClick={toggleSound}
+                className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-slate-300 transition-all cursor-pointer"
+                title={soundEnabled ? t.muteTip : t.unmuteTip}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-4 h-4 text-green-400" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-rose-400" />
+                )}
+                <span className="text-[10px]">{soundEnabled ? '音效:开' : '音效:关'}</span>
+              </button>
+
+              {/* 音乐开关 */}
+              <button
+                type="button"
+                onClick={toggleBgm}
+                className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-slate-300 transition-all cursor-pointer"
+                title={bgmEnabled ? t.bgmMuteTip : t.bgmUnmuteTip}
+              >
+                <Music2 className={`w-4 h-4 ${bgmEnabled ? 'text-green-400' : 'text-slate-500'}`} />
+                <span className="text-[10px]">{bgmEnabled ? 'BGM:开' : 'BGM:关'}</span>
+              </button>
+
+              {/* 语言切换 */}
+              <button
+                type="button"
+                onClick={toggleLang}
+                className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold transition-all cursor-pointer"
+                title={t.langToggleTip}
+              >
+                <Languages className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[10px]">{lang === 'zh' ? 'EN' : '中文'}</span>
+              </button>
+            </div>
+
+            {/* 重新开始 */}
+            <button
+              type="button"
+              onClick={() => {
+                onCloseDrawer?.();
+                onRestart?.();
+              }}
+              className="w-full mt-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-600/40 rounded-xl text-xs font-bold text-rose-300 transition-all cursor-pointer active:scale-95"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+              <span>{t.restartTip}</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 虚拟方向控制手柄 (移动端与便捷点击) */}
-      <div className="mt-4 pt-3 border-t border-slate-800 flex flex-col items-center">
-        <div className="text-[10px] text-slate-400 mb-2 font-medium flex items-center justify-between w-full px-1">
-          <span>{t.moveControls}</span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 font-bold">
-            {t.arrowKeysHint}
-          </span>
+      {/* 桌面端虚拟十字方向键 (仅在非抽屉模式下渲染) */}
+      {!isDrawer && (
+        <div className="mt-4 pt-3 border-t border-slate-800 flex flex-col items-center">
+          <div className="text-[10px] text-slate-400 mb-2 font-medium flex items-center justify-between w-full px-1">
+            <span>{t.moveControls}</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 font-bold">
+              {t.arrowKeysHint}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 w-40">
+            <div />
+            <button
+              onClick={() => onMove('up')}
+              className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
+              title={t.up}
+            >
+              <ChevronUp className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
+              <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.up}</span>
+            </button>
+            <div />
+            <button
+              onClick={() => onMove('left')}
+              className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
+              title={t.left}
+            >
+              <ChevronLeft className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
+              <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.left}</span>
+            </button>
+            <button
+              onClick={() => onMove('down')}
+              className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
+              title={t.down}
+            >
+              <ChevronDown className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
+              <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.down}</span>
+            </button>
+            <button
+              onClick={() => onMove('right')}
+              className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
+              title={t.right}
+            >
+              <ChevronRight className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
+              <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.right}</span>
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-1.5 w-40">
-          <div />
-          <button
-            onClick={() => onMove('up')}
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
-            title={t.up}
-          >
-            <ChevronUp className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
-            <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.up}</span>
-          </button>
-          <div />
-          <button
-            onClick={() => onMove('left')}
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
-            title={t.left}
-          >
-            <ChevronLeft className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
-            <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.left}</span>
-          </button>
-          <button
-            onClick={() => onMove('down')}
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
-            title={t.down}
-          >
-            <ChevronDown className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
-            <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.down}</span>
-          </button>
-          <button
-            onClick={() => onMove('right')}
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-lg flex flex-col items-center justify-center border border-slate-600 shadow transition-all active:scale-95 group"
-            title={t.right}
-          >
-            <ChevronRight className="w-5 h-5 text-slate-200 group-hover:text-amber-300" />
-            <span className="text-[9px] text-amber-400 font-bold -mt-0.5">{t.right}</span>
-          </button>
-        </div>
-      </div>
+      )}
     </aside>
   );
 };
+
