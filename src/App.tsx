@@ -109,12 +109,20 @@ export const App: React.FC = () => {
   // 移动端/窄屏与触屏设备检测 (仅移动端生效，桌面端完全不显示摇杆)
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return window.innerWidth < 768 || ('ontouchstart' in window && window.innerWidth < 1024);
+    return (
+      window.innerWidth < 768 ||
+      (('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+        window.innerWidth < 1024)
+    );
   });
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || ('ontouchstart' in window && window.innerWidth < 1024));
+      setIsMobile(
+        window.innerWidth < 768 ||
+          (('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+            window.innerWidth < 1024)
+      );
     };
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -745,7 +753,7 @@ export const App: React.FC = () => {
   }, [game, addFloating, t.clearedMonstersFloating]);
 
   return (
-    <div className="flex h-screen w-screen bg-slate-950 overflow-hidden select-none font-sans">
+    <div className="flex fixed inset-0 w-full h-[100dvh] bg-slate-950 overflow-hidden select-none font-sans">
       {/* 桌面端经典复古状态栏 (宽屏显示，窄屏/手机端隐匿) */}
       <Sidebar
         className="hidden md:flex shrink-0"
@@ -829,7 +837,7 @@ export const App: React.FC = () => {
       )}
 
       {/* 主游戏展示区 */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
+      <div className="flex-1 flex flex-col relative w-full h-full min-h-0 overflow-hidden">
         {/* 顶部工具栏：移动端完全留空以展示完整 3D 地图，桌面端显示标准 Topbar */}
         {!isMobile && (
           <Topbar
@@ -852,7 +860,7 @@ export const App: React.FC = () => {
         {/* 3D WebGL Three.js 画布容器 */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 w-full min-h-0 relative cursor-grab active:cursor-grabbing select-none"
+          className="flex-1 w-full min-h-0 relative cursor-grab active:cursor-grabbing select-none overflow-hidden"
           style={{ touchAction: 'none' }}
         >
           {/* 时空飞行器任意瞬移选点模式横幅指示 */}

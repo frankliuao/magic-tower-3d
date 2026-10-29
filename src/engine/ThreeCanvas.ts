@@ -146,6 +146,12 @@ export class ThreeCanvas {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.localClippingEnabled = true; // 启用逐材质裁剪面 (用于门扇滑入墙体裁剪)
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
     container.appendChild(this.renderer.domElement);
 
     // 4. 灯光系统
@@ -1287,8 +1293,9 @@ export class ThreeCanvas {
   // 窗口重置
   private onResize = () => {
     if (!this.container) return;
-    const w = this.container.clientWidth;
-    const h = this.container.clientHeight || 1;
+    const rect = this.container.getBoundingClientRect();
+    const w = rect.width || this.container.clientWidth;
+    const h = rect.height || this.container.clientHeight || 1;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
