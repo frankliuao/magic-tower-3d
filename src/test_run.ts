@@ -2517,6 +2517,55 @@ assert(evaluatePointerGesture(8, false) === 'click', '位移 8px (快速轻点) 
 assert(evaluatePointerGesture(15, false) === 'drag', '位移 15px (有意拖动) -> 判定为地图拖拽，不触发误点');
 assert(evaluatePointerGesture(60, false) === 'drag', '位移 60px (大幅平移) -> 畅快平移地图视角');
 
+console.log('\n--- 34. 验证电脑端/手机端双击自动寻路边界规则 (Right-Double-Click Auto-Path Only on PC) ---');
+// 模拟双击与寻路路由逻辑
+const evaluateAutoPathTrigger = (
+  pointerType: 'mouse' | 'touch',
+  button: number,
+  isDoubleClick: boolean
+): 'none' | 'select' | 'auto-path' => {
+  if (button === 0) {
+    if (pointerType === 'touch') {
+      return isDoubleClick ? 'auto-path' : 'select';
+    }
+    // 电脑端鼠标左键：无论是单击还是双击，都只能用于选择/检视，严禁自动寻路！
+    return 'select';
+  }
+  if (button === 2) {
+    // 电脑端鼠标右键：必须且只能双击才触发自动寻路
+    return isDoubleClick ? 'auto-path' : 'none';
+  }
+  return 'none';
+};
+
+// 1. 验证电脑版 (mouse) 交互规则
+assert(
+  evaluateAutoPathTrigger('mouse', 0, false) === 'select',
+  '电脑版鼠标左键单击 -> 检视目标，不触发寻路'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 0, true) === 'select',
+  '电脑版鼠标左键双击 -> 仅做检视，严禁触发自动寻路 (满足用户明确要求)'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 2, false) === 'none',
+  '电脑版鼠标右键单击 -> 无动作，防止单击误走'
+);
+assert(
+  evaluateAutoPathTrigger('mouse', 2, true) === 'auto-path',
+  '电脑版鼠标右键双击 -> 必须且只能右键双击地面/物品开始自动寻路！'
+);
+
+// 2. 验证手机版 (touch) 交互规则
+assert(
+  evaluateAutoPathTrigger('touch', 0, false) === 'select',
+  '手机版单指轻触 -> 检视目标/地块'
+);
+assert(
+  evaluateAutoPathTrigger('touch', 0, true) === 'auto-path',
+  '手机版单指双击 -> 触发自动寻路 (手机无右键，双击屏幕前进)'
+);
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

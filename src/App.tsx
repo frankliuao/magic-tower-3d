@@ -466,20 +466,18 @@ export const App: React.FC = () => {
       setIsPanned(panned);
     };
 
-    // 绑定单击检视与双击/右键自动寻路/交互事件 (移动端双击与桌面端右键均支持)
+    // 绑定单击检视与双击/右键自动寻路/交互事件
     engine.onSelectTile = (gx, gy) => {
       handleSelectTile(gx, gy);
     };
 
+    // 移动端触屏双击自动寻路 (手机无右键，双击地块/物品触发寻路)
     engine.onDoubleClickTile = (gx, gy) => {
       handleEngageOrPath(gx, gy);
     };
 
+    // 电脑端专属：只能右键双击物品或地面开始自动寻路 (左键双击严禁自动寻路)
     engine.onRightDoubleClickTile = (gx, gy) => {
-      handleEngageOrPath(gx, gy);
-    };
-
-    engine.onRightClickTile = (gx, gy) => {
       handleEngageOrPath(gx, gy);
     };
 

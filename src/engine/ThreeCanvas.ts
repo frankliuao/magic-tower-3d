@@ -1497,8 +1497,9 @@ export class ThreeCanvas {
         e.clientY - this.lastLeftClickPos.y
       );
 
-      // 双击判定：380ms 内连续两次点击相同或极近网格坐标
+      // 触屏双击自动寻路判定 (仅在手机触屏 touch 下支持双击寻路；电脑端鼠标左键双击严禁自动寻路，必须且只能右键双击寻路)
       if (
+        e.pointerType === 'touch' &&
         timeSinceLast < 380 &&
         posDist < 35 &&
         coords &&
@@ -1510,10 +1511,6 @@ export class ThreeCanvas {
         this.lastLeftClickCoords = null;
         if (this.onDoubleClickTile) {
           this.onDoubleClickTile(coords.gridX, coords.gridY);
-        } else if (this.onRightDoubleClickTile) {
-          this.onRightDoubleClickTile(coords.gridX, coords.gridY);
-        } else if (this.onRightClickTile) {
-          this.onRightClickTile(coords.gridX, coords.gridY);
         }
         return;
       }
@@ -1534,7 +1531,7 @@ export class ThreeCanvas {
       return;
     }
 
-    // 2. 右键点击：双击判定 (位移 < 8px)
+    // 2. 电脑端右键点击：双击自动寻路判定 (位移 < 8px，仅右键双击生效)
     if (e.button === 2 && dist < 8) {
       const now = performance.now();
       const timeSinceLast = now - this.lastRightClickTime;
@@ -1544,14 +1541,12 @@ export class ThreeCanvas {
       );
 
       if (timeSinceLast < 380 && posDist < 20) {
-        // 右键双击！
+        // 电脑端右键双击自动寻路！
         this.lastRightClickTime = 0;
         const coords = this.raycastToGrid(e.clientX, e.clientY);
         if (coords) {
           if (this.onRightDoubleClickTile) {
             this.onRightDoubleClickTile(coords.gridX, coords.gridY);
-          } else if (this.onRightClickTile) {
-            this.onRightClickTile(coords.gridX, coords.gridY);
           }
         }
       } else {
