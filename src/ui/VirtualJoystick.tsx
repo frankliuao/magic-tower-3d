@@ -25,6 +25,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
   activeDirRef.current = activeDir;
 
   const repeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const capturedPointerIdRef = useRef<number | null>(null);
 
   // 清除行走定时器
   const clearRepeatTimer = useCallback(() => {
@@ -33,6 +34,14 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
       repeatTimerRef.current = null;
     }
   }, []);
+
+  // 释放/重置
+  const handleRelease = useCallback(() => {
+    setIsPressed(false);
+    setKnobPos({ x: 0, y: 0 });
+    setActiveDir(null);
+    clearRepeatTimer();
+  }, [clearRepeatTimer]);
 
   // 根据当前摇杆偏向计算真实移动方向（结合 3D 相机朝向）
   const triggerStep = useCallback(
@@ -44,13 +53,18 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     [getYaw, onMove]
   );
 
-  // 释放/重置
-  const handleRelease = useCallback(() => {
-    setIsPressed(false);
-    setKnobPos({ x: 0, y: 0 });
-    setActiveDir(null);
-    clearRepeatTimer();
-  }, [clearRepeatTimer]);
+  // 当弹窗打开 disabled 为 true 时，立即废除先前所有正在进行的按键与手势动作
+  useEffect(() => {
+    if (disabled) {
+      handleRelease();
+      if (baseRef.current && capturedPointerIdRef.current !== null) {
+        try {
+          baseRef.current.releasePointerCapture(capturedPointerIdRef.current);
+        } catch (_) {}
+        capturedPointerIdRef.current = null;
+      }
+    }
+  }, [disabled, handleRelease]);
 
   useEffect(() => {
     return () => {
@@ -66,6 +80,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     const target = e.currentTarget;
     try {
       target.setPointerCapture(e.pointerId);
+      capturedPointerIdRef.current = e.pointerId;
     } catch (_) {}
 
     setIsPressed(true);
@@ -73,8 +88,12 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (disabled) {
+      handleRelease();
+      return;
+    }
     if (!isPressed && e.type !== 'pointerdown') return;
-    if (!baseRef.current || disabled) return;
+    if (!baseRef.current) return;
 
     const rect = baseRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -137,6 +156,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch (_) {}
+    capturedPointerIdRef.current = null;
     handleRelease();
   };
 
@@ -147,7 +167,9 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className={`relative w-28 h-28 sm:w-32 sm:h-32 select-none touch-none rounded-full bg-slate-950/80 border-2 border-slate-700/80 backdrop-blur-md shadow-2xl flex items-center justify-center pointer-events-auto shrink-0 ${className}`}
+      className={`relative w-28 h-28 sm:w-32 sm:h-32 select-none touch-none rounded-full bg-slate-950/80 border-2 border-slate-700/80 backdrop-blur-md shadow-2xl flex items-center justify-center shrink-0 ${
+        disabled ? 'pointer-events-none opacity-60' : 'pointer-events-auto'
+      } ${className}`}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* 4 方向指示图标 */}

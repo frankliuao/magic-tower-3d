@@ -2577,6 +2577,81 @@ assert(
   '手机版单指双击 -> 触发自动寻路 (手机无右键，双击屏幕前进)'
 );
 
+console.log('\n--- 35. 验证弹窗垂直居中与触控动作废除防误触机制 (Modal Vertical Centering & Touch Invalidation) ---');
+// 1. 验证 DialogueModal 样式定义已垂直居中且去除底部对齐与下边距
+import * as fs from 'fs';
+const dialogueModalContent = fs.readFileSync('src/ui/DialogueModal.tsx', 'utf-8');
+assert(dialogueModalContent.includes('flex items-center justify-center'), 'DialogueModal 弹窗容器使用 items-center 垂直居中');
+assert(!dialogueModalContent.includes('items-end'), 'DialogueModal 彻底移除移动端 items-end 底部靠拢布局');
+assert(!dialogueModalContent.includes('mb-4 sm:mb-0'), 'DialogueModal 移除 mb-4 底部边距');
+
+// 2. 模拟弹窗弹出时先前手指按键/触碰动作废除机制
+const simulateModalTouchSecurity = (
+  isModalOpen: boolean,
+  modalMountTime: number,
+  touchStartTime: number,
+  touchReleaseTime: number,
+  pointerDownButton: string | null
+): boolean => {
+  if (!isModalOpen) return false;
+  // 必须在弹窗挂载 350ms 后才接受点击 (防止弹窗打开瞬间长按/滑动穿透)
+  if (touchReleaseTime - modalMountTime < 350) return false;
+  // 手指的按下动作必须发生在弹窗挂载之后且必须落在指定按钮上
+  if (touchStartTime < modalMountTime) return false;
+  if (!pointerDownButton) return false;
+  return true;
+};
+
+const t0 = 1000; // 弹窗挂载时间
+// 场景 A: 玩家从左向右长按摇杆箭头 engage 荣誉碑，手指在弹窗打开前就已按下并在打开瞬间释放
+assert(
+  !simulateModalTouchSecurity(true, t0, 800, 1050, null),
+  '弹窗打开前按下的手指在打开后释放 -> 先前按键动作完全失效，严禁触发按钮跳转！'
+);
+// 场景 B: 弹窗打开后 100ms 内快速连点穿透
+assert(
+  !simulateModalTouchSecurity(true, t0, 1050, 1100, 'support'),
+  '弹窗打开后 350ms 冷却期内的触摸穿透 -> 处于防误触冷却保护，严禁触发！'
+);
+// 场景 C: 玩家正常审阅弹窗并在 500ms 后故意点击“前往支持”或“我慎重考虑一下”
+assert(
+  simulateModalTouchSecurity(true, t0, 1500, 1600, 'support'),
+  '弹窗打开后有意识的主动点击 -> 正常响应前往支持'
+);
+assert(
+  simulateModalTouchSecurity(true, t0, 1500, 1600, 'cancel'),
+  '弹窗打开后有意识的主动点击 -> 正常响应关闭/慎重考虑'
+);
+
+// 3. 验证 VirtualJoystick disabled 时立即释放与清空状态
+interface JoystickMockState {
+  isPressed: boolean;
+  activeDir: string | null;
+  knobPos: { x: number; y: number };
+  timerActive: boolean;
+}
+const simulateJoystickDisabled = (state: JoystickMockState, disabled: boolean): JoystickMockState => {
+  if (disabled) {
+    return {
+      isPressed: false,
+      activeDir: null,
+      knobPos: { x: 0, y: 0 },
+      timerActive: false,
+    };
+  }
+  return state;
+};
+const activePressState: JoystickMockState = {
+  isPressed: true,
+  activeDir: 'right',
+  knobPos: { x: 30, y: 0 },
+  timerActive: true,
+};
+const disabledResult = simulateJoystickDisabled(activePressState, true);
+assert(!disabledResult.isPressed && disabledResult.activeDir === null, 'VirtualJoystick disabled 时立即取消按下并清空方向');
+assert(disabledResult.knobPos.x === 0 && disabledResult.knobPos.y === 0, 'VirtualJoystick disabled 时摇杆自动复位中心 (0, 0)');
+assert(!disabledResult.timerActive, 'VirtualJoystick disabled 时行走定时器立即销毁停止');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

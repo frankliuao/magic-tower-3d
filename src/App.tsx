@@ -577,6 +577,14 @@ export const App: React.FC = () => {
     game.isVictory ||
     game.isDebugOpen;
 
+  // 当任意模态窗口打开时，废除 3D 画布与底层可能残留的指针拖拽与手势状态，停止可能正在进行的自动寻路
+  useEffect(() => {
+    if (hasModal) {
+      stopAutoWalk();
+      threeEngineRef.current?.resetPointerState();
+    }
+  }, [hasModal, stopAutoWalk]);
+
   // 全局键盘事件监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

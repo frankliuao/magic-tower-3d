@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GameState } from '../game/gameState';
 import { ChevronRight, Check, Coins, X, AlertCircle, Key, Coffee, ExternalLink, Heart, Sparkles } from 'lucide-react';
 import { useI18n } from '../i18n';
@@ -106,7 +106,22 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
 }) => {
   const { t } = useI18n();
   const [isConfirmingTrade, setIsConfirmingTrade] = useState(false);
+  const [canInteract, setCanInteract] = useState(false);
+  const pointerDownButtonRef = useRef<string | null>(null);
+
   const dialogue = game.activeDialogue;
+
+  // 当对话弹窗打开或切换台词时，启用 350ms 误触冷却期，并重置按键武装状态
+  // 彻底废除由于长按摇杆、滑动操作或手指残留动作导致的穿透误触
+  useEffect(() => {
+    setCanInteract(false);
+    pointerDownButtonRef.current = null;
+    const timer = setTimeout(() => {
+      setCanInteract(true);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [dialogue?.npcId, dialogue?.currentIndex]);
+
   if (!dialogue) return null;
 
   const isLast = dialogue.currentIndex >= dialogue.lines.length - 1;
@@ -116,6 +131,8 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
     dialogue.npcId === 'honor_monument' || dialogue.npcId === 'monument';
 
   const handleNext = () => {
+    if (!canInteract) return;
+    pointerDownButtonRef.current = null;
     if (isLast) {
       onClose();
     } else {
@@ -125,14 +142,21 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
   };
 
   const handleTrade = () => {
-    if (!trade) return;
+    if (!canInteract || !trade) return;
+    pointerDownButtonRef.current = null;
     game.buyTraderItem(trade.tradeId);
   };
 
+  const handleSupportClick = () => {
+    if (!canInteract || pointerDownButtonRef.current !== 'support') return;
+    pointerDownButtonRef.current = null;
+    window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 select-none">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 select-none">
       <div
-        className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] shadow-2xl overflow-hidden flex flex-col mb-4 sm:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl w-full max-w-2xl max-h-[85vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 对话框头部 */}
@@ -218,15 +242,34 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                 isConfirmingTrade ? (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={handleTrade}
-                      className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-95 text-white rounded-xl text-sm font-bold shadow ring-1 ring-emerald-300/50 transition-all cursor-pointer"
+                      type="button"
+                      onPointerDown={() => {
+                        if (canInteract) pointerDownButtonRef.current = 'confirm_trade';
+                      }}
+                      onClick={() => {
+                        if (!canInteract || pointerDownButtonRef.current !== 'confirm_trade') return;
+                        handleTrade();
+                      }}
+                      className={`flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-95 text-white rounded-xl text-sm font-bold shadow ring-1 ring-emerald-300/50 transition-all ${
+                        !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                      }`}
                     >
                       <Check className="w-4 h-4" />
                       {t.confirmBtn} ({trade.costGold} G)
                     </button>
                     <button
-                      onClick={() => setIsConfirmingTrade(false)}
-                      className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-300 rounded-xl text-sm font-medium transition-all cursor-pointer border border-slate-600"
+                      type="button"
+                      onPointerDown={() => {
+                        if (canInteract) pointerDownButtonRef.current = 'cancel_confirm_trade';
+                      }}
+                      onClick={() => {
+                        if (!canInteract || pointerDownButtonRef.current !== 'cancel_confirm_trade') return;
+                        pointerDownButtonRef.current = null;
+                        setIsConfirmingTrade(false);
+                      }}
+                      className={`flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-300 rounded-xl text-sm font-medium transition-all border border-slate-600 ${
+                        !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                      }`}
                     >
                       <X className="w-4 h-4" />
                       {t.cancelBtn}
@@ -234,8 +277,18 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
                   </div>
                 ) : (
                   <button
-                    onClick={() => setIsConfirmingTrade(true)}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow transition-all bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 hover:scale-[1.02] active:scale-95 text-white cursor-pointer ring-1 ring-amber-300/50"
+                    type="button"
+                    onPointerDown={() => {
+                      if (canInteract) pointerDownButtonRef.current = 'ask_trade';
+                    }}
+                    onClick={() => {
+                      if (!canInteract || pointerDownButtonRef.current !== 'ask_trade') return;
+                      pointerDownButtonRef.current = null;
+                      setIsConfirmingTrade(true);
+                    }}
+                    className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow transition-all bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 hover:scale-[1.02] active:scale-95 text-white ring-1 ring-amber-300/50 ${
+                      !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                    }`}
                   >
                     <Coins className="w-4 h-4 text-amber-300" />
                     {trade.title} ({trade.costGold} {game.language === 'zh' ? '金币' : 'Gold'})
@@ -259,11 +312,19 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
               )}
 
               <button
+                type="button"
+                onPointerDown={() => {
+                  if (canInteract) pointerDownButtonRef.current = 'decline_trade';
+                }}
                 onClick={() => {
+                  if (!canInteract || pointerDownButtonRef.current !== 'decline_trade') return;
+                  pointerDownButtonRef.current = null;
                   setIsConfirmingTrade(false);
                   onClose();
                 }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all cursor-pointer"
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all ${
+                  !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                }`}
               >
                 {game.language === 'zh' ? '暂不购买' : 'Decline'}
               </button>
@@ -272,10 +333,13 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
               <button
                 type="button"
-                onClick={() => {
-                  window.open(BUY_ME_A_COFFEE_URL, '_blank', 'noopener,noreferrer');
+                onPointerDown={() => {
+                  if (canInteract) pointerDownButtonRef.current = 'support';
                 }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all cursor-pointer ring-1 ring-amber-300/50"
+                onClick={handleSupportClick}
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all ring-1 ring-amber-300/50 ${
+                  !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                }`}
               >
                 <Coffee className="w-4 h-4 text-slate-950" />
                 <span>{t.monumentSupportBtn}</span>
@@ -283,8 +347,17 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
               </button>
 
               <button
-                onClick={handleNext}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                type="button"
+                onPointerDown={() => {
+                  if (canInteract) pointerDownButtonRef.current = 'cancel';
+                }}
+                onClick={() => {
+                  if (!canInteract || pointerDownButtonRef.current !== 'cancel') return;
+                  handleNext();
+                }}
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 ${
+                  !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                }`}
               >
                 {t.coffeeModalCancelBtn}
               </button>
@@ -292,8 +365,17 @@ export const DialogueModal: React.FC<DialogueModalProps> = ({
           ) : (
             <div className="flex justify-end w-full">
               <button
-                onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                type="button"
+                onPointerDown={() => {
+                  if (canInteract) pointerDownButtonRef.current = 'proceed';
+                }}
+                onClick={() => {
+                  if (!canInteract || pointerDownButtonRef.current !== 'proceed') return;
+                  handleNext();
+                }}
+                className={`flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-sm font-bold shadow transition-all hover:scale-105 active:scale-95 ${
+                  !canInteract ? 'opacity-85 pointer-events-none' : 'cursor-pointer'
+                }`}
               >
                 {isLast ? (
                   <>

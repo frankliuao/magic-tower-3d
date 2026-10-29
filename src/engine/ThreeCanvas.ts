@@ -1659,6 +1659,19 @@ export class ThreeCanvas {
     this.notifyCameraStateChange();
   }
 
+  // 重置并废除指针手势状态 (当模态窗口/对话弹出时调用，防止拖拽或点击残留)
+  public resetPointerState() {
+    this.pointerDownOnCanvas = false;
+    this.isDragging = false;
+    this.dragMode = 'none';
+    this.isTwoFingerGesture = false;
+    this.hasTwoFingerMoved = false;
+    this.isPanMoved = false;
+    if (this.container) {
+      this.container.style.cursor = 'grab';
+    }
+  }
+
   public getZoom(): number {
     return this.targetZoom;
   }
