@@ -58,21 +58,25 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   return (
     <footer className="w-full bg-slate-950/95 border-t border-slate-800/90 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl z-20 shrink-0 select-none px-2.5 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-1.5">
       {/* 顶部全宽功能与状态导航条 (Top Utility Toolbar) */}
-      <div className="max-w-md mx-auto w-full flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-        {/* 左侧：楼层标识徽章 */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="px-2 py-0.5 bg-amber-500/15 border border-amber-500/40 rounded-lg text-amber-300 font-extrabold text-xs font-mono drop-shadow truncate max-w-[85px] sm:max-w-[100px]">
-            {displayedFloorName}
+      <div className="max-w-md mx-auto w-full flex items-center justify-between gap-2.5">
+        {/* 左侧：楼层标识徽章 (宽度与下方摇杆右边缘严格对齐，充分利用空间) */}
+        <div className="w-28 sm:w-32 shrink-0 flex items-center">
+          <span
+            className="w-full px-2 py-1 bg-amber-500/15 border border-amber-500/40 rounded-lg text-amber-300 font-extrabold text-xs font-mono drop-shadow truncate text-center flex items-center justify-center gap-1 shadow-sm"
+            title={displayedFloorName}
+          >
+            <span className="text-[11px] opacity-80 shrink-0">🏰</span>
+            <span className="truncate">{displayedFloorName}</span>
           </span>
         </div>
 
         {/* 右侧：存档、读档、语言切换、视角复位、咖啡与菜单抽屉 */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex-1 min-w-0 flex items-center justify-end gap-1 overflow-x-auto no-scrollbar">
           {/* 存档按钮 */}
           <button
             type="button"
             onClick={onQuickSave}
-            className="flex items-center gap-1 px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/60 rounded-lg text-xs font-bold text-indigo-300 active:scale-95 transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/60 rounded-lg text-xs font-bold text-indigo-300 active:scale-95 transition-all cursor-pointer shadow-sm shrink-0"
             title={t.saveBtn}
           >
             <Save className="w-3.5 h-3.5 text-indigo-400" />
@@ -83,7 +87,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <button
             type="button"
             onClick={onQuickLoad}
-            className="flex items-center gap-1 px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-sky-500/60 rounded-lg text-xs font-bold text-sky-300 active:scale-95 transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-sky-500/60 rounded-lg text-xs font-bold text-sky-300 active:scale-95 transition-all cursor-pointer shadow-sm shrink-0"
             title={t.loadBtn}
           >
             <RotateCcw className="w-3.5 h-3.5 text-sky-400" />
@@ -94,7 +98,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <button
             type="button"
             onClick={toggleLang}
-            className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-950/70 to-slate-900 hover:from-amber-900/80 border border-amber-500/60 rounded-lg text-xs font-bold text-amber-300 active:scale-95 transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-950/70 to-slate-900 hover:from-amber-900/80 border border-amber-500/60 rounded-lg text-xs font-bold text-amber-300 active:scale-95 transition-all cursor-pointer shadow-sm shrink-0"
             title={t.langToggleTip}
           >
             <Languages className="w-3.5 h-3.5 text-amber-400" />
@@ -105,7 +109,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <button
             type="button"
             onClick={onResetCamera}
-            className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-sky-500/50 rounded-lg text-sky-400 active:scale-90 transition-all cursor-pointer shadow-sm"
+            className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-sky-500/50 rounded-lg text-sky-400 active:scale-90 transition-all cursor-pointer shadow-sm shrink-0"
             title={t.spaceResetBtnTitle}
           >
             <Target className="w-3.5 h-3.5 text-sky-400" />
@@ -115,7 +119,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <button
             type="button"
             onClick={onOpenCoffeeModal}
-            className="p-1.5 bg-gradient-to-r from-amber-600/90 to-yellow-600/90 hover:from-amber-500 border border-amber-400/80 rounded-lg text-amber-100 active:scale-95 transition-all cursor-pointer shadow"
+            className="p-1.5 bg-gradient-to-r from-amber-600/90 to-yellow-600/90 hover:from-amber-500 border border-amber-400/80 rounded-lg text-amber-100 active:scale-95 transition-all cursor-pointer shadow shrink-0"
             title={t.coffeeTip}
           >
             <Coffee className="w-3.5 h-3.5 text-amber-200" />
@@ -125,7 +129,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <button
             type="button"
             onClick={onOpenDrawer}
-            className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 rounded-lg text-amber-400 active:scale-90 transition-all cursor-pointer shadow-sm"
+            className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 rounded-lg text-amber-400 active:scale-90 transition-all cursor-pointer shadow-sm shrink-0"
             title="菜单 (Menu)"
           >
             <Menu className="w-3.5 h-3.5 text-amber-400" />
