@@ -2717,6 +2717,26 @@ assert(
   '英文音效与 BGM 开关文案绝对不含任何中文字符'
 );
 
+// 6. 验证 Bugbot 修复：PWA manifest 使用相对路径兼容 GitHub Pages 二级子路径
+console.log('\n--- 6. 验证 PWA manifest 路径相对性 (GitHub Pages 兼容) ---');
+const manifestContent = JSON.parse(fs.readFileSync('public/manifest.json', 'utf-8'));
+assert(
+  manifestContent.start_url === './' || manifestContent.start_url === './index.html',
+  'manifest start_url 必须为相对路径 (./)，严禁使用根路径 (/) 防止 GitHub Pages 404'
+);
+assert(
+  manifestContent.scope === './' || manifestContent.scope === undefined,
+  'manifest scope 为相对作用域 (./)'
+);
+for (const icon of manifestContent.icons) {
+  assert(
+    icon.src.startsWith('./') || !icon.src.startsWith('/'),
+    `manifest icon (${icon.src}) 必须使用相对路径，避免脱离 GitHub Pages 子路径`
+  );
+  const cleanPath = icon.src.replace(/^\.\//, 'public/');
+  assert(fs.existsSync(cleanPath), `manifest icon 目标文件 (${cleanPath}) 真实存在`);
+}
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
