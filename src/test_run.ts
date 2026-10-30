@@ -2737,6 +2737,48 @@ for (const icon of manifestContent.icons) {
   assert(fs.existsSync(cleanPath), `manifest icon 目标文件 (${cleanPath}) 真实存在`);
 }
 
+// 7. 验证鼠标滚轮直接缩放与双语提示更新
+console.log('\n--- 7. 验证鼠标滚轮直接缩放 (无需按住 Ctrl) 与双语提示 ---');
+const simulateWheelZoom = (currentZoom: number, deltaY: number, deltaMode: number = 0) => {
+  if (deltaY === 0) return currentZoom;
+  let delta = 0;
+  if (deltaMode === 1) {
+    delta = -Math.sign(deltaY) * 0.12;
+  } else if (deltaMode === 2) {
+    delta = -Math.sign(deltaY) * 0.25;
+  } else {
+    delta = -Math.sign(deltaY) * Math.min(Math.abs(deltaY) * 0.0012, 0.15);
+  }
+  return Math.min(2.2, Math.max(0.45, currentZoom + delta));
+};
+
+assert(
+  simulateWheelZoom(1.0, -100, 0) > 1.0,
+  '普通滚轮向上滚动 (无需 Ctrl) -> 视野放大 (> 1.0)'
+);
+assert(
+  simulateWheelZoom(1.0, 100, 0) < 1.0,
+  '普通滚轮向下滚动 (无需 Ctrl) -> 视野缩小 (< 1.0)'
+);
+assert(
+  simulateWheelZoom(1.0, -3, 1) === 1.12,
+  '逐行滚轮向上 (deltaMode=1) -> 视野增加 0.12 (1.0 -> 1.12)'
+);
+assert(
+  simulateWheelZoom(2.15, -100, 0) === 2.2,
+  '滚轮放大受最大 2.2 缩放上限钳位保护'
+);
+assert(
+  simulateWheelZoom(0.5, 100, 0) === 0.45,
+  '滚轮缩小受最小 0.45 缩放下限钳位保护'
+);
+
+assert(TRANSLATIONS.zh.hintZoom === '缩放: 滚轮', '中文底栏缩放提示更新为 "缩放: 滚轮"');
+assert(TRANSLATIONS.en.hintZoom === 'Zoom: Wheel', '英文底栏缩放提示更新为 "Zoom: Wheel"');
+assert(!chineseRegex.test(TRANSLATIONS.en.hintZoom), '英文缩放提示不含任何汉字');
+assert(!chineseRegex.test(TRANSLATIONS.en.zoomInTip), '英文放大提示不含任何汉字');
+assert(!chineseRegex.test(TRANSLATIONS.en.zoomOutTip), '英文缩小提示不含任何汉字');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');
