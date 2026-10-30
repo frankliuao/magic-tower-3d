@@ -1009,7 +1009,7 @@ export class ThreeCanvas {
     this.reqId = requestAnimationFrame(animate);
   }
 
-  // 计算摄像机位置与焦点目标 (策略俯视视角，支持平移、Ctrl+滚轮缩放、Shift+拖拽自由旋转)
+  // 计算摄像机位置与焦点目标 (策略俯视视角，支持平移、滚轮直接缩放、Shift/Ctrl+拖拽自由旋转)
   private calculateCameraTargets() {
     const heroX = this.heroCurrentPos.x;
     const heroZ = this.heroCurrentPos.z;
@@ -1617,12 +1617,20 @@ export class ThreeCanvas {
   }
 
   private onWheel = (e: WheelEvent) => {
-    // 严格限制：只有按住 Ctrl (或 macOS 的 Cmd) 时才允许缩放，避免普通上/下滚动误触缩放
-    if (!e.ctrlKey && !e.metaKey) {
-      return;
-    }
     e.preventDefault();
-    const delta = -e.deltaY * 0.008;
+    if (e.deltaY === 0) return;
+    // 鼠标滚轮直接缩放（无需按住 Ctrl，提升电脑端操作便捷性）
+    let delta = 0;
+    if (e.deltaMode === 1) {
+      // 逐行滚动模式 (常见于外接物理滚轮)
+      delta = -Math.sign(e.deltaY) * 0.12;
+    } else if (e.deltaMode === 2) {
+      // 翻页滚动模式
+      delta = -Math.sign(e.deltaY) * 0.25;
+    } else {
+      // 像素滚动模式 (常见于触控板或高精度鼠标滚轮)
+      delta = -Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY) * 0.0012, 0.15);
+    }
     this.setZoom(this.targetZoom + delta);
   };
 
