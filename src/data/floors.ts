@@ -481,7 +481,7 @@ function getFloor18(): FloorData {
   const layout: Tile[][] = [
     [T.up(), T.floor(), T.floor(), T.doorB(), T.floor(), T.down(), T.floor(), T.doorY(), T.mon('senior_mage'), T.floor(), T.item('key_yellow')],
     [T.floor(), T.floor(), T.npc('elder'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.mon('big_slime'), T.item('key_yellow')],
-    [T.doorY(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall(), T.wall(), T.wall(), T.floor(), T.floor(), T.item('key_blue')],
+    [T.doorY(), T.wall(), T.wall(), T.wall(), T.wall(), T.fakeWall('pickaxe'), T.wall(), T.wall(), T.floor(), T.floor(), T.item('key_blue')],
     [T.floor(), T.item('potion_red'), T.floor(), T.doorY(), T.mon('orc_knight'), T.floor(), T.mon('orc_knight'), T.doorY(), T.mon('orc'), T.floor(), T.item('key_yellow')],
     [T.mon('golem'), T.floor(), T.mon('golem'), T.wall(), T.floor(), T.floor(), T.floor(), T.wall(), T.floor(), T.mon('big_bat'), T.item('key_yellow')],
     [T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.doorB(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall()],
@@ -506,7 +506,7 @@ function getFloor19(): FloorData {
   const layout: Tile[][] = [
     [T.down(), T.floor(), T.wall(), T.item('potion_red'), T.floor(), T.mon('senior_mage'), T.floor(), T.item('key_blue'), T.wall(), T.item('key_yellow'), T.item('gem_red')],
     [T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor(), T.wall(), T.mon('big_bat'), T.floor()],
-    [T.doorY(), T.wall(), T.wall(), T.mon('orc_knight'), T.wall(), T.fakeWall(), T.wall(), T.mon('orc_knight'), T.wall(), T.doorY(), T.wall()],
+    [T.doorY(), T.wall(), T.wall(), T.mon('orc_knight'), T.wall(), T.fakeWall('cross'), T.wall(), T.mon('orc_knight'), T.wall(), T.doorY(), T.wall()],
     [T.mon('small_bat'), T.floor(), T.wall(), T.floor(), T.floor(), T.fakeWall(), T.floor(), T.floor(), T.wall(), T.floor(), T.floor()],
     [T.floor(), T.floor(), T.wall(), T.item('key_yellow'), T.floor(), T.wall(), T.floor(), T.item('key_yellow'), T.wall(), T.mon('big_slime'), T.mon('big_slime')],
     [T.doorY(), T.wall(), T.wall(), T.floor(), T.mon('golem'), T.floor(), T.mon('golem'), T.floor(), T.wall(), T.floor(), T.floor()],
@@ -1088,7 +1088,7 @@ function getFloor40(): FloorData {
 function getFloor41(): FloorData {
   const layout: Tile[][] = [
     [T.item('potion_red'), T.wall(), T.floor(), T.item('key_blue'), T.wall(), T.down(), T.wall(), T.item('key_blue'), T.floor(), T.wall(), T.item('potion_red')],
-    [T.doorY(), T.mon('senior_wizard'), T.floor(), T.floor(), T.wall(), T.floor(), T.wall(), T.floor(), T.floor(), T.fakeWall(), T.doorY()],
+    [T.doorY(), T.mon('senior_wizard'), T.floor(), T.floor(), T.wall(), T.floor(), T.wall(), T.floor(), T.floor(), T.fakeWall('down_fly'), T.doorY()],
     [T.doorY(), T.wall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.floor(), T.wall(), T.doorY()],
     [T.doorY(), T.wall(), T.doorY(), T.wall(), T.npc('elder'), T.floor(), T.mon('magic_guard'), T.wall(), T.doorY(), T.wall(), T.doorY()],
     [T.floor(), T.floor(), T.mon('junior_wizard'), T.wall(), T.wall(), T.floor(), T.wall(), T.wall(), T.mon('junior_wizard'), T.floor(), T.floor()],
@@ -1246,7 +1246,7 @@ function getFloor47(): FloorData {
     [T.floor(), T.wall(), T.floor(), T.wall(), T.item('key_blue'), T.item('key_yellow'), T.wall(), T.wall(), T.wall(), T.wall(), T.doorY()],
     [T.floor(), T.wall(), T.floor(), T.doorB(), T.item('gem_red'), T.item('gem_blue'), T.wall(), T.floor(), T.floor(), T.floor(), T.floor()],
     [T.mon('senior_wizard'), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.wall(), T.mon('slime_king'), T.wall(), T.wall(), T.wall()],
-    [T.floor(), T.floor(), T.wall(), T.item('potion_red'), T.floor(), T.item('gem_red'), T.wall(), T.floor(), T.wall(), T.npc('elder'), T.floor()],
+    [T.floor(), T.floor(), T.wall(), T.item('potion_red'), T.item('earthquake'), T.item('gem_red'), T.wall(), T.floor(), T.wall(), T.npc('elder'), T.floor()],
     [T.floor(), T.floor(), T.doorY(), T.floor(), T.mon('junior_wizard'), T.floor(), T.doorY(), T.floor(), T.floor(), T.floor(), T.down()],
   ];
 

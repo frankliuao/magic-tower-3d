@@ -75,6 +75,18 @@ export function getCameraAdaptedDirection(
   return DIR_CLOCKWISE[adaptedIndex];
 }
 
+export const BOSS_MONSTER_IDS = new Set([
+  'skeleton_captain',
+  'giant_squid',
+  'vampire',
+  'archmage',
+  'dragon',
+  'nether_commander',
+  'false_sorcerer',
+  'demon_lord',
+  'blood_demon',
+]);
+
 export class GameState {
   // 玩家基础状态
   public playerStats: PlayerStats = {
@@ -834,6 +846,268 @@ export class GameState {
     return true;
   }
 
+  /**
+   * 使用【向下飞行器】：
+   * 使勇士瞬间垂直下降一层。
+   * 经典魔塔核心规则：
+   * 1. 0F 与 1F 无法向下飞行
+   * 2. 45F 向下飞行降至 43F（避开异空间密室 44F）
+   * 3. 消耗 1 个 down_fly
+   */
+  public useDownFly(
+    _onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.down_fly || this.playerStats.inventory.down_fly <= 0) {
+      const msg = this.language === 'zh' ? '背包中没有向下飞行器！' : 'No Down Flyer in inventory!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    if (this.currentFloor <= 1) {
+      const msg =
+        this.language === 'zh'
+          ? '当前已是底层，无法向下飞行！'
+          : 'Already on the ground floor, cannot fly down!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const targetFloor = this.currentFloor === 45 ? 43 : this.currentFloor - 1;
+    this.playerStats.inventory.down_fly -= 1;
+    this.changeFloor(targetFloor, 'down');
+
+    sound.playVictory();
+    const successMsg =
+      this.language === 'zh'
+        ? `向下跃迁成功！已降至 ${targetFloor} 层！（消耗向下飞行器）`
+        : `Descended successfully to Floor ${targetFloor}! (Flyer consumed)`;
+    this.addNotification(successMsg, '#06b6d4');
+    if (onFloating) onFloating(successMsg, '#06b6d4', 4000);
+
+    this.notify();
+    return true;
+  }
+
+  /**
+   * 使用【炸弹】：
+   * 引爆身旁任意一名非首领强敌，直接获取其金币与经验（免伤消灭）。
+   * 首领怪物拥有魔能护体，免疫炸弹。
+   */
+  public useBomb(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.bomb || this.playerStats.inventory.bomb <= 0) {
+      const msg = this.language === 'zh' ? '背包中没有炸弹！' : 'No Bomb in inventory!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const DIR_DELTAS: Record<Direction, { dx: number; dy: number }> = {
+      up: { dx: 0, dy: -1 },
+      down: { dx: 0, dy: 1 },
+      left: { dx: -1, dy: 0 },
+      right: { dx: 1, dy: 0 },
+    };
+
+    const px = this.playerPos.x;
+    const py = this.playerPos.y;
+    const facing = this.playerPos.dir;
+    const front = { x: px + DIR_DELTAS[facing].dx, y: py + DIR_DELTAS[facing].dy };
+    const others = (['up', 'right', 'down', 'left'] as Direction[])
+      .filter((d) => d !== facing)
+      .map((d) => ({ x: px + DIR_DELTAS[d].dx, y: py + DIR_DELTAS[d].dy }));
+    const coords = [front, ...others].filter(
+      (c) => c.x >= 0 && c.x <= 10 && c.y >= 0 && c.y <= 10
+    );
+
+    const floor = this.getCurrentFloorData();
+    let targetCoord: { x: number; y: number; monsterId: string } | null = null;
+    let sawBoss = false;
+
+    for (const c of coords) {
+      const tile = floor.layout[c.y][c.x];
+      if (tile && tile.type === 'monster' && tile.monsterId) {
+        if (BOSS_MONSTER_IDS.has(tile.monsterId)) {
+          sawBoss = true;
+        } else {
+          targetCoord = { x: c.x, y: c.y, monsterId: tile.monsterId };
+          break;
+        }
+      }
+    }
+
+    if (!targetCoord) {
+      const msg = sawBoss
+        ? (this.language === 'zh'
+            ? '首领怪物拥有神圣魔能护体，无法被炸弹消灭！'
+            : 'Boss monsters possess magical wards and cannot be bombed!')
+        : (this.language === 'zh'
+            ? '身旁没有可引爆消灭的敌怪！'
+            : 'No adjacent enemy to eliminate with a bomb!');
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    this.playerStats.inventory.bomb -= 1;
+    const monster = MONSTERS[targetCoord.monsterId];
+    const earnedGold = this.playerStats.inventory.lucky_coin ? monster.gold * 2 : monster.gold;
+    this.playerStats.gold += earnedGold;
+    this.playerStats.exp += monster.exp;
+
+    floor.layout[targetCoord.y][targetCoord.x] = { type: 'floor' };
+    if (onTileChange) onTileChange(targetCoord.x, targetCoord.y, false);
+
+    sound.playAttack();
+    const monsterName = this.language === 'zh' ? monster.name : monster.nameEn;
+    const msg =
+      this.language === 'zh'
+        ? `💣 引爆炸弹消灭了【${monsterName}】！获得金币 +${earnedGold}，经验 +${monster.exp}！`
+        : `💣 Detonated bomb, slaying [${monsterName}]! +${earnedGold} Gold, +${monster.exp} EXP!`;
+    this.addNotification(msg, '#ef4444');
+    if (onFloating) onFloating(msg, '#ef4444', 3800);
+
+    this.checkPostBattleGuardedDoors(targetCoord.x, targetCoord.y, onTileChange, onFloating, false);
+    this.notify();
+    return true;
+  }
+
+  /**
+   * 使用【破墙镐】：
+   * 破开身旁任意一堵普通石墙（非暗墙、非铁门），开辟新道路。
+   */
+  public usePickaxe(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.pickaxe || this.playerStats.inventory.pickaxe <= 0) {
+      const msg = this.language === 'zh' ? '背包中没有破墙镐！' : 'No Pickaxe in inventory!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const DIR_DELTAS: Record<Direction, { dx: number; dy: number }> = {
+      up: { dx: 0, dy: -1 },
+      down: { dx: 0, dy: 1 },
+      left: { dx: -1, dy: 0 },
+      right: { dx: 1, dy: 0 },
+    };
+
+    const px = this.playerPos.x;
+    const py = this.playerPos.y;
+    const facing = this.playerPos.dir;
+    const front = { x: px + DIR_DELTAS[facing].dx, y: py + DIR_DELTAS[facing].dy };
+    const others = (['up', 'right', 'down', 'left'] as Direction[])
+      .filter((d) => d !== facing)
+      .map((d) => ({ x: px + DIR_DELTAS[d].dx, y: py + DIR_DELTAS[d].dy }));
+    const coords = [front, ...others].filter(
+      (c) => c.x >= 0 && c.x <= 10 && c.y >= 0 && c.y <= 10
+    );
+
+    const floor = this.getCurrentFloorData();
+    let targetCoord: { x: number; y: number } | null = null;
+
+    for (const c of coords) {
+      const tile = floor.layout[c.y][c.x];
+      if (tile && tile.type === 'wall') {
+        targetCoord = { x: c.x, y: c.y };
+        break;
+      }
+    }
+
+    if (!targetCoord) {
+      const msg =
+        this.language === 'zh'
+          ? '身旁没有可破开的普通石墙！'
+          : 'No adjacent normal stone wall to break!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    this.playerStats.inventory.pickaxe -= 1;
+    floor.layout[targetCoord.y][targetCoord.x] = { type: 'floor' };
+    if (onTileChange) onTileChange(targetCoord.x, targetCoord.y, false);
+
+    sound.playDoor();
+    const msg =
+      this.language === 'zh'
+        ? '⛏️ 破墙镐粉碎了石墙！道路已打通！'
+        : '⛏️ Pickaxe shattered the stone wall! The path is open!';
+    this.addNotification(msg, '#f59e0b');
+    if (onFloating) onFloating(msg, '#f59e0b', 3500);
+
+    this.notify();
+    return true;
+  }
+
+  /**
+   * 使用【地震卷轴】：
+   * 引发天崩地裂的强震，震塌当前楼层的所有普通石墙（保留暗墙与门）。
+   */
+  public useEarthquake(
+    onTileChange?: (x: number, y: number, isDoor: boolean, newTile?: Tile) => void,
+    onFloating?: (txt: string, col: string, duration?: number) => void
+  ): boolean {
+    if (!this.playerStats.inventory.earthquake || this.playerStats.inventory.earthquake <= 0) {
+      const msg = this.language === 'zh' ? '背包中没有地震卷轴！' : 'No Earthquake Scroll in inventory!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    const floor = this.getCurrentFloorData();
+    let brokenCount = 0;
+
+    for (let y = 0; y < floor.layout.length; y++) {
+      for (let x = 0; x < floor.layout[y].length; x++) {
+        const tile = floor.layout[y][x];
+        if (tile && tile.type === 'wall') {
+          brokenCount++;
+        }
+      }
+    }
+
+    if (brokenCount === 0) {
+      const msg =
+        this.language === 'zh'
+          ? '当前楼层没有可震塌的普通石墙！'
+          : 'No normal stone walls to collapse on this floor!';
+      this.addNotification(msg, '#ef4444');
+      if (onFloating) onFloating(msg, '#ef4444');
+      return false;
+    }
+
+    this.playerStats.inventory.earthquake -= 1;
+
+    for (let y = 0; y < floor.layout.length; y++) {
+      for (let x = 0; x < floor.layout[y].length; x++) {
+        const tile = floor.layout[y][x];
+        if (tile && tile.type === 'wall') {
+          floor.layout[y][x] = { type: 'floor' };
+          if (onTileChange) onTileChange(x, y, false);
+        }
+      }
+    }
+
+    sound.playVictory();
+    const msg =
+      this.language === 'zh'
+        ? `📜 地震卷轴发动！当前楼层 ${brokenCount} 堵石墙全数震塌！`
+        : `📜 Earthquake Scroll triggered! ${brokenCount} stone walls collapsed!`;
+    this.addNotification(msg, '#eab308');
+    if (onFloating) onFloating(msg, '#eab308', 4200);
+
+    this.notify();
+    return true;
+  }
+
   // 拾取道具逻辑
   private collectItem(
     itemType: ItemType,
@@ -932,7 +1206,27 @@ export class GameState {
       this.playerStats.yellowKeys += 1;
       this.playerStats.blueKeys += 1;
       this.playerStats.redKeys += 1;
+      let openedCount = 0;
+      for (let y = 0; y < floor.layout.length; y++) {
+        for (let x = 0; x < floor.layout[y].length; x++) {
+          const t = floor.layout[y][x];
+          if (t && t.type === 'door_yellow') {
+            floor.layout[y][x] = { type: 'floor' };
+            if (onTileChange) onTileChange(x, y, true);
+            openedCount++;
+          }
+        }
+      }
       sound.playVictory();
+      const notifText =
+        this.language === 'zh'
+          ? openedCount > 0
+            ? `✨ 金钥匙开启了本层 ${openedCount} 扇黄门！并获赠黄蓝红钥匙各1把！`
+            : '✨ 获得黄蓝红钥匙各1把！'
+          : openedCount > 0
+          ? `✨ Gold Key unlocked ${openedCount} yellow doors! And granted 1 of each key!`
+          : '✨ Obtained 1 of each key!';
+      if (onFloating) onFloating(notifText, '#fbbf24', 3800);
     } else if (itemType === 'cross') {
       this.playerStats.inventory.cross = 1;
       sound.playVictory();
@@ -1008,9 +1302,11 @@ export class GameState {
       sound.playItem();
     }
 
-    const notif = getPickupNotification(itemType, this.language);
-    if (onFloating && notif.text) {
-      onFloating(notif.text, notif.color);
+    if (itemType !== 'key_gold') {
+      const notif = getPickupNotification(itemType, this.language);
+      if (onFloating && notif.text) {
+        onFloating(notif.text, notif.color);
+      }
     }
     this.notify();
   }
@@ -1124,9 +1420,11 @@ export class GameState {
       sound.playVictory();
       bossHandledDoor = true;
       this.playerStats.inventory.snow_crystal = 1;
+      this.playerStats.atk += 100;
+      this.playerStats.weapon = '屠龙之刃';
       const text = this.language === 'zh'
-        ? '🐉 远古魔龙已被诛灭！获得传说秘宝【冰冻雪花】！可前往13层与26层冻结炽热熔岩！'
-        : '🐉 Ancient Dragon defeated! Obtained legendary [Frost Snowflake]! Lava on 13F & 26F can now be frozen!';
+        ? '🐉 远古魔龙已被诛灭！斩获神兵【屠龙之刃】(攻击+100) 与传说秘宝【冰冻雪花】！可前往13层与26层冻结炽热熔岩！'
+        : '🐉 Ancient Dragon defeated! Obtained [Dragon Slayer] (+100 ATK) and [Frost Snowflake]! Lava on 13F & 26F can now be frozen!';
       if (onFloating) onFloating(text, '#38bdf8', 5000);
     } else if (monsterId === 'archmage') {
       sound.playVictory();
@@ -1262,6 +1560,33 @@ export class GameState {
         }
       }
     }
+  }
+
+  /**
+   * 罗盘列出的可传送楼层。
+   * 44F 是只能靠一次性上楼器进入一次的隐藏密室：即使已经写入 exploredFloors，
+   * 即使这份记录来自旧存档，也永远不作为罗盘目的地。
+   */
+  public getCompassDestinations(): number[] {
+    return Array.from(this.exploredFloors)
+      .filter((floor) => floor !== 44)
+      .sort((a, b) => b - a);
+  }
+
+  /**
+   * 按楼层号传送。罗盘、调试跳层，以及任何以楼层号为目标的飞行器都走这里。
+   * 44F 一律拒绝，当前位置保持不变。其余楼层沿用原罗盘落点（该层下楼口），
+   * 且不会把目的地写入 exploredFloors。
+   */
+  public teleportToFloor(floor: number): boolean {
+    if (floor === 44) return false;
+
+    this.currentFloor = floor;
+    const fData = this.getCurrentFloorData();
+    this.playerPos.x = fData.downStairsPos.x;
+    this.playerPos.y = fData.downStairsPos.y;
+    this.notify();
+    return true;
   }
 
   // 跨楼层切换

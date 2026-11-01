@@ -1220,7 +1220,10 @@ export function getPickupNotification(
   }
   if (itemType === 'key_gold') {
     return {
-      text: lang === 'zh' ? '获得金钥匙，全钥匙 +1！' : 'Obtained Gold Key, +1 to all keys!',
+      text:
+        lang === 'zh'
+          ? '获得金钥匙！开启本层所有黄门，全钥匙 +1！'
+          : 'Obtained Gold Key! Unlocks all yellow doors on floor, +1 to all keys!',
       color: '#fbbf24',
     };
   }
@@ -2230,16 +2233,27 @@ export function getEquipName(name: string | null | undefined, lang: Language): s
   if (!name) return lang === 'zh' ? '无' : 'None';
   const map: Record<string, { zh: string; en: string }> = {
     铁剑: { zh: '铁剑', en: 'Iron Sword' },
+    'Iron Sword': { zh: '铁剑', en: 'Iron Sword' },
     银剑: { zh: '银剑', en: 'Silver Sword' },
+    'Silver Sword': { zh: '银剑', en: 'Silver Sword' },
     骑士剑: { zh: '骑士剑', en: 'Knight Sword' },
+    'Knight Sword': { zh: '骑士剑', en: 'Knight Sword' },
     圣光之剑: { zh: '圣光之剑', en: 'Holy Sword' },
+    'Holy Sword': { zh: '圣光之剑', en: 'Holy Sword' },
     神圣神剑: { zh: '神圣神剑', en: 'Sacred Sword' },
+    'Sacred Sword': { zh: '神圣神剑', en: 'Sacred Sword' },
     屠龙之刃: { zh: '屠龙之刃', en: 'Dragon Slayer' },
+    'Dragon Slayer': { zh: '屠龙之刃', en: 'Dragon Slayer' },
     铁盾: { zh: '铁盾', en: 'Iron Shield' },
+    'Iron Shield': { zh: '铁盾', en: 'Iron Shield' },
     银盾: { zh: '银盾', en: 'Silver Shield' },
+    'Silver Shield': { zh: '银盾', en: 'Silver Shield' },
     骑士盾: { zh: '骑士盾', en: 'Knight Shield' },
+    'Knight Shield': { zh: '骑士盾', en: 'Knight Shield' },
     圣光之盾: { zh: '圣光之盾', en: 'Holy Shield' },
+    'Holy Shield': { zh: '圣光之盾', en: 'Holy Shield' },
     神圣之盾: { zh: '神圣之盾', en: 'Sacred Shield' },
+    'Sacred Shield': { zh: '神圣之盾', en: 'Sacred Shield' },
     神圣神盾: { zh: '神圣之盾', en: 'Sacred Shield' },
   };
   return map[name]?.[lang] || name;

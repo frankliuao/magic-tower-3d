@@ -16,6 +16,10 @@ import {
   Cross,
   Zap,
   ArrowUpCircle,
+  ArrowDownCircle,
+  Bomb,
+  Hammer,
+  Scroll,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -36,6 +40,10 @@ interface SidebarProps {
   onOpenTeleport?: () => void;
   onUseCenterFly?: () => void;
   onUseUpFly?: () => void;
+  onUseDownFly?: () => void;
+  onUseBomb?: () => void;
+  onUsePickaxe?: () => void;
+  onUseEarthquake?: () => void;
   isDrawer?: boolean;
   onCloseDrawer?: () => void;
   onQuickSave?: () => void;
@@ -51,6 +59,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenTeleport,
   onUseCenterFly,
   onUseUpFly,
+  onUseDownFly,
+  onUseBomb,
+  onUsePickaxe,
+  onUseEarthquake,
   isDrawer = false,
   onCloseDrawer,
   onQuickSave,
@@ -295,8 +307,92 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ArrowUpCircle className="w-4 h-4 text-indigo-300 animate-pulse shrink-0" />
                   <span className="tracking-wide">{lang === 'zh' ? '使用向上飞行器' : 'Use Up Flyer'}</span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal">
-                  {lang === 'zh' ? '一次性' : '1x Use'}
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal font-mono font-bold">
+                  {playerStats.inventory.up_fly > 1 ? `x${playerStats.inventory.up_fly}` : (lang === 'zh' ? '一次性' : '1x Use')}
+                </span>
+              </button>
+            ) : null}
+
+            {/* 向下飞行器 (拥有时显现) */}
+            {playerStats.inventory.down_fly ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onUseDownFly?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
+                title={lang === 'zh' ? '点击使用【向下飞行器】(一次性消耗品，使勇士瞬间下降一层)' : 'Click to use [Down Flyer] (One-time consumable, transports hero down one floor)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-cyan-950/90 via-sky-950/80 to-cyan-950/90 hover:from-cyan-900 hover:to-sky-900 border border-cyan-400/80 rounded-lg text-xs text-cyan-200 font-bold flex items-center justify-between shadow-md hover:shadow-cyan-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-cyan-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <ArrowDownCircle className="w-4 h-4 text-cyan-300 animate-pulse shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '使用向下飞行器' : 'Use Down Flyer'}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal font-mono font-bold">
+                  {playerStats.inventory.down_fly > 1 ? `x${playerStats.inventory.down_fly}` : (lang === 'zh' ? '一次性' : '1x Use')}
+                </span>
+              </button>
+            ) : null}
+
+            {/* 炸弹 (拥有时显现) */}
+            {playerStats.inventory.bomb ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onUseBomb?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
+                title={lang === 'zh' ? '点击使用【炸弹】(引爆消灭身旁任意一名非首领强敌)' : 'Click to use [Bomb] (Instantly eliminates adjacent non-boss enemy)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-red-950/90 via-rose-950/80 to-red-950/90 hover:from-red-900 hover:to-rose-900 border border-red-500/80 rounded-lg text-xs text-red-200 font-bold flex items-center justify-between shadow-md hover:shadow-red-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-red-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Bomb className="w-4 h-4 text-red-400 shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '引爆炸弹' : 'Detonate Bomb'}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal font-mono font-bold">
+                  {playerStats.inventory.bomb > 1 ? `x${playerStats.inventory.bomb}` : (lang === 'zh' ? '一次性' : '1x Use')}
+                </span>
+              </button>
+            ) : null}
+
+            {/* 破墙镐 (拥有时显现) */}
+            {playerStats.inventory.pickaxe ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onUsePickaxe?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
+                title={lang === 'zh' ? '点击使用【破墙镐】(破开身旁任意一堵普通石墙)' : 'Click to use [Pickaxe] (Breaks any adjacent normal stone wall)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-amber-950/90 via-orange-950/80 to-amber-950/90 hover:from-amber-900 hover:to-orange-900 border border-amber-500/80 rounded-lg text-xs text-amber-200 font-bold flex items-center justify-between shadow-md hover:shadow-amber-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-amber-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Hammer className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '使用破墙镐' : 'Use Pickaxe'}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal font-mono font-bold">
+                  {playerStats.inventory.pickaxe > 1 ? `x${playerStats.inventory.pickaxe}` : (lang === 'zh' ? '一次性' : '1x Use')}
+                </span>
+              </button>
+            ) : null}
+
+            {/* 地震卷轴 (拥有时显现) */}
+            {playerStats.inventory.earthquake ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onUseEarthquake?.();
+                  if (isDrawer) onCloseDrawer?.();
+                }}
+                title={lang === 'zh' ? '点击使用【地震卷轴】(震塌当前楼层的所有普通石墙)' : 'Click to use [Earthquake Scroll] (Collapses all normal stone walls on current floor)'}
+                className="w-full py-2 px-3 bg-gradient-to-r from-yellow-950/90 via-stone-900/90 to-yellow-950/90 hover:from-yellow-900 hover:to-stone-800 border border-yellow-500/80 rounded-lg text-xs text-yellow-200 font-bold flex items-center justify-between shadow-md hover:shadow-yellow-500/25 active:scale-[0.98] cursor-pointer transition-all ring-1 ring-yellow-400/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Scroll className="w-4 h-4 text-yellow-300 shrink-0" />
+                  <span className="tracking-wide">{lang === 'zh' ? '使用地震卷轴' : 'Use Earthquake'}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-normal font-mono font-bold">
+                  {playerStats.inventory.earthquake > 1 ? `x${playerStats.inventory.earthquake}` : (lang === 'zh' ? '一次性' : '1x Use')}
                 </span>
               </button>
             ) : null}

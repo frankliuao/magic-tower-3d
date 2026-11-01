@@ -18,12 +18,12 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
   onJumpFloor,
   onClearMonsters,
 }) => {
+  const { t } = useI18n();
+  const [targetFloor, setTargetFloor] = useState<number>(game.currentFloor);
+
   if (!isDebugAllowed()) {
     return null;
   }
-
-  const { t } = useI18n();
-  const [targetFloor, setTargetFloor] = useState<number>(game.currentFloor);
 
   const addStats = () => {
     game.playerStats.hp += 2000;
@@ -48,6 +48,10 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
     game.playerStats.inventory.monster_manual = 1;
     game.playerStats.inventory.compass = 1;
     game.playerStats.inventory.cross = 1;
+    game.playerStats.inventory.bomb = (game.playerStats.inventory.bomb || 0) + 1;
+    game.playerStats.inventory.pickaxe = (game.playerStats.inventory.pickaxe || 0) + 1;
+    game.playerStats.inventory.earthquake = (game.playerStats.inventory.earthquake || 0) + 1;
+    game.playerStats.inventory.down_fly = (game.playerStats.inventory.down_fly || 0) + 1;
     game.notify();
   };
 

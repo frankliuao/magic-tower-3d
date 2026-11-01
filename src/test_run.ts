@@ -19,6 +19,7 @@ import {
   getDialogueData,
   FLOOR_NAMES,
   getFloorName,
+  getEquipName,
   TRADER_FLOOR_OFFERS,
   ELDER_FLOOR_DIALOGUES,
 } from './i18n';
@@ -2590,7 +2591,6 @@ assert(
 
 console.log('\n--- 35. 验证弹窗垂直居中与触控动作废除防误触机制 (Modal Vertical Centering & Touch Invalidation) ---');
 // 1. 验证 DialogueModal 样式定义已垂直居中且去除底部对齐与下边距
-import * as fs from 'fs';
 const dialogueModalContent = fs.readFileSync('src/ui/DialogueModal.tsx', 'utf-8');
 assert(dialogueModalContent.includes('flex items-center justify-center'), 'DialogueModal 弹窗容器使用 items-center 垂直居中');
 assert(!dialogueModalContent.includes('items-end'), 'DialogueModal 彻底移除移动端 items-end 底部靠拢布局');
@@ -2778,6 +2778,288 @@ assert(TRANSLATIONS.en.hintZoom === 'Zoom: Wheel', '英文底栏缩放提示更�
 assert(!chineseRegex.test(TRANSLATIONS.en.hintZoom), '英文缩放提示不含任何汉字');
 assert(!chineseRegex.test(TRANSLATIONS.en.zoomInTip), '英文放大提示不含任何汉字');
 assert(!chineseRegex.test(TRANSLATIONS.en.zoomOutTip), '英文缩小提示不含任何汉字');
+
+console.log('\n--- 33. 验证隐藏 44F 永不作为罗盘或按楼层号传送的目的地 ---');
+const compassGame = new GameState();
+compassGame.initGame();
+assert(!compassGame.getCompassDestinations().includes(44), '未探索时罗盘目的地不含 44F');
+
+// 沿既有路线取得一次性上楼器，并从 43F 进入 44F
+compassGame.changeFloor(45, 'up');
+compassGame.playerPos = { x: 1, y: 8, dir: 'down' };
+compassGame.move('down');
+assert(compassGame.playerStats.inventory.up_fly === 1, '罗盘测试前已取得向上飞行器');
+compassGame.isDialogueOpen = false;
+compassGame.changeFloor(43, 'up');
+assert(compassGame.useUpFly() === true, '上楼器仍是进入 44F 的路径');
+assert(compassGame.currentFloor === 44, '上楼器仍能抵达 44F');
+assert(compassGame.exploredFloors.has(44), '44F 仍记入已探索集合，只是不能当传送目的地');
+
+const whileInside = compassGame.getCompassDestinations();
+assert(!whileInside.includes(44), '身处 44F 时罗盘目的地也不包含 44F');
+assert(whileInside.includes(0) && whileInside.includes(43) && whileInside.includes(45), '罗盘仍列出其它已探索楼层');
+assert(compassGame.teleportToFloor(43) === true && compassGame.currentFloor === 43, '身在 44F 时仍可传送离开到其它已探索楼层');
+
+// 楼梯离开后，44F 依然不能作为目的地，坐标在拒绝时保持不变
+compassGame.changeFloor(44, 'up');
+compassGame.playerPos = { x: 0, y: 9, dir: 'down' };
+compassGame.move('down');
+assert(compassGame.currentFloor === 43, '44F 下楼梯仍回到 43F');
+const afterVisit = compassGame.getCompassDestinations();
+assert(!afterVisit.includes(44), '离开 44F 后罗盘目的地依然没有 44F');
+assert(afterVisit.includes(43) && afterVisit.includes(45), '43F 与 45F 仍是罗盘目的地');
+const rejectedFloor = compassGame.currentFloor;
+const rejectedPos = { x: compassGame.playerPos.x, y: compassGame.playerPos.y, dir: compassGame.playerPos.dir };
+assert(compassGame.teleportToFloor(44) === false, '按楼层号传送到 44F 被拒绝');
+assert(compassGame.currentFloor === rejectedFloor, '拒绝传送后楼层不变');
+assert(
+  compassGame.playerPos.x === rejectedPos.x &&
+    compassGame.playerPos.y === rejectedPos.y &&
+    compassGame.playerPos.dir === rejectedPos.dir,
+  '拒绝传送后坐标与朝向不变'
+);
+assert(compassGame.teleportToFloor(45) === true && compassGame.currentFloor === 45, '传送到其它已探索楼层仍然成功');
+
+// 新存档读回后依旧隐藏
+assert(compassGame.saveGame(44) === true, '写入含 44F 探索记录的存档');
+const restoredCompass = new GameState();
+restoredCompass.initGame();
+assert(restoredCompass.loadGame(44) === true, '读取含 44F 探索记录的存档');
+assert(restoredCompass.exploredFloors.has(44), '读档后已探索集合仍保留 44F');
+assert(!restoredCompass.getCompassDestinations().includes(44), '读档后罗盘目的地仍不含 44F');
+const restoredFloor = restoredCompass.currentFloor;
+const restoredPos = { x: restoredCompass.playerPos.x, y: restoredCompass.playerPos.y };
+assert(restoredCompass.teleportToFloor(44) === false, '读档后传送到 44F 仍被拒绝');
+assert(
+  restoredCompass.currentFloor === restoredFloor &&
+    restoredCompass.playerPos.x === restoredPos.x &&
+    restoredCompass.playerPos.y === restoredPos.y,
+  '读档后拒绝传送不改变位置'
+);
+
+// 模拟修复前已经把 44 写进 exploredFloors 的旧存档
+const legacyCompassSave = {
+  slotId: 43,
+  timestamp: '2026-10-01 12:00:00',
+  floor: 43,
+  floorName: '43F',
+  stats: JSON.parse(JSON.stringify(restoredCompass.playerStats)),
+  playerPos: { x: 0, y: 10, dir: 'up' as const },
+  floorStates: {},
+  exploredFloors: [0, 43, 44, 45],
+};
+localStorage.setItem('mota3d_save_43', JSON.stringify(legacyCompassSave));
+const legacyCompassGame = new GameState();
+legacyCompassGame.initGame();
+assert(legacyCompassGame.loadGame(43) === true, '成功加载已包含 44F 的旧存档');
+assert(legacyCompassGame.exploredFloors.has(44), '旧存档中的 44F 探索记录原样保留');
+const legacyDestinations = legacyCompassGame.getCompassDestinations();
+assert(!legacyDestinations.includes(44), '旧存档读入后罗盘仍不列出 44F');
+assert(legacyDestinations.includes(0) && legacyDestinations.includes(43) && legacyDestinations.includes(45), '旧存档中的其它楼层仍是罗盘目的地');
+const legacyFloor = legacyCompassGame.currentFloor;
+const legacyPos = { x: legacyCompassGame.playerPos.x, y: legacyCompassGame.playerPos.y };
+assert(legacyCompassGame.teleportToFloor(44) === false, '旧存档下按楼层号传送到 44F 被拒绝');
+assert(
+  legacyCompassGame.currentFloor === legacyFloor &&
+    legacyCompassGame.playerPos.x === legacyPos.x &&
+    legacyCompassGame.playerPos.y === legacyPos.y,
+  '旧存档拒绝传送后位置不变'
+);
+assert(legacyCompassGame.teleportToFloor(45) === true && legacyCompassGame.currentFloor === 45, '旧存档仍可传送到其它已探索楼层');
+
+// 楼梯绕行与上楼器入口保持原样
+legacyCompassGame.changeFloor(43, 'up');
+legacyCompassGame.playerPos = { x: 0, y: 9, dir: 'down' };
+legacyCompassGame.move('down');
+assert(legacyCompassGame.currentFloor === 45, '43F 上楼梯仍直接通往 45F');
+legacyCompassGame.playerPos = { x: 0, y: 1, dir: 'up' };
+legacyCompassGame.move('up');
+assert(legacyCompassGame.currentFloor === 43, '45F 下楼梯仍直接通往 43F');
+legacyCompassGame.playerStats.inventory.up_fly = 1;
+assert(legacyCompassGame.useUpFly() === true && legacyCompassGame.currentFloor === 44, '43F 上楼器仍能进入 44F');
+assert(!legacyCompassGame.getCompassDestinations().includes(44), '再次进入后罗盘依然不列出 44F');
+
+const floorTeleportSource = fs.readFileSync('src/ui/FloorTeleport.tsx', 'utf-8');
+assert(floorTeleportSource.includes('getCompassDestinations()'), '罗盘界面的目的地来自 getCompassDestinations');
+assert(!floorTeleportSource.includes('Array.from(game.exploredFloors)'), '罗盘界面不再直接罗列全部已探索楼层');
+const appSource = fs.readFileSync('src/App.tsx', 'utf-8');
+assert(appSource.includes('game.teleportToFloor(floor)'), '罗盘与调试跳层都经由 teleportToFloor 按楼层号传送');
+
+localStorage.removeItem('mota3d_save_43');
+localStorage.removeItem('mota3d_save_44');
+
+// -------------------------------------------------------------
+// 34. 核心玩法与内容缺失回归测试 (H1, H2, M5, M6)
+// -------------------------------------------------------------
+console.log('\n--- 34. 核心玩法与内容缺失回归测试 (H1, H2, M5, M6) ---');
+
+// 1. H1: 19F 神圣十字架暗墙 (5, 2)
+const floor19 = getFloor(19);
+let floor19CrossCount = 0;
+for (let y = 0; y < floor19.layout.length; y++) {
+  for (let x = 0; x < floor19.layout[y].length; x++) {
+    const t = floor19.layout[y][x];
+    if (t?.type === 'fake_wall' && t.itemType === 'cross') {
+      floor19CrossCount++;
+    }
+    if (t?.type === 'item' && t.itemType === 'cross') {
+      floor19CrossCount++;
+    }
+  }
+}
+assert(floor19CrossCount === 1, '19F 包含且仅包含 1 个神圣十字架 (H1 修复)');
+assert(
+  floor19.layout[2][5]?.type === 'fake_wall' && floor19.layout[2][5]?.itemType === 'cross',
+  '19F (5, 2) 暗墙中藏有神圣十字架'
+);
+
+// 2. H2 道具地图分布
+const floor18 = getFloor(18);
+assert(
+  floor18.layout[2][5]?.type === 'fake_wall' && floor18.layout[2][5]?.itemType === 'pickaxe',
+  '18F (5, 2) 暗墙中藏有破墙镐 pickaxe'
+);
+
+const floor41Data = getFloor(41);
+assert(
+  floor41Data.layout[1][9]?.type === 'fake_wall' && floor41Data.layout[1][9]?.itemType === 'down_fly',
+  '41F (9, 1) 暗墙中藏有向下飞行器 down_fly'
+);
+
+const floor47 = getFloor(47);
+assert(
+  floor47.layout[9][4]?.type === 'item' && floor47.layout[9][4]?.itemType === 'earthquake',
+  '47F (4, 9) 密室宝库中藏有地震卷轴 earthquake'
+);
+
+// 3. M6: 35F 远古魔龙斩获屠龙之刃 (+100 ATK)
+const gameDragon = new GameState();
+gameDragon.initGame();
+gameDragon.currentFloor = 35;
+gameDragon.playerStats.hp = 100000;
+gameDragon.playerStats.atk = 1000;
+gameDragon.playerStats.def = 1000;
+const baseDragonAtk = gameDragon.playerStats.atk;
+gameDragon.fightMonster('dragon', 5, 5);
+assert(gameDragon.playerStats.inventory.snow_crystal === 1, '击败魔龙获得冰冻雪花');
+assert(gameDragon.playerStats.atk === baseDragonAtk + 100, '击败魔龙攻击力提升 100 点 (屠龙之刃)');
+assert(gameDragon.playerStats.weapon === '屠龙之刃', '击败魔龙装备神兵屠龙之刃 (标准中文键名)');
+assert(getEquipName(gameDragon.playerStats.weapon, 'zh') === '屠龙之刃', '屠龙之刃中文显示为 屠龙之刃');
+assert(getEquipName(gameDragon.playerStats.weapon, 'en') === 'Dragon Slayer', '屠龙之刃英文显示为 Dragon Slayer');
+assert(getEquipName('Dragon Slayer', 'zh') === '屠龙之刃', '历史英文存档 Dragon Slayer 在中文下正确映射');
+assert(ITEMS.sword_dragon.value === 100, 'items.ts 中 sword_dragon 数值为 100');
+
+// 4. M5: 金钥匙开启当前楼层所有黄门并赠予钥匙
+const gameGoldKey = new GameState();
+gameGoldKey.initGame();
+gameGoldKey.currentFloor = 1;
+const gFloor = gameGoldKey.getCurrentFloorData();
+gFloor.layout[1][1] = { type: 'door_yellow' };
+gFloor.layout[2][1] = { type: 'door_yellow' };
+gFloor.layout[3][1] = { type: 'item', itemType: 'key_gold' };
+const prevY = gameGoldKey.playerStats.yellowKeys;
+const prevB = gameGoldKey.playerStats.blueKeys;
+const prevR = gameGoldKey.playerStats.redKeys;
+gameGoldKey.playerPos = { x: 1, y: 4, dir: 'up' };
+gameGoldKey.move('up');
+assert(gameGoldKey.playerStats.yellowKeys === prevY + 1, '金钥匙获得黄钥匙 +1');
+assert(gameGoldKey.playerStats.blueKeys === prevB + 1, '金钥匙获得蓝钥匙 +1');
+assert(gameGoldKey.playerStats.redKeys === prevR + 1, '金钥匙获得红钥匙 +1');
+assert(gFloor.layout[1][1]?.type === 'floor', '金钥匙开启了本层 (1, 1) 黄门');
+assert(gFloor.layout[2][1]?.type === 'floor', '金钥匙开启了本层 (1, 2) 黄门');
+
+// 5. H2: 向下飞行器 useDownFly
+const gameDown = new GameState();
+gameDown.initGame();
+assert(gameDown.useDownFly() === false, '无向下飞行器时使用失败');
+gameDown.playerStats.inventory.down_fly = 2;
+gameDown.currentFloor = 1;
+assert(gameDown.useDownFly() === false, '在 1F 使用向下飞行器失败 (受底层保护)');
+gameDown.currentFloor = 10;
+assert(gameDown.useDownFly() === true, '在 10F 使用向下飞行器成功');
+assert(gameDown.currentFloor === 9, '从 10F 降至 9F');
+assert(gameDown.playerStats.inventory.down_fly === 1, '消耗 1 个向下飞行器');
+gameDown.currentFloor = 45;
+assert(gameDown.useDownFly() === true, '在 45F 使用向下飞行器成功');
+assert(gameDown.currentFloor === 43, '从 45F 使用向下飞行器降至 43F (避开 44F 密室)');
+
+// 6. H2: 炸弹 useBomb
+const gameBomb = new GameState();
+gameBomb.initGame();
+assert(gameBomb.useBomb() === false, '无炸弹时使用失败');
+gameBomb.playerStats.inventory.bomb = 2;
+gameBomb.currentFloor = 5;
+gameBomb.playerPos = { x: 5, y: 5, dir: 'up' };
+const bFloor = gameBomb.getCurrentFloorData();
+bFloor.layout[4][5] = { type: 'floor' };
+bFloor.layout[6][5] = { type: 'floor' };
+bFloor.layout[5][4] = { type: 'floor' };
+bFloor.layout[5][6] = { type: 'floor' };
+assert(gameBomb.useBomb() === false, '身旁无怪时使用炸弹失败');
+
+bFloor.layout[4][5] = { type: 'monster', monsterId: 'dragon' };
+assert(gameBomb.useBomb() === false, '身旁仅有首领怪物时炸弹免疫失败');
+assert(gameBomb.playerStats.inventory.bomb === 2, '炸弹未被消耗');
+
+bFloor.layout[4][5] = { type: 'monster', monsterId: 'dark_knight' };
+const startGold = gameBomb.playerStats.gold;
+const startExp = gameBomb.playerStats.exp;
+assert(gameBomb.useBomb() === true, '身旁有非首领怪物时引爆炸弹成功');
+assert(gameBomb.playerStats.inventory.bomb === 1, '炸弹数量扣减 1');
+assert(bFloor.layout[4][5]?.type === 'floor', '怪物地块变为畅通地面');
+assert(gameBomb.playerStats.gold === startGold + MONSTERS.dark_knight.gold, '炸弹全额获取怪物金币');
+assert(gameBomb.playerStats.exp === startExp + MONSTERS.dark_knight.exp, '炸弹全额获取怪物经验');
+
+// 7. H2: 破墙镐 usePickaxe
+const gamePick = new GameState();
+gamePick.initGame();
+assert(gamePick.usePickaxe() === false, '无破墙镐时使用失败');
+gamePick.playerStats.inventory.pickaxe = 1;
+gamePick.currentFloor = 5;
+gamePick.playerPos = { x: 5, y: 5, dir: 'up' };
+const pFloor = gamePick.getCurrentFloorData();
+pFloor.layout[4][5] = { type: 'floor' };
+pFloor.layout[6][5] = { type: 'floor' };
+pFloor.layout[5][4] = { type: 'floor' };
+pFloor.layout[5][6] = { type: 'floor' };
+assert(gamePick.usePickaxe() === false, '身旁无普通石墙时破墙失败');
+
+pFloor.layout[4][5] = { type: 'wall' };
+assert(gamePick.usePickaxe() === true, '破墙镐成功粉碎正前方石墙');
+assert(gamePick.playerStats.inventory.pickaxe === 0, '消耗 1 把破墙镐');
+assert(pFloor.layout[4][5]?.type === 'floor', '石墙转化为普通地面');
+
+// 8. H2: 地震卷轴 useEarthquake
+const gameQuake = new GameState();
+gameQuake.initGame();
+assert(gameQuake.useEarthquake() === false, '无地震卷轴时使用失败');
+gameQuake.playerStats.inventory.earthquake = 1;
+gameQuake.currentFloor = 5;
+const qFloor = gameQuake.getCurrentFloorData();
+qFloor.layout[1][1] = { type: 'fake_wall', itemType: 'cross' };
+qFloor.layout[1][2] = { type: 'door_yellow' };
+qFloor.layout[1][3] = { type: 'item', itemType: 'gem_red' };
+
+let initialWalls = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    if (qFloor.layout[y][x]?.type === 'wall') initialWalls++;
+  }
+}
+assert(initialWalls > 0, '5F 拥有普通石墙');
+assert(gameQuake.useEarthquake() === true, '使用地震卷轴成功');
+assert(gameQuake.playerStats.inventory.earthquake === 0, '消耗 1 个地震卷轴');
+
+let remainingWalls = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    if (qFloor.layout[y][x]?.type === 'wall') remainingWalls++;
+  }
+}
+assert(remainingWalls === 0, '地震卷轴清空当前楼层所有普通石墙');
+assert(qFloor.layout[1][1]?.type === 'fake_wall', '地震卷轴不破坏暗墙');
+assert(qFloor.layout[1][2]?.type === 'door_yellow', '地震卷轴不破坏门');
+assert(qFloor.layout[1][3]?.type === 'item', '地震卷轴不破坏道具');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
