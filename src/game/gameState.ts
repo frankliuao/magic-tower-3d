@@ -1264,6 +1264,33 @@ export class GameState {
     }
   }
 
+  /**
+   * 罗盘列出的可传送楼层。
+   * 44F 是只能靠一次性上楼器进入一次的隐藏密室：即使已经写入 exploredFloors，
+   * 即使这份记录来自旧存档，也永远不作为罗盘目的地。
+   */
+  public getCompassDestinations(): number[] {
+    return Array.from(this.exploredFloors)
+      .filter((floor) => floor !== 44)
+      .sort((a, b) => b - a);
+  }
+
+  /**
+   * 按楼层号传送。罗盘、调试跳层，以及任何以楼层号为目标的飞行器都走这里。
+   * 44F 一律拒绝，当前位置保持不变。其余楼层沿用原罗盘落点（该层下楼口），
+   * 且不会把目的地写入 exploredFloors。
+   */
+  public teleportToFloor(floor: number): boolean {
+    if (floor === 44) return false;
+
+    this.currentFloor = floor;
+    const fData = this.getCurrentFloorData();
+    this.playerPos.x = fData.downStairsPos.x;
+    this.playerPos.y = fData.downStairsPos.y;
+    this.notify();
+    return true;
+  }
+
   // 跨楼层切换
   public changeFloor(targetFloor: number, fromDir: 'up' | 'down') {
     if (targetFloor < 0 || targetFloor > 50) return;

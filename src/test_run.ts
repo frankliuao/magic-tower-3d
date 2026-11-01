@@ -2779,6 +2779,115 @@ assert(!chineseRegex.test(TRANSLATIONS.en.hintZoom), '英文缩放提示不含�
 assert(!chineseRegex.test(TRANSLATIONS.en.zoomInTip), '英文放大提示不含任何汉字');
 assert(!chineseRegex.test(TRANSLATIONS.en.zoomOutTip), '英文缩小提示不含任何汉字');
 
+console.log('\n--- 33. 验证隐藏 44F 永不作为罗盘或按楼层号传送的目的地 ---');
+const compassGame = new GameState();
+compassGame.initGame();
+assert(!compassGame.getCompassDestinations().includes(44), '未探索时罗盘目的地不含 44F');
+
+// 沿既有路线取得一次性上楼器，并从 43F 进入 44F
+compassGame.changeFloor(45, 'up');
+compassGame.playerPos = { x: 1, y: 8, dir: 'down' };
+compassGame.move('down');
+assert(compassGame.playerStats.inventory.up_fly === 1, '罗盘测试前已取得向上飞行器');
+compassGame.isDialogueOpen = false;
+compassGame.changeFloor(43, 'up');
+assert(compassGame.useUpFly() === true, '上楼器仍是进入 44F 的路径');
+assert(compassGame.currentFloor === 44, '上楼器仍能抵达 44F');
+assert(compassGame.exploredFloors.has(44), '44F 仍记入已探索集合，只是不能当传送目的地');
+
+const whileInside = compassGame.getCompassDestinations();
+assert(!whileInside.includes(44), '身处 44F 时罗盘目的地也不包含 44F');
+assert(whileInside.includes(0) && whileInside.includes(43) && whileInside.includes(45), '罗盘仍列出其它已探索楼层');
+assert(compassGame.teleportToFloor(43) === true && compassGame.currentFloor === 43, '身在 44F 时仍可传送离开到其它已探索楼层');
+
+// 楼梯离开后，44F 依然不能作为目的地，坐标在拒绝时保持不变
+compassGame.changeFloor(44, 'up');
+compassGame.playerPos = { x: 0, y: 9, dir: 'down' };
+compassGame.move('down');
+assert(compassGame.currentFloor === 43, '44F 下楼梯仍回到 43F');
+const afterVisit = compassGame.getCompassDestinations();
+assert(!afterVisit.includes(44), '离开 44F 后罗盘目的地依然没有 44F');
+assert(afterVisit.includes(43) && afterVisit.includes(45), '43F 与 45F 仍是罗盘目的地');
+const rejectedFloor = compassGame.currentFloor;
+const rejectedPos = { x: compassGame.playerPos.x, y: compassGame.playerPos.y, dir: compassGame.playerPos.dir };
+assert(compassGame.teleportToFloor(44) === false, '按楼层号传送到 44F 被拒绝');
+assert(compassGame.currentFloor === rejectedFloor, '拒绝传送后楼层不变');
+assert(
+  compassGame.playerPos.x === rejectedPos.x &&
+    compassGame.playerPos.y === rejectedPos.y &&
+    compassGame.playerPos.dir === rejectedPos.dir,
+  '拒绝传送后坐标与朝向不变'
+);
+assert(compassGame.teleportToFloor(45) === true && compassGame.currentFloor === 45, '传送到其它已探索楼层仍然成功');
+
+// 新存档读回后依旧隐藏
+assert(compassGame.saveGame(44) === true, '写入含 44F 探索记录的存档');
+const restoredCompass = new GameState();
+restoredCompass.initGame();
+assert(restoredCompass.loadGame(44) === true, '读取含 44F 探索记录的存档');
+assert(restoredCompass.exploredFloors.has(44), '读档后已探索集合仍保留 44F');
+assert(!restoredCompass.getCompassDestinations().includes(44), '读档后罗盘目的地仍不含 44F');
+const restoredFloor = restoredCompass.currentFloor;
+const restoredPos = { x: restoredCompass.playerPos.x, y: restoredCompass.playerPos.y };
+assert(restoredCompass.teleportToFloor(44) === false, '读档后传送到 44F 仍被拒绝');
+assert(
+  restoredCompass.currentFloor === restoredFloor &&
+    restoredCompass.playerPos.x === restoredPos.x &&
+    restoredCompass.playerPos.y === restoredPos.y,
+  '读档后拒绝传送不改变位置'
+);
+
+// 模拟修复前已经把 44 写进 exploredFloors 的旧存档
+const legacyCompassSave = {
+  slotId: 43,
+  timestamp: '2026-10-01 12:00:00',
+  floor: 43,
+  floorName: '43F',
+  stats: JSON.parse(JSON.stringify(restoredCompass.playerStats)),
+  playerPos: { x: 0, y: 10, dir: 'up' as const },
+  floorStates: {},
+  exploredFloors: [0, 43, 44, 45],
+};
+localStorage.setItem('mota3d_save_43', JSON.stringify(legacyCompassSave));
+const legacyCompassGame = new GameState();
+legacyCompassGame.initGame();
+assert(legacyCompassGame.loadGame(43) === true, '成功加载已包含 44F 的旧存档');
+assert(legacyCompassGame.exploredFloors.has(44), '旧存档中的 44F 探索记录原样保留');
+const legacyDestinations = legacyCompassGame.getCompassDestinations();
+assert(!legacyDestinations.includes(44), '旧存档读入后罗盘仍不列出 44F');
+assert(legacyDestinations.includes(0) && legacyDestinations.includes(43) && legacyDestinations.includes(45), '旧存档中的其它楼层仍是罗盘目的地');
+const legacyFloor = legacyCompassGame.currentFloor;
+const legacyPos = { x: legacyCompassGame.playerPos.x, y: legacyCompassGame.playerPos.y };
+assert(legacyCompassGame.teleportToFloor(44) === false, '旧存档下按楼层号传送到 44F 被拒绝');
+assert(
+  legacyCompassGame.currentFloor === legacyFloor &&
+    legacyCompassGame.playerPos.x === legacyPos.x &&
+    legacyCompassGame.playerPos.y === legacyPos.y,
+  '旧存档拒绝传送后位置不变'
+);
+assert(legacyCompassGame.teleportToFloor(45) === true && legacyCompassGame.currentFloor === 45, '旧存档仍可传送到其它已探索楼层');
+
+// 楼梯绕行与上楼器入口保持原样
+legacyCompassGame.changeFloor(43, 'up');
+legacyCompassGame.playerPos = { x: 0, y: 9, dir: 'down' };
+legacyCompassGame.move('down');
+assert(legacyCompassGame.currentFloor === 45, '43F 上楼梯仍直接通往 45F');
+legacyCompassGame.playerPos = { x: 0, y: 1, dir: 'up' };
+legacyCompassGame.move('up');
+assert(legacyCompassGame.currentFloor === 43, '45F 下楼梯仍直接通往 43F');
+legacyCompassGame.playerStats.inventory.up_fly = 1;
+assert(legacyCompassGame.useUpFly() === true && legacyCompassGame.currentFloor === 44, '43F 上楼器仍能进入 44F');
+assert(!legacyCompassGame.getCompassDestinations().includes(44), '再次进入后罗盘依然不列出 44F');
+
+const floorTeleportSource = fs.readFileSync('src/ui/FloorTeleport.tsx', 'utf-8');
+assert(floorTeleportSource.includes('getCompassDestinations()'), '罗盘界面的目的地来自 getCompassDestinations');
+assert(!floorTeleportSource.includes('Array.from(game.exploredFloors)'), '罗盘界面不再直接罗列全部已探索楼层');
+const appSource = fs.readFileSync('src/App.tsx', 'utf-8');
+assert(appSource.includes('game.teleportToFloor(floor)'), '罗盘与调试跳层都经由 teleportToFloor 按楼层号传送');
+
+localStorage.removeItem('mota3d_save_43');
+localStorage.removeItem('mota3d_save_44');
+
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
 console.log('==============================================\n');

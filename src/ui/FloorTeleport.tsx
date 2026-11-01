@@ -13,7 +13,7 @@ interface FloorTeleportProps {
 
 export const FloorTeleport: React.FC<FloorTeleportProps> = ({ game, onClose, onTeleport }) => {
   const { lang, t } = useI18n();
-  const explored = Array.from(game.exploredFloors).sort((a, b) => b - a);
+  const explored = game.getCompassDestinations();
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">

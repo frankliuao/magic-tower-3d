@@ -736,18 +736,15 @@ export const App: React.FC = () => {
     [game, addFloating, t.loadSlotSuccess]
   );
 
-  // 罗盘楼层传送
+  // 罗盘楼层传送（调试面板的按楼层号跳转也走同一入口，因此同样无法再进入 44F）
   const handleTeleport = useCallback(
     (floor: number) => {
-      game.currentFloor = floor;
+      if (!game.teleportToFloor(floor)) return;
       const fData = game.getCurrentFloorData();
-      game.playerPos.x = fData.downStairsPos.x;
-      game.playerPos.y = fData.downStairsPos.y;
       if (threeEngineRef.current) {
         threeEngineRef.current.setFloor(fData);
         threeEngineRef.current.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir, true);
       }
-      game.notify();
       addFloating(`${t.teleportedToPrefix}${getFloorName(floor, lang)}`, '#06b6d4');
     },
     [game, addFloating, t.teleportedToPrefix, lang]
