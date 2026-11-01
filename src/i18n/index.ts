@@ -1220,7 +1220,10 @@ export function getPickupNotification(
   }
   if (itemType === 'key_gold') {
     return {
-      text: lang === 'zh' ? '获得金钥匙，全钥匙 +1！' : 'Obtained Gold Key, +1 to all keys!',
+      text:
+        lang === 'zh'
+          ? '获得金钥匙！开启本层所有黄门，全钥匙 +1！'
+          : 'Obtained Gold Key! Unlocks all yellow doors on floor, +1 to all keys!',
       color: '#fbbf24',
     };
   }

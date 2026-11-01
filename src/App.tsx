@@ -561,6 +561,82 @@ export const App: React.FC = () => {
     }
   }, [game]);
 
+  const handleUseDownFly = useCallback(() => {
+    if (game.currentFloor <= 1) {
+      const alertMsg =
+        lang === 'zh'
+          ? '当前已是底层，无法向下飞行！'
+          : 'Already on the ground floor, cannot fly down!';
+      addFloating(alertMsg, '#ef4444');
+      return;
+    }
+    const confirmMsg =
+      lang === 'zh'
+        ? `确定消耗 1 个【向下飞行器】降至第 ${game.currentFloor === 45 ? 43 : game.currentFloor - 1} 层吗？`
+        : `Consume 1 [Down Flyer] to descend to Floor ${game.currentFloor === 45 ? 43 : game.currentFloor - 1}?`;
+    if (window.confirm(confirmMsg)) {
+      const success = game.useDownFly((x, y, isDoor) => {
+        threeEngineRef.current?.removeTile(x, y, isDoor);
+      }, addFloating);
+      if (success) {
+        const fData = game.getCurrentFloorData();
+        if (threeEngineRef.current) {
+          threeEngineRef.current.setFloor(fData);
+          threeEngineRef.current.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir, true);
+        }
+        game.notify();
+      }
+    }
+  }, [game, lang, addFloating]);
+
+  const handleUseBomb = useCallback(() => {
+    const confirmMsg =
+      lang === 'zh'
+        ? '确定消耗 1 枚【炸弹】引爆消灭身旁敌怪吗？'
+        : 'Consume 1 [Bomb] to eliminate an adjacent enemy?';
+    if (window.confirm(confirmMsg)) {
+      const success = game.useBomb((x, y, isDoor) => {
+        threeEngineRef.current?.removeTile(x, y, isDoor);
+      }, addFloating);
+      if (success) {
+        threeEngineRef.current?.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir);
+        game.notify();
+      }
+    }
+  }, [game, lang, addFloating]);
+
+  const handleUsePickaxe = useCallback(() => {
+    const confirmMsg =
+      lang === 'zh'
+        ? '确定消耗 1 把【破墙镐】粉碎身旁的普通石墙吗？'
+        : 'Consume 1 [Pickaxe] to break an adjacent normal wall?';
+    if (window.confirm(confirmMsg)) {
+      const success = game.usePickaxe((x, y, isDoor) => {
+        threeEngineRef.current?.removeTile(x, y, isDoor);
+      }, addFloating);
+      if (success) {
+        threeEngineRef.current?.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir);
+        game.notify();
+      }
+    }
+  }, [game, lang, addFloating]);
+
+  const handleUseEarthquake = useCallback(() => {
+    const confirmMsg =
+      lang === 'zh'
+        ? '确定使用【地震卷轴】震塌当前楼层的所有普通石墙吗？'
+        : 'Use [Earthquake Scroll] to collapse all normal stone walls on this floor?';
+    if (window.confirm(confirmMsg)) {
+      const success = game.useEarthquake((x, y, isDoor) => {
+        threeEngineRef.current?.removeTile(x, y, isDoor);
+      }, addFloating);
+      if (success) {
+        threeEngineRef.current?.updatePlayer(game.playerPos.x, game.playerPos.y, game.playerPos.dir);
+        game.notify();
+      }
+    }
+  }, [game, lang, addFloating]);
+
   // 是否打开了任意模态窗口 / 对话 / 抽屉
   const hasModal =
     isCoffeeModalOpen ||
@@ -802,6 +878,10 @@ export const App: React.FC = () => {
               setIsConfirmUpFlyOpen(true);
             }
           }}
+          onUseDownFly={handleUseDownFly}
+          onUseBomb={handleUseBomb}
+          onUsePickaxe={handleUsePickaxe}
+          onUseEarthquake={handleUseEarthquake}
           onQuickSave={handleOpenSaveModal}
           onQuickLoad={handleOpenLoadModal}
           onRestart={handleRestart}
@@ -848,6 +928,10 @@ export const App: React.FC = () => {
                   setIsConfirmUpFlyOpen(true);
                 }
               }}
+              onUseDownFly={handleUseDownFly}
+              onUseBomb={handleUseBomb}
+              onUsePickaxe={handleUsePickaxe}
+              onUseEarthquake={handleUseEarthquake}
               onQuickSave={handleOpenSaveModal}
               onQuickLoad={handleOpenLoadModal}
               onRestart={handleRestart}

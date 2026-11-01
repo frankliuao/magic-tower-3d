@@ -2590,7 +2590,6 @@ assert(
 
 console.log('\n--- 35. 验证弹窗垂直居中与触控动作废除防误触机制 (Modal Vertical Centering & Touch Invalidation) ---');
 // 1. 验证 DialogueModal 样式定义已垂直居中且去除底部对齐与下边距
-import * as fs from 'fs';
 const dialogueModalContent = fs.readFileSync('src/ui/DialogueModal.tsx', 'utf-8');
 assert(dialogueModalContent.includes('flex items-center justify-center'), 'DialogueModal 弹窗容器使用 items-center 垂直居中');
 assert(!dialogueModalContent.includes('items-end'), 'DialogueModal 彻底移除移动端 items-end 底部靠拢布局');
@@ -2887,6 +2886,176 @@ assert(appSource.includes('game.teleportToFloor(floor)'), '罗盘与调试跳层
 
 localStorage.removeItem('mota3d_save_43');
 localStorage.removeItem('mota3d_save_44');
+
+// -------------------------------------------------------------
+// 34. 核心玩法与内容缺失回归测试 (H1, H2, M5, M6)
+// -------------------------------------------------------------
+console.log('\n--- 34. 核心玩法与内容缺失回归测试 (H1, H2, M5, M6) ---');
+
+// 1. H1: 19F 神圣十字架暗墙 (5, 2)
+const floor19 = getFloor(19);
+let floor19CrossCount = 0;
+for (let y = 0; y < floor19.layout.length; y++) {
+  for (let x = 0; x < floor19.layout[y].length; x++) {
+    const t = floor19.layout[y][x];
+    if (t?.type === 'fake_wall' && t.itemType === 'cross') {
+      floor19CrossCount++;
+    }
+    if (t?.type === 'item' && t.itemType === 'cross') {
+      floor19CrossCount++;
+    }
+  }
+}
+assert(floor19CrossCount === 1, '19F 包含且仅包含 1 个神圣十字架 (H1 修复)');
+assert(
+  floor19.layout[2][5]?.type === 'fake_wall' && floor19.layout[2][5]?.itemType === 'cross',
+  '19F (5, 2) 暗墙中藏有神圣十字架'
+);
+
+// 2. H2 道具地图分布
+const floor18 = getFloor(18);
+assert(
+  floor18.layout[2][5]?.type === 'fake_wall' && floor18.layout[2][5]?.itemType === 'pickaxe',
+  '18F (5, 2) 暗墙中藏有破墙镐 pickaxe'
+);
+
+const floor41Data = getFloor(41);
+assert(
+  floor41Data.layout[1][9]?.type === 'fake_wall' && floor41Data.layout[1][9]?.itemType === 'down_fly',
+  '41F (9, 1) 暗墙中藏有向下飞行器 down_fly'
+);
+
+const floor47 = getFloor(47);
+assert(
+  floor47.layout[9][4]?.type === 'item' && floor47.layout[9][4]?.itemType === 'earthquake',
+  '47F (4, 9) 密室宝库中藏有地震卷轴 earthquake'
+);
+
+// 3. M6: 35F 远古魔龙斩获屠龙之刃 (+100 ATK)
+const gameDragon = new GameState();
+gameDragon.initGame();
+gameDragon.currentFloor = 35;
+gameDragon.playerStats.hp = 100000;
+gameDragon.playerStats.atk = 1000;
+gameDragon.playerStats.def = 1000;
+const baseDragonAtk = gameDragon.playerStats.atk;
+gameDragon.fightMonster('dragon', 5, 5);
+assert(gameDragon.playerStats.inventory.snow_crystal === 1, '击败魔龙获得冰冻雪花');
+assert(gameDragon.playerStats.atk === baseDragonAtk + 100, '击败魔龙攻击力提升 100 点 (屠龙之刃)');
+assert(gameDragon.playerStats.weapon === '屠龙之刃', '击败魔龙装备神兵屠龙之刃');
+assert(ITEMS.sword_dragon.value === 100, 'items.ts 中 sword_dragon 数值为 100');
+
+// 4. M5: 金钥匙开启当前楼层所有黄门并赠予钥匙
+const gameGoldKey = new GameState();
+gameGoldKey.initGame();
+gameGoldKey.currentFloor = 1;
+const gFloor = gameGoldKey.getCurrentFloorData();
+gFloor.layout[1][1] = { type: 'door_yellow' };
+gFloor.layout[2][1] = { type: 'door_yellow' };
+gFloor.layout[3][1] = { type: 'item', itemType: 'key_gold' };
+const prevY = gameGoldKey.playerStats.yellowKeys;
+const prevB = gameGoldKey.playerStats.blueKeys;
+const prevR = gameGoldKey.playerStats.redKeys;
+gameGoldKey.playerPos = { x: 1, y: 4, dir: 'up' };
+gameGoldKey.move('up');
+assert(gameGoldKey.playerStats.yellowKeys === prevY + 1, '金钥匙获得黄钥匙 +1');
+assert(gameGoldKey.playerStats.blueKeys === prevB + 1, '金钥匙获得蓝钥匙 +1');
+assert(gameGoldKey.playerStats.redKeys === prevR + 1, '金钥匙获得红钥匙 +1');
+assert(gFloor.layout[1][1]?.type === 'floor', '金钥匙开启了本层 (1, 1) 黄门');
+assert(gFloor.layout[2][1]?.type === 'floor', '金钥匙开启了本层 (1, 2) 黄门');
+
+// 5. H2: 向下飞行器 useDownFly
+const gameDown = new GameState();
+gameDown.initGame();
+assert(gameDown.useDownFly() === false, '无向下飞行器时使用失败');
+gameDown.playerStats.inventory.down_fly = 2;
+gameDown.currentFloor = 1;
+assert(gameDown.useDownFly() === false, '在 1F 使用向下飞行器失败 (受底层保护)');
+gameDown.currentFloor = 10;
+assert(gameDown.useDownFly() === true, '在 10F 使用向下飞行器成功');
+assert(gameDown.currentFloor === 9, '从 10F 降至 9F');
+assert(gameDown.playerStats.inventory.down_fly === 1, '消耗 1 个向下飞行器');
+gameDown.currentFloor = 45;
+assert(gameDown.useDownFly() === true, '在 45F 使用向下飞行器成功');
+assert(gameDown.currentFloor === 43, '从 45F 使用向下飞行器降至 43F (避开 44F 密室)');
+
+// 6. H2: 炸弹 useBomb
+const gameBomb = new GameState();
+gameBomb.initGame();
+assert(gameBomb.useBomb() === false, '无炸弹时使用失败');
+gameBomb.playerStats.inventory.bomb = 2;
+gameBomb.currentFloor = 5;
+gameBomb.playerPos = { x: 5, y: 5, dir: 'up' };
+const bFloor = gameBomb.getCurrentFloorData();
+bFloor.layout[4][5] = { type: 'floor' };
+bFloor.layout[6][5] = { type: 'floor' };
+bFloor.layout[5][4] = { type: 'floor' };
+bFloor.layout[5][6] = { type: 'floor' };
+assert(gameBomb.useBomb() === false, '身旁无怪时使用炸弹失败');
+
+bFloor.layout[4][5] = { type: 'monster', monsterId: 'dragon' };
+assert(gameBomb.useBomb() === false, '身旁仅有首领怪物时炸弹免疫失败');
+assert(gameBomb.playerStats.inventory.bomb === 2, '炸弹未被消耗');
+
+bFloor.layout[4][5] = { type: 'monster', monsterId: 'dark_knight' };
+const startGold = gameBomb.playerStats.gold;
+const startExp = gameBomb.playerStats.exp;
+assert(gameBomb.useBomb() === true, '身旁有非首领怪物时引爆炸弹成功');
+assert(gameBomb.playerStats.inventory.bomb === 1, '炸弹数量扣减 1');
+assert(bFloor.layout[4][5]?.type === 'floor', '怪物地块变为畅通地面');
+assert(gameBomb.playerStats.gold === startGold + MONSTERS.dark_knight.gold, '炸弹全额获取怪物金币');
+assert(gameBomb.playerStats.exp === startExp + MONSTERS.dark_knight.exp, '炸弹全额获取怪物经验');
+
+// 7. H2: 破墙镐 usePickaxe
+const gamePick = new GameState();
+gamePick.initGame();
+assert(gamePick.usePickaxe() === false, '无破墙镐时使用失败');
+gamePick.playerStats.inventory.pickaxe = 1;
+gamePick.currentFloor = 5;
+gamePick.playerPos = { x: 5, y: 5, dir: 'up' };
+const pFloor = gamePick.getCurrentFloorData();
+pFloor.layout[4][5] = { type: 'floor' };
+pFloor.layout[6][5] = { type: 'floor' };
+pFloor.layout[5][4] = { type: 'floor' };
+pFloor.layout[5][6] = { type: 'floor' };
+assert(gamePick.usePickaxe() === false, '身旁无普通石墙时破墙失败');
+
+pFloor.layout[4][5] = { type: 'wall' };
+assert(gamePick.usePickaxe() === true, '破墙镐成功粉碎正前方石墙');
+assert(gamePick.playerStats.inventory.pickaxe === 0, '消耗 1 把破墙镐');
+assert(pFloor.layout[4][5]?.type === 'floor', '石墙转化为普通地面');
+
+// 8. H2: 地震卷轴 useEarthquake
+const gameQuake = new GameState();
+gameQuake.initGame();
+assert(gameQuake.useEarthquake() === false, '无地震卷轴时使用失败');
+gameQuake.playerStats.inventory.earthquake = 1;
+gameQuake.currentFloor = 5;
+const qFloor = gameQuake.getCurrentFloorData();
+qFloor.layout[1][1] = { type: 'fake_wall', itemType: 'cross' };
+qFloor.layout[1][2] = { type: 'door_yellow' };
+qFloor.layout[1][3] = { type: 'item', itemType: 'gem_red' };
+
+let initialWalls = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    if (qFloor.layout[y][x]?.type === 'wall') initialWalls++;
+  }
+}
+assert(initialWalls > 0, '5F 拥有普通石墙');
+assert(gameQuake.useEarthquake() === true, '使用地震卷轴成功');
+assert(gameQuake.playerStats.inventory.earthquake === 0, '消耗 1 个地震卷轴');
+
+let remainingWalls = 0;
+for (let y = 0; y < 11; y++) {
+  for (let x = 0; x < 11; x++) {
+    if (qFloor.layout[y][x]?.type === 'wall') remainingWalls++;
+  }
+}
+assert(remainingWalls === 0, '地震卷轴清空当前楼层所有普通石墙');
+assert(qFloor.layout[1][1]?.type === 'fake_wall', '地震卷轴不破坏暗墙');
+assert(qFloor.layout[1][2]?.type === 'door_yellow', '地震卷轴不破坏门');
+assert(qFloor.layout[1][3]?.type === 'item', '地震卷轴不破坏道具');
 
 console.log('\n==============================================');
 console.log(` 自检完毕：通过 ${passedTests} / ${totalTests} 项核心测试用例！`);
