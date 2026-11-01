@@ -19,6 +19,7 @@ import {
   getDialogueData,
   FLOOR_NAMES,
   getFloorName,
+  getEquipName,
   TRADER_FLOOR_OFFERS,
   ELDER_FLOOR_DIALOGUES,
 } from './i18n';
@@ -2942,7 +2943,10 @@ const baseDragonAtk = gameDragon.playerStats.atk;
 gameDragon.fightMonster('dragon', 5, 5);
 assert(gameDragon.playerStats.inventory.snow_crystal === 1, '击败魔龙获得冰冻雪花');
 assert(gameDragon.playerStats.atk === baseDragonAtk + 100, '击败魔龙攻击力提升 100 点 (屠龙之刃)');
-assert(gameDragon.playerStats.weapon === '屠龙之刃', '击败魔龙装备神兵屠龙之刃');
+assert(gameDragon.playerStats.weapon === '屠龙之刃', '击败魔龙装备神兵屠龙之刃 (标准中文键名)');
+assert(getEquipName(gameDragon.playerStats.weapon, 'zh') === '屠龙之刃', '屠龙之刃中文显示为 屠龙之刃');
+assert(getEquipName(gameDragon.playerStats.weapon, 'en') === 'Dragon Slayer', '屠龙之刃英文显示为 Dragon Slayer');
+assert(getEquipName('Dragon Slayer', 'zh') === '屠龙之刃', '历史英文存档 Dragon Slayer 在中文下正确映射');
 assert(ITEMS.sword_dragon.value === 100, 'items.ts 中 sword_dragon 数值为 100');
 
 // 4. M5: 金钥匙开启当前楼层所有黄门并赠予钥匙

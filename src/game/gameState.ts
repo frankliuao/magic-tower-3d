@@ -1421,7 +1421,7 @@ export class GameState {
       bossHandledDoor = true;
       this.playerStats.inventory.snow_crystal = 1;
       this.playerStats.atk += 100;
-      this.playerStats.weapon = this.language === 'zh' ? '屠龙之刃' : 'Dragon Slayer';
+      this.playerStats.weapon = '屠龙之刃';
       const text = this.language === 'zh'
         ? '🐉 远古魔龙已被诛灭！斩获神兵【屠龙之刃】(攻击+100) 与传说秘宝【冰冻雪花】！可前往13层与26层冻结炽热熔岩！'
         : '🐉 Ancient Dragon defeated! Obtained [Dragon Slayer] (+100 ATK) and [Frost Snowflake]! Lava on 13F & 26F can now be frozen!';
